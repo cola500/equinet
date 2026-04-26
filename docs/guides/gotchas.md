@@ -1520,6 +1520,24 @@ body { padding-bottom: 0 !important; }
 
 ---
 
+## Gotcha #40: Miljövariabel-rename kräver global grep — inte fil-för-fil
+
+**Problem:** S62-2 bytte `NEXTAUTH_URL` mot `APP_URL` i `email-service.ts` men missade 5 instanser i domain-lagret: `AuthService.ts` (lösenordsåterställnings-URL), `createPaymentService.ts` + `createPaymentWebhookService.ts` (Stripe callback-URL) och `RouteAnnouncementNotifier.ts` (2 push-URL). En hotfix krävdes — Stripe callback-URL hade potentiellt kunnat blockera webhooks i produktion.
+
+**Lösning:** Vid rename av miljövariabel: kör `grep -r OLD_VAR_NAME src/ --include="*.ts"` som explicit **första steg** i storyn — inte som efterkontroll. Lista alla träffar i PR-beskrivningen och markera vilka som åtgärdats.
+
+```bash
+# Steg 1 vid env-rename: sök hela kodbasen
+grep -r "NEXTAUTH_URL" src/ --include="*.ts"
+grep -r "NEXTAUTH_URL" src/ --include="*.tsx"
+```
+
+**Regel:** Miljövariabel-renames är globala operationer. En ändring i en fil räcker aldrig. Sök alltid i `src/`, `prisma/`, `scripts/` och `e2e/`.
+
+**Källa:** S62-2 hotfix 2026-04-25.
+
+---
+
 ## Relaterade Dokument
 
 - [CLAUDE.md](../CLAUDE.md) - Utvecklingsguide

@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-25
+last_updated: 2026-04-26
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -17,6 +17,19 @@ sections:
 > **Instruktion:** Uppdatera denna fil vid varje commit. Tech lead laser den for review och koordinering.
 
 ## Aktiv sprint
+
+**Sprint 63** — Smart Replies release-klar.
+
+| Story | Beskrivning | Status |
+|-------|-------------|--------|
+| S63-1 | Chip med ouppfyllt `{telefon}` skickas som rå placeholder | done (57189d7d) |
+| S63-2 | Chip-klick raderar befintlig text i skrivfältet utan varning | done (f0a447ad) |
+| S63-3 | Mallarna täcker inte vanliga fält-behov (ETA, "jag är framme") | done (f2926549) |
+| S63-4 | Ta bort smart_replies feature flag (DoD) | done (173f6bc7) |
+
+*(Sprint 63 klar 2026-04-26. 4/4 stories done — Smart Replies release-klar: telefon-placeholder disabled (S63-1), undo-toast vid chip-klick (S63-2), ETA-mallar tillagda (S63-3), smart_replies flag borttagen — GA (S63-4). Mergade via PR #306–309. check:all 4/4 gröna, 4380 tester.)*
+
+---
 
 **Sprint 62** — Kundinbjudningar release-klar.
 
@@ -73,6 +86,7 @@ sections:
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
+| S63 | Smart Replies release-klar | 4/4 done — telefon-placeholder disabled (S63-1), undo-toast (S63-2), ETA-mallar (S63-3), smart_replies flag borttagen — GA (S63-4). Mergade via PR #306–309. |
 | S62 | Kundinbjudningar release-klar | Planerad 2026-04-25. 6 stories. |
 | S61 | Återkommande bokningar release-klar | 6/6 done — atomisk create/cancel, startdatumsvalidering, kund-vy, email-bekräftelse, recurring_bookings flag borttagen. Mergade via PR #294–298. |
 | S60 | Förfallen service release-klar | 5/5 done — inline intervalredigering, varning vid >26 veckor, native 200+[], due_for_service flag borttagen. Mergad via PR #293. |
