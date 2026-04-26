@@ -36,5 +36,7 @@ export const DEMO_ALLOWED_PATHS = [
   "/provider/bookings",
   "/provider/customers",
   "/provider/services",
+  "/provider/insights",
+  "/provider/messages",
   "/provider/profile",
 ] as const

@@ -90,11 +90,17 @@ async function resetDemoData(providerId: string) {
     if (bookingIds.length > 0) {
       await prisma.review.deleteMany({ where: { bookingId: { in: bookingIds } } })
       await prisma.customerReview.deleteMany({ where: { bookingId: { in: bookingIds } } })
+      // Conversations cascade from bookings (onDelete: Cascade) — no explicit delete needed
       const deleted = await prisma.booking.deleteMany({
         where: { id: { in: bookingIds } },
       })
       console.log(`  Deleted ${deleted.count} bookings`)
     }
+
+    const series = await prisma.bookingSeries.deleteMany({
+      where: { customerId: { in: demoCustomerIds }, providerId },
+    })
+    if (series.count > 0) console.log(`  Deleted ${series.count} booking series`)
 
     const horses = await prisma.horse.deleteMany({
       where: { specialNeeds: { contains: DEMO_TAG } },
@@ -731,6 +737,167 @@ async function main() {
   console.log("")
 
   // -------------------------------------------------------------------------
+  // 10. BookingSeries (återkommande bokning — Lisa Andersson / Molly / Omskoning)
+  // -------------------------------------------------------------------------
+
+  const lisaId = customers["Lisa Andersson"]
+  const mollyId = horses["Lisa Andersson/Molly"]
+  const omskoningId = services["Omskoning"]
+
+  let bookingSeriesId: string | null = null
+
+  if (lisaId && omskoningId) {
+    const existingSeries = await prisma.bookingSeries.findFirst({
+      where: { customerId: lisaId, providerId: provider.id, serviceId: omskoningId },
+    })
+
+    if (existingSeries) {
+      bookingSeriesId = existingSeries.id
+      console.log("  Bokningsserie finns: Omskoning Molly (Lisa Andersson)")
+    } else {
+      const series = await prisma.bookingSeries.create({
+        data: {
+          customerId: lisaId,
+          providerId: provider.id,
+          serviceId: omskoningId,
+          horseId: mollyId ?? null,
+          intervalWeeks: 8,
+          totalOccurrences: 6,
+          createdCount: 3,
+          startTime: "08:00",
+          status: "active",
+        },
+      })
+      bookingSeriesId = series.id
+      console.log("  Skapade bokningsserie: Omskoning Molly (Lisa Andersson)")
+    }
+
+    // 2 genomförda bokningar i serien (8 och 16 veckor bakåt)
+    for (const daysBack of [-112, -56]) {
+      const seriesDate = daysFromNow(daysBack)
+      const existing = await prisma.booking.findFirst({
+        where: {
+          customerId: lisaId,
+          providerId: provider.id,
+          serviceId: omskoningId,
+          bookingDate: seriesDate,
+          startTime: "08:00",
+        },
+      })
+      if (!existing) {
+        await prisma.booking.create({
+          data: {
+            customerId: lisaId,
+            providerId: provider.id,
+            serviceId: omskoningId,
+            bookingDate: seriesDate,
+            startTime: "08:00",
+            endTime: "09:15",
+            status: "completed",
+            horseName: "Molly",
+            horseId: mollyId ?? null,
+            bookingSeriesId,
+          },
+        })
+        console.log(`  Serie-bokning (genomförd): Molly ${seriesDate.toISOString().slice(0, 10)}`)
+      } else {
+        if (!existing.bookingSeriesId) {
+          await prisma.booking.update({ where: { id: existing.id }, data: { bookingSeriesId } })
+        }
+        console.log(`  Serie-bokning finns: Molly ${seriesDate.toISOString().slice(0, 10)}`)
+      }
+    }
+
+    // Länka den kommande bekräftade Molly-bokningen till serien
+    const upcomingMolly = await prisma.booking.findFirst({
+      where: {
+        customerId: lisaId,
+        providerId: provider.id,
+        serviceId: omskoningId,
+        horseId: mollyId ?? undefined,
+        status: "confirmed",
+      },
+    })
+    if (upcomingMolly && !upcomingMolly.bookingSeriesId) {
+      await prisma.booking.update({
+        where: { id: upcomingMolly.id },
+        data: { bookingSeriesId },
+      })
+      console.log("  Länkade kommande Molly-bokning till serien")
+    }
+  }
+  console.log("")
+
+  // -------------------------------------------------------------------------
+  // 11. Konversation + meddelanden (Anders Bergman / Dante / Omskoning)
+  //     Visar Smart Reply-chips — sista meddelandet är från kunden, oläst.
+  // -------------------------------------------------------------------------
+
+  const andersId = customers["Anders Bergman"]
+
+  if (andersId && omskoningId) {
+    const andersBooking = await prisma.booking.findFirst({
+      where: {
+        customerId: andersId,
+        providerId: provider.id,
+        serviceId: omskoningId,
+        status: "confirmed",
+      },
+      orderBy: { bookingDate: "asc" },
+    })
+
+    if (!andersBooking) {
+      console.log("  Hoppar konversation: bekräftad bokning Anders Bergman/Omskoning saknas")
+    } else {
+      const existingConv = await prisma.conversation.findUnique({
+        where: { bookingId: andersBooking.id },
+      })
+
+      if (existingConv) {
+        console.log("  Konversation finns: Anders Bergman/Dante")
+      } else {
+        const t1 = new Date(Date.now() - 48 * 60 * 60 * 1000) // 2 dagar sedan
+        const t2 = new Date(Date.now() - 47 * 60 * 60 * 1000) // 2 dagar sedan + 1h
+        const t3 = new Date(Date.now() - 24 * 60 * 60 * 1000) // 1 dag sedan (oläst)
+
+        await prisma.conversation.create({
+          data: {
+            bookingId: andersBooking.id,
+            lastMessageAt: t3,
+            messages: {
+              create: [
+                {
+                  senderType: "CUSTOMER",
+                  senderId: andersId,
+                  content: "Hej Erik! Bara kolla att du har rätt adress — vi håller till på Ekebyvägen 12 i Västerås. Dante är redo.",
+                  createdAt: t1,
+                  readAt: t2,
+                },
+                {
+                  senderType: "PROVIDER",
+                  senderId: providerUserId,
+                  content: "Hej Anders! Ja, jag har Ekebyvägen 12. Räkna med mig kl 10:30 som planerat.",
+                  createdAt: t2,
+                  readAt: t2,
+                },
+                {
+                  senderType: "CUSTOMER",
+                  senderId: andersId,
+                  content: "Super, tack! En sak — Dante kan vara lite svårhanterad med bakhovarna, ta det lugnt med honom.",
+                  createdAt: t3,
+                  readAt: null,
+                },
+              ],
+            },
+          },
+        })
+        console.log("  Skapade konversation: Anders Bergman/Dante (Smart Reply-demo)")
+      }
+    }
+  }
+  console.log("")
+
+  // -------------------------------------------------------------------------
   // Summary
   // -------------------------------------------------------------------------
 
@@ -742,6 +909,7 @@ async function main() {
   console.log(`Kunder     : ${Object.keys(customers).length}`)
   console.log(`Hästar     : ${Object.keys(horses).length}`)
   console.log(`Bokningar  : ${createdBookings.length} (+ eventuellt befintliga om --reset ej kördes)`)
+  console.log(`Serie      : ${bookingSeriesId ? "Omskoning Molly — aktiv (6 tillfällen)" : "Ej skapad"}`)
   console.log("\nDemo-walkthrough: Se docs/operations/demo-setup.md")
 }
 
