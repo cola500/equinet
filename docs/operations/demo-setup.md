@@ -96,9 +96,9 @@ Demo-data är märkt på följande sätt:
 
 | Typ | Märkning |
 |-----|----------|
-| Kunder | E-post slutar på `@demo-provider.equinet.se` |
-| Hästar | `specialNeeds` innehåller `E2E-spec:demo-provider` |
-| Bokningar | Kopplade till demo-kunder (email-suffix ovan) |
+| Kunder | E-post matchar `DEMO_CUSTOMER_EMAILS`-konstanten i seed-scriptet |
+| Hästar | Kopplade till demo-kunder (via `ownerId`) |
+| Bokningar | Kopplade till demo-kunder (via `customerId`) |
 | Recensioner | Kopplade till demo-bokningar |
 | Anteckningar | Skapade av demo-leverantören (`providerId` = Erik Järnfot) |
 
