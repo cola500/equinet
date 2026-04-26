@@ -150,12 +150,4 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: true,
     category: "shared",
   },
-  smart_replies: {
-    key: "smart_replies",
-    label: "Snabbsvar för leverantörer",
-    description: "Visar klickbara mall-chips ovanför skriv-fältet i messaging-tråden",
-    defaultEnabled: false,
-    clientVisible: true,
-    category: "provider",
-  },
 }
