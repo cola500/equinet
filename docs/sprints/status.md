@@ -18,19 +18,35 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 64** — Auth-leverans och URL-config-uppstädning. Se [sprint-64.md](sprint-64.md).
+**Sprint 65** — Sprint 64 follow-through (auth-säkerhet och leveransgarantier). Se [sprint-65.md](sprint-65.md).
 
 | Story | Beskrivning | Status |
 |-------|-------------|--------|
-| S64-1 | Fixa fire-and-forget i AuthService och övriga notifiers (HÖG PRIO) | done (facafec4) |
+| S65-1 | Hotfix: open redirect + redirectTo + userType-routing i auth/callback | pending |
+| S65-2 | Riktig fire-and-forget-fix: fail loud eller retry-kö (rotorsak) | pending |
+| S65-3 | Eliminera kvarstående fire-and-forget i reschedule + invites + booking-series | pending |
+| S65-4 | Lägg till STRIPE_WEBHOOK_SECRET + audit för fler missade env-vars i CI-guard | pending |
+| S65-5 | Session-invalidering på andra enheter vid lösenordsbyte | pending |
+| S65-6 | Egen rate-limiter för change-password | pending |
+| S65-7 | userType-guard på change-password + synkad lösenordspolicy i UI | pending |
+
+*(Sprint 65 planerad 2026-04-30. 7 stories från tech-lead-review av Sprint 64 samma dag — 3 BLOCKERS + 7 MAJORS hittades post-merge. Total effort ~2-3 dagar. S65-1 är hotfix; auth/callback får INTE aktiveras i Supabase Redirect URLs förrän klart. Komplett kontext i sprint-65.md.)*
+
+---
+
+**Sprint 64** — Auth-leverans och URL-config-uppstädning. **KLAR MEN INTE RELEASE-KLAR** — fynd från tech-lead-review 2026-04-30 åtgärdas i Sprint 65.
+
+| Story | Beskrivning | Status |
+|-------|-------------|--------|
+| S64-1 | Fixa fire-and-forget i AuthService och övriga notifiers (HÖG PRIO) | done (facafec4) — fix räddar inte leveransen, se S65-2 |
 | S64-2 | Städa Vercel env-variabler med literal `\n` (preview + dev) | done (verifierat: NEXT_PUBLIC_SUPABASE_URL + ANON_KEY rena i preview+dev) |
 | S64-3 | Fixa hardkodad fel domän i `data-retention-warning.ts` | done (fd7c2c7f) |
-| S64-4 | CI-guard: kräv kritiska env-variabler i prod-build | done (a86a1fd0) |
-| S64-5 | "Byt lösenord"-funktion under Inställningar | done (c8c9e69d) |
-| S64-6 | Supabase Auth callback-route för magic link / OAuth | done (4932c0f1) |
-| S64-7 | URL-konfigurationsmatris i `docs/operations/url-configuration.md` | done (direkt till main) |
+| S64-4 | CI-guard: kräv kritiska env-variabler i prod-build | done (a86a1fd0) — saknar STRIPE_WEBHOOK_SECRET, se S65-4 |
+| S64-5 | "Byt lösenord"-funktion under Inställningar | done (c8c9e69d) — saknar session-invalidering, egen rate-limiter, userType-guard, synkad UI-policy. Se S65-5/6/7 |
+| S64-6 | Supabase Auth callback-route för magic link / OAuth | done (4932c0f1) — **3 BLOCKERS i route** (open redirect, ingen redirectTo-validering, hardkodad userType-routing). Får INTE aktiveras i Supabase förrän S65-1 mergad |
+| S64-7 | URL-konfigurationsmatris i `docs/operations/url-configuration.md` | done (cd33f9cc) |
 
-*(Sprint 64 planerad 2026-04-30. 7 stories från password reset-incidenten samma dag. Total effort ~2.5 dag. CSP-hotfix redan landad på main 9410dd21. Komplett kontext i sprint-64.md.)*
+*(Sprint 64 mergad 2026-04-30. 7 stories från password reset-incidenten samma dag. Tech-lead-review samma kväll hittade 3 BLOCKERS + 7 MAJORS + 5 MINORS. Sprint 64 räddar INTE email-leveransen och callback-routen har öppen attack-yta. Sprint 65 stänger luckorna. CSP-hotfix landad på main 9410dd21. Komplett kontext i sprint-64.md.)*
 
 ---
 
