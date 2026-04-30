@@ -25,7 +25,7 @@ sections:
 | S64-1 | Fixa fire-and-forget i AuthService och övriga notifiers (HÖG PRIO) | done (facafec4) |
 | S64-2 | Städa Vercel env-variabler med literal `\n` (preview + dev) | done (verifierat: NEXT_PUBLIC_SUPABASE_URL + ANON_KEY rena i preview+dev) |
 | S64-3 | Fixa hardkodad fel domän i `data-retention-warning.ts` | done (fd7c2c7f) |
-| S64-4 | CI-guard: kräv kritiska env-variabler i prod-build | pending |
+| S64-4 | CI-guard: kräv kritiska env-variabler i prod-build | done (a86a1fd0) |
 | S64-5 | "Byt lösenord"-funktion under Inställningar | pending |
 | S64-6 | Supabase Auth callback-route för magic link / OAuth | pending |
 | S64-7 | URL-konfigurationsmatris i `docs/operations/url-configuration.md` | pending |
