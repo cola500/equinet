@@ -294,11 +294,13 @@ export class AuthService {
       expiresAt,
     })
 
-    // 4. Send verification email (fire-and-forget)
+    // 4. Send verification email
     if (this.emailService) {
-      this.emailService.sendVerification(input.email, input.firstName, token).catch(() => {
-        // Logged at infrastructure level
-      })
+      try {
+        await this.emailService.sendVerification(input.email, input.firstName, token)
+      } catch (err) {
+        logger.error('Failed to send verification email during registration', err instanceof Error ? err : new Error(String(err)))
+      }
     }
 
     return Result.ok({ user })
@@ -359,9 +361,11 @@ export class AuthService {
       })
 
       if (this.emailService) {
-        this.emailService.sendVerification(user.email, user.firstName, token).catch(() => {
-          // Logged at infrastructure level
-        })
+        try {
+          await this.emailService.sendVerification(user.email, user.firstName, token)
+        } catch (err) {
+          logger.error('Failed to send verification email during resend', err instanceof Error ? err : new Error(String(err)))
+        }
       }
 
       return Result.ok({ sent: true })
@@ -392,13 +396,15 @@ export class AuthService {
         expiresAt,
       })
 
-      // Send password reset email (fire-and-forget)
+      // Send password reset email
       if (this.emailService?.sendPasswordReset) {
         const baseUrl = process.env.APP_URL || 'http://localhost:3000'
         const resetUrl = `${baseUrl}/reset-password?token=${token}`
-        this.emailService.sendPasswordReset(user.email, user.firstName, resetUrl).catch(() => {
-          // Logged at infrastructure level
-        })
+        try {
+          await this.emailService.sendPasswordReset(user.email, user.firstName, resetUrl)
+        } catch (err) {
+          logger.error('Failed to send password reset email', err instanceof Error ? err : new Error(String(err)))
+        }
       }
 
       return Result.ok({ sent: true })

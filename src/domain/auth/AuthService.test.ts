@@ -302,6 +302,52 @@ describe('AuthService', () => {
         const users = authRepo.getUsers()
         expect(users[0].emailVerified).toBe(false)
       })
+
+      it('should await email delivery before returning (no fire-and-forget)', async () => {
+        let emailDelivered = false
+        const slowDeps: AuthServiceDeps = {
+          authRepository: authRepo,
+          generateToken: () => 'slow-token-register',
+          emailService: {
+            sendVerification: () => new Promise<void>(resolve => {
+              setTimeout(() => {
+                emailDelivered = true
+                resolve()
+              }, 0)
+            }),
+            sendPasswordReset: async () => {},
+          },
+          supabaseAdmin: {
+            createUser: mockSupabaseAdmin.createUser,
+            updateUserById: mockSupabaseAdmin.updateUserById,
+          },
+        }
+        const slowService = new AuthService(slowDeps)
+
+        await slowService.register(customerInput)
+
+        expect(emailDelivered).toBe(true)
+      })
+
+      it('should return success even if email service throws', async () => {
+        const failingDeps: AuthServiceDeps = {
+          authRepository: authRepo,
+          generateToken: () => 'fail-token-register',
+          emailService: {
+            sendVerification: async () => { throw new Error('Resend down') },
+            sendPasswordReset: async () => {},
+          },
+          supabaseAdmin: {
+            createUser: mockSupabaseAdmin.createUser,
+            updateUserById: mockSupabaseAdmin.updateUserById,
+          },
+        }
+        const failingService = new AuthService(failingDeps)
+
+        const result = await failingService.register(customerInput)
+
+        expect(result.isSuccess).toBe(true)
+      })
     })
   })
 
@@ -446,6 +492,70 @@ describe('AuthService', () => {
       // Same response shape regardless -- enumeration prevention
       expect(result.isSuccess).toBe(true)
     })
+
+    it('should await email delivery before returning (no fire-and-forget)', async () => {
+      authRepo.seedUser({
+        id: 'user-1',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        userType: 'customer',
+        emailVerified: false,
+      })
+
+      let emailDelivered = false
+      const slowDeps: AuthServiceDeps = {
+        authRepository: authRepo,
+        generateToken: () => 'slow-token-resend',
+        emailService: {
+          sendVerification: () => new Promise<void>(resolve => {
+            setTimeout(() => {
+              emailDelivered = true
+              resolve()
+            }, 0)
+          }),
+          sendPasswordReset: async () => {},
+        },
+        supabaseAdmin: {
+          createUser: mockSupabaseAdmin.createUser,
+          updateUserById: mockSupabaseAdmin.updateUserById,
+        },
+      }
+      const slowService = new AuthService(slowDeps)
+
+      await slowService.resendVerification('test@example.com')
+
+      expect(emailDelivered).toBe(true)
+    })
+
+    it('should return success even if email service throws', async () => {
+      authRepo.seedUser({
+        id: 'user-1',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        userType: 'customer',
+        emailVerified: false,
+      })
+
+      const failingDeps: AuthServiceDeps = {
+        authRepository: authRepo,
+        generateToken: () => 'fail-token-resend',
+        emailService: {
+          sendVerification: async () => { throw new Error('Resend down') },
+          sendPasswordReset: async () => {},
+        },
+        supabaseAdmin: {
+          createUser: mockSupabaseAdmin.createUser,
+          updateUserById: mockSupabaseAdmin.updateUserById,
+        },
+      }
+      const failingService = new AuthService(failingDeps)
+
+      const result = await failingService.resendVerification('test@example.com')
+
+      expect(result.isSuccess).toBe(true)
+    })
   })
 
   // ===========================================================
@@ -518,6 +628,72 @@ describe('AuthService', () => {
       const activeTokens = tokens.filter(t => !t.usedAt)
       expect(activeTokens).toHaveLength(1)
       expect(activeTokens[0].token).toBe('test-token-2')
+    })
+
+    it('should await email delivery before returning (no fire-and-forget)', async () => {
+      authRepo.seedUser({
+        id: 'user-1',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        userType: 'customer',
+        emailVerified: true,
+      })
+
+      let emailDelivered = false
+      const slowDeps: AuthServiceDeps = {
+        authRepository: authRepo,
+        generateToken: () => 'slow-token-1',
+        emailService: {
+          sendVerification: async () => {},
+          sendPasswordReset: () => new Promise<void>(resolve => {
+            setTimeout(() => {
+              emailDelivered = true
+              resolve()
+            }, 0)
+          }),
+        },
+        supabaseAdmin: {
+          createUser: mockSupabaseAdmin.createUser,
+          updateUserById: mockSupabaseAdmin.updateUserById,
+        },
+      }
+      const slowService = new AuthService(slowDeps)
+
+      await slowService.requestPasswordReset('test@example.com')
+
+      // With fire-and-forget the setTimeout hasn't fired yet -- emailDelivered is false.
+      // With blocking await it's true.
+      expect(emailDelivered).toBe(true)
+    })
+
+    it('should return success even if email service throws', async () => {
+      authRepo.seedUser({
+        id: 'user-1',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        userType: 'customer',
+        emailVerified: true,
+      })
+
+      const failingDeps: AuthServiceDeps = {
+        authRepository: authRepo,
+        generateToken: () => 'fail-token-1',
+        emailService: {
+          sendVerification: async () => {},
+          sendPasswordReset: async () => { throw new Error('Resend down') },
+        },
+        supabaseAdmin: {
+          createUser: mockSupabaseAdmin.createUser,
+          updateUserById: mockSupabaseAdmin.updateUserById,
+        },
+      }
+      const failingService = new AuthService(failingDeps)
+
+      const result = await failingService.requestPasswordReset('test@example.com')
+
+      expect(result.isSuccess).toBe(true)
     })
   })
 
