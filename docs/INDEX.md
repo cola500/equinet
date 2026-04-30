@@ -50,6 +50,7 @@ sections:
 | Dokument | Beskrivning |
 |----------|-------------|
 | [ci-decisions.md](ci-decisions.md) | CI-beslut och lärdomar |
+| [url-configuration.md](operations/url-configuration.md) | Alla URL-config-platser (Vercel, Supabase, iOS, Stripe, Resend) + checklista domänbyte |
 | [deployment.md](operations/deployment.md) | Komplett deploy-guide (Vercel + Supabase) |
 | [environments.md](operations/environments.md) | Konfiguration och skillnader mellan lokal utveckling och produktion |
 | [monitoring.md](operations/monitoring.md) | Övervakningsverktyg, loggning, viktiga metrics och begränsningar |

@@ -27,8 +27,8 @@ sections:
 | S64-3 | Fixa hardkodad fel domän i `data-retention-warning.ts` | done (fd7c2c7f) |
 | S64-4 | CI-guard: kräv kritiska env-variabler i prod-build | done (a86a1fd0) |
 | S64-5 | "Byt lösenord"-funktion under Inställningar | done (c8c9e69d) |
-| S64-6 | Supabase Auth callback-route för magic link / OAuth | in_progress |
-| S64-7 | URL-konfigurationsmatris i `docs/operations/url-configuration.md` | pending |
+| S64-6 | Supabase Auth callback-route för magic link / OAuth | done (4932c0f1) |
+| S64-7 | URL-konfigurationsmatris i `docs/operations/url-configuration.md` | done (direkt till main) |
 
 *(Sprint 64 planerad 2026-04-30. 7 stories från password reset-incidenten samma dag. Total effort ~2.5 dag. CSP-hotfix redan landad på main 9410dd21. Komplett kontext i sprint-64.md.)*
 
