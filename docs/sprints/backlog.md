@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Alla kända stories och uppgifter, speglar roadmap.md. Plockas in i sprintar vid behov."
 category: sprint
 status: active
-last_updated: 2026-04-12
+last_updated: 2026-04-30
 tags: [backlog, roadmap, planning]
 sections:
   - Blockerare
@@ -54,6 +54,8 @@ sections:
 | withApiHandler resterande routes (131 st) | Löpande | Opportunistiskt |
 | console.* i legacy docs | 0.5 dag | Låg prioritet |
 | **BDD integrationstester — horses, booking-series, bookings POST, group-bookings join** | 1 dag | Kärndomäner saknar integration: Horses (8 routes, noll integration), Booking-series (3 routes, precis releasad), `POST /api/bookings` (viktigaste CREATE-routen), `POST /api/group-bookings/join` (Serializable-transaktion). 18/181 routes har integration totalt. Audit: [bdd-coverage-audit-2026-04-25.md](../research/bdd-coverage-audit-2026-04-25.md). |
+| **Hårdkodad fel domän i `data-retention-warning.ts`** | 10 min | `src/lib/email/templates/data-retention-warning.ts:4` har fallback `https://equinet.vercel.app` (utan `-app`) — fungerar inte. Bör använda samma logik som övriga email-templates: `process.env.APP_URL \|\| 'http://localhost:3000'`. Hittad 2026-04-30 vid felsökning av password reset till localhost. |
+| **CI-guard: kräv APP_URL i prod-build** | 1-2h | `APP_URL` saknades i Vercel prod-env i månader → alla email-länkar pekade på `http://localhost:3000` (password reset, bokningsbekräftelser, route-announcements m.fl.). Lägg till build-time-validering som faller om kritiska env-variabler saknas i prod (APP_URL, DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, RESEND_API_KEY, STRIPE_SECRET_KEY). Förslag: `scripts/check-prod-env.ts` körs i `prebuild` när `VERCEL_ENV=production`. |
 
 ## Kodeffektivitet (tech debt)
 
