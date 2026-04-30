@@ -732,33 +732,41 @@ async function main() {
     // 2 genomförda bokningar i serien (8 och 16 veckor bakåt)
     for (const daysBack of [-112, -56]) {
       const seriesDate = daysFromNow(daysBack)
+      // Check the provider-level slot (matches the unique constraint)
       const existing = await prisma.booking.findFirst({
         where: {
-          customerId: lisaId,
           providerId: provider.id,
-          serviceId: omskoningId,
           bookingDate: seriesDate,
           startTime: "08:00",
+          endTime: "09:15",
         },
       })
       if (!existing) {
-        await prisma.booking.create({
-          data: {
-            customerId: lisaId,
-            providerId: provider.id,
-            serviceId: omskoningId,
-            bookingDate: seriesDate,
-            startTime: "08:00",
-            endTime: "09:15",
-            status: "completed",
-            horseName: "Molly",
-            horseId: mollyId ?? null,
-            bookingSeriesId,
-          },
-        })
-        console.log(`  Serie-bokning (genomförd): Molly ${seriesDate.toISOString().slice(0, 10)}`)
+        try {
+          await prisma.booking.create({
+            data: {
+              customerId: lisaId,
+              providerId: provider.id,
+              serviceId: omskoningId,
+              bookingDate: seriesDate,
+              startTime: "08:00",
+              endTime: "09:15",
+              status: "completed",
+              horseName: "Molly",
+              horseId: mollyId ?? null,
+              bookingSeriesId,
+            },
+          })
+          console.log(`  Serie-bokning (genomförd): Molly ${seriesDate.toISOString().slice(0, 10)}`)
+        } catch (err: unknown) {
+          if ((err as { code?: string }).code === "P2002") {
+            console.log(`  Serie-bokning hoppades över (slottkonflikt): ${seriesDate.toISOString().slice(0, 10)}`)
+          } else {
+            throw err
+          }
+        }
       } else {
-        if (!existing.bookingSeriesId) {
+        if (!existing.bookingSeriesId && existing.customerId === lisaId) {
           await prisma.booking.update({ where: { id: existing.id }, data: { bookingSeriesId } })
         }
         console.log(`  Serie-bokning finns: Molly ${seriesDate.toISOString().slice(0, 10)}`)

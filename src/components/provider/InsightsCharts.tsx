@@ -173,8 +173,8 @@ function TimeHeatmapGrid({ data }: { data: TimeHeatmapItem[] }) {
           ))}
         </div>
 
-        {/* Day rows */}
-        {DAY_ORDER.map((day) => (
+        {/* Day rows — only show days that have bookings */}
+        {DAY_ORDER.filter((day) => data.some((d) => d.day === day)).map((day) => (
           <div
             key={day}
             className="grid gap-0.5 sm:gap-1 mt-1"
@@ -330,9 +330,9 @@ export function InsightsCharts({
           <CardHeader className="pb-2">
             <div className="flex items-center gap-1.5">
               <CardTitle className="text-base">Populäraste tider</CardTitle>
-              <InfoPopover text="Visar alla bokningar (inte bara genomförda). Mörkare färg = fler bokningar." />
+              <InfoPopover text="Räknar dina bekräftade, genomförda och väntande bokningar — avbokade räknas inte. Varje bokning motsvarar en kund. Mörkare cell = fler bokningar den dagen och timmen under vald period. Bara dagar med faktiska bokningar visas." />
             </div>
-            <CardDescription>Antal bokningar per dag och timme</CardDescription>
+            <CardDescription>Vilka dagar och tider du får flest bokningar</CardDescription>
           </CardHeader>
           <CardContent>
             <TimeHeatmapGrid data={heatmapWithLabels} />

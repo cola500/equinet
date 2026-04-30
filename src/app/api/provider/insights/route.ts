@@ -152,8 +152,10 @@ export async function GET(request: NextRequest) {
 
     for (const b of bookings) {
       if (b.status === "cancelled") continue
-      const date = new Date(b.bookingDate)
-      const dayIndex = getDay(date)
+      // Parse as local date to avoid UTC midnight shifting the day index
+      const dateStr = b.bookingDate.toISOString().split("T")[0]
+      const [y, mo, d] = dateStr.split("-").map(Number)
+      const dayIndex = getDay(new Date(y, mo - 1, d))
       const hour = b.startTime ? parseInt(b.startTime.split(":")[0], 10) : null
       if (hour === null || isNaN(hour)) continue
 

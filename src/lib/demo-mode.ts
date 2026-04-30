@@ -39,4 +39,5 @@ export const DEMO_ALLOWED_PATHS = [
   "/provider/insights",
   "/provider/messages",
   "/provider/profile",
+  "/provider/help",
 ] as const

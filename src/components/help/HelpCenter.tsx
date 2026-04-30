@@ -7,6 +7,7 @@ import {
   getArticleSections,
   searchArticles,
 } from "@/lib/help/index"
+import { isDemoMode } from "@/lib/demo-mode"
 import {
   Accordion,
   AccordionContent,
@@ -22,17 +23,25 @@ interface HelpCenterProps {
 }
 
 export function HelpCenter({ role, basePath }: HelpCenterProps) {
-  const allArticlesForRole = getAllArticles(role)
+  const demoMode = isDemoMode()
+  const allArticlesForRole = getAllArticles(role).filter(
+    (a) => a.section !== "Demo" || demoMode
+  )
   const [query, setQuery] = useState("")
   const [articles, setArticles] = useState(allArticlesForRole)
-  const sections = getArticleSections(role)
+  const sections = getArticleSections(role).filter(
+    (s) => s !== "Demo" || demoMode
+  )
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setArticles(searchArticles(query, role))
+      const results = searchArticles(query, role).filter(
+        (a) => a.section !== "Demo" || demoMode
+      )
+      setArticles(results)
     }, 200)
     return () => clearTimeout(timer)
-  }, [query, role])
+  }, [query, role, demoMode])
 
   const handleQueryChange = useCallback((newQuery: string) => {
     setQuery(newQuery)
