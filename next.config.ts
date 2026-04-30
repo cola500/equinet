@@ -39,6 +39,15 @@ const nextConfig: NextConfig = {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
     const isLocalSupabase = supabaseUrl.includes('127.0.0.1') || supabaseUrl.includes('localhost')
     const localSupabaseCsp = (isDev || isLocalSupabase) ? ' http://localhost:54321 http://127.0.0.1:54321' : ''
+    // Extract origin (https://xxx.supabase.co) from full URL for CSP connect-src.
+    // Falls back to a placeholder during build if env var is missing — caught by check:prod-env in future.
+    const supabaseOrigin = (() => {
+      try {
+        return supabaseUrl ? new URL(supabaseUrl).origin : ''
+      } catch {
+        return ''
+      }
+    })()
 
     // Parse Sentry DSN for CSP report-uri
     // DSN format: https://<key>@o<org>.ingest.sentry.io/<project>
@@ -63,7 +72,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              `connect-src 'self' https://router.project-osrm.org https://zzdamokfeenencuggjjp.supabase.co https://*.sentry.io${localSupabaseCsp}`, // Allow OSRM API + Supabase + Sentry (+ local Supabase in dev/E2E)
+              `connect-src 'self' https://router.project-osrm.org ${supabaseOrigin} https://*.sentry.io${localSupabaseCsp}`, // Allow OSRM API + Supabase + Sentry (+ local Supabase in dev/E2E)
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
@@ -116,7 +125,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
               "img-src 'self' data: blob: https:", // blob: for image uploads
               "font-src 'self' data:", // Next.js Google Fonts self-hosting
-              `connect-src 'self' https://zzdamokfeenencuggjjp.supabase.co https://*.sentry.io https://api.stripe.com${localSupabaseCsp}`, // API calls + Supabase + Sentry + Stripe (+ local Supabase in dev/E2E)
+              `connect-src 'self' ${supabaseOrigin} https://*.sentry.io https://api.stripe.com${localSupabaseCsp}`, // API calls + Supabase + Sentry + Stripe (+ local Supabase in dev/E2E)
               "frame-src https://js.stripe.com", // Stripe Payment Element renders in iframe
               "worker-src 'self' blob:", // browser-image-compression uses Web Workers via blob URLs
               "frame-ancestors 'none'", // Clickjacking protection
