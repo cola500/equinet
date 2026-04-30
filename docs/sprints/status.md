@@ -22,7 +22,7 @@ sections:
 
 | Story | Beskrivning | Status |
 |-------|-------------|--------|
-| S64-1 | Fixa fire-and-forget i AuthService och övriga notifiers (HÖG PRIO) | pending |
+| S64-1 | Fixa fire-and-forget i AuthService och övriga notifiers (HÖG PRIO) | done (facafec4) |
 | S64-2 | Städa Vercel env-variabler med literal `\n` (preview + dev) | pending |
 | S64-3 | Fixa hardkodad fel domän i `data-retention-warning.ts` | pending |
 | S64-4 | CI-guard: kräv kritiska env-variabler i prod-build | pending |
