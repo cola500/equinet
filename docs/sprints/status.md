@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-26
+last_updated: 2026-04-30
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -17,6 +17,22 @@ sections:
 > **Instruktion:** Uppdatera denna fil vid varje commit. Tech lead laser den for review och koordinering.
 
 ## Aktiv sprint
+
+**Sprint 64** — Auth-leverans och URL-config-uppstädning. Se [sprint-64.md](sprint-64.md).
+
+| Story | Beskrivning | Status |
+|-------|-------------|--------|
+| S64-1 | Fixa fire-and-forget i AuthService och övriga notifiers (HÖG PRIO) | pending |
+| S64-2 | Städa Vercel env-variabler med literal `\n` (preview + dev) | pending |
+| S64-3 | Fixa hardkodad fel domän i `data-retention-warning.ts` | pending |
+| S64-4 | CI-guard: kräv kritiska env-variabler i prod-build | pending |
+| S64-5 | "Byt lösenord"-funktion under Inställningar | pending |
+| S64-6 | Supabase Auth callback-route för magic link / OAuth | pending |
+| S64-7 | URL-konfigurationsmatris i `docs/operations/url-configuration.md` | pending |
+
+*(Sprint 64 planerad 2026-04-30. 7 stories från password reset-incidenten samma dag. Total effort ~2.5 dag. CSP-hotfix redan landad på main 9410dd21. Komplett kontext i sprint-64.md.)*
+
+---
 
 **Sprint 63** — Smart Replies release-klar.
 
