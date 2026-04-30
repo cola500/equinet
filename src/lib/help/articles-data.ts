@@ -146,7 +146,7 @@ export const allArticles: HelpArticle[] = [
         "heading": "Vad händer sen?",
         "bullets": [
           "Leverantören får en notifikation om din bokning",
-          "Du får besked när leverantören accepterar eller avvisar",
+          "Du får besked när leverantören accepterar eller avböjer",
           "Vid bekräftelse kan du betala direkt i appen"
         ]
       },
@@ -481,9 +481,30 @@ export const allArticles: HelpArticle[] = [
         "bullets": [
           "Filtrera på kommande, tidigare eller alla bokningar",
           "Avboka en bokning (om den inte redan är betald)",
+          "Boka om en bokning (om leverantören tillåter det)",
           "Betala för bekräftade bokningar",
           "Lämna omdöme efter genomförd bokning"
         ]
+      },
+      {
+        "heading": "Boka om en bokning",
+        "paragraphs": [
+          "Om leverantören har aktiverat självservice-ombokning kan du byta tid på en bekräftad bokning utan att behöva kontakta leverantören.",
+          "Ombokning är inte tillgänglig om:"
+        ],
+        "steps": [
+          "Gå till Mina bokningar",
+          "Klicka på den bokning du vill boka om",
+          "Klicka **Boka om**",
+          "Välj ett nytt datum och tid",
+          "Bekräfta -- den gamla bokningstiden ersätts"
+        ],
+        "bullets": [
+          "Leverantören inte har aktiverat funktionen",
+          "Bokningstiden är för nära inpå (leverantören sätter gränsen)",
+          "Bokningen redan är betald"
+        ],
+        "tip": "Den här funktionen kan vara inaktiverad och kanske inte är tillgänglig i alla konton."
       }
     ]
   },
@@ -642,6 +663,52 @@ export const allArticles: HelpArticle[] = [
     ]
   },
   {
+    "slug": "meddelanden",
+    "title": "Skicka meddelande till leverantör",
+    "role": "customer",
+    "section": "Bokningar",
+    "keywords": [
+      "meddelande",
+      "chatt",
+      "kommunikation",
+      "leverantör",
+      "konversation",
+      "bokning"
+    ],
+    "summary": "Kommunicera med din leverantör direkt i appen, kopplat till din specifika bokning.",
+    "content": [
+      {
+        "paragraphs": [
+          "Du kan kommunicera med din leverantör direkt i appen, kopplat till din specifika bokning."
+        ]
+      },
+      {
+        "heading": "Öppna konversationen",
+        "steps": [
+          "Gå till **Mina bokningar**",
+          "Hitta den bokning du vill kommunicera om",
+          "Klicka på **Meddelanden** längst ner på bokningskortet"
+        ]
+      },
+      {
+        "heading": "Skicka ett meddelande",
+        "paragraphs": [
+          "Skriv ditt meddelande i textfältet och klicka **Skicka**. Du kan även skicka med **Ctrl+Enter** (PC) eller **Cmd+Enter** (Mac)."
+        ],
+        "bullets": [
+          "Maximalt 2 000 tecken per meddelande",
+          "Meddelanden är kopplade till en specifik bokning"
+        ]
+      },
+      {
+        "heading": "Läsa svar",
+        "paragraphs": [
+          "När leverantören svarar kan du läsa svaret i samma konversationsvy. Meddelanden visas i kronologisk ordning med dina egna meddelanden till höger och leverantörens till vänster."
+        ]
+      }
+    ]
+  },
+  {
     "slug": "notifikationer",
     "title": "Notifikationer",
     "role": "customer",
@@ -665,7 +732,7 @@ export const allArticles: HelpArticle[] = [
       {
         "heading": "Du notifieras när",
         "bullets": [
-          "Leverantören bekräftar eller avvisar din bokning",
+          "Leverantören bekräftar eller avböjer din bokning",
           "En bokning markeras som genomförd",
           "Betalning har gått igenom",
           "Leverantören svarar på ditt omdöme",
@@ -768,6 +835,74 @@ export const allArticles: HelpArticle[] = [
       {
         "paragraphs": [
           "Ditt eget intervall gäller före leverantörens rekommendation och tjänstens standardvärde. Om du inte har satt ett eget intervall används leverantörens rekommendation."
+        ],
+        "tip": "Den här funktionen kan vara inaktiverad och kanske inte är tillgänglig i alla konton."
+      }
+    ]
+  },
+  {
+    "slug": "affarsinsikter",
+    "title": "Affärsinsikter",
+    "role": "provider",
+    "section": "Planering",
+    "keywords": [
+      "affärsinsikter",
+      "analytics",
+      "statistik",
+      "populära tjänster",
+      "tidsanalys",
+      "kundretention",
+      "avbokningsfrekvens",
+      "intäkter",
+      "period"
+    ],
+    "summary": "Analysera din verksamhets trender med diagram över populära tjänster, besökstider, kundretention och nyckeltal.",
+    "content": [
+      {
+        "paragraphs": [
+          "Under **Affärsinsikter** ser du analysdiagram och nyckeltal för din verksamhet. Använd inblicken för att planera bättre, sätta rätt priser och behålla kunder."
+        ]
+      },
+      {
+        "heading": "Välj period",
+        "paragraphs": [
+          "Överst på sidan väljer du analyspериod: **3 månader**, **6 månader** eller **12 månader**. Alla diagram uppdateras automatiskt."
+        ]
+      },
+      {
+        "heading": "Diagram",
+        "paragraphs": [
+          "### Populäraste tjänsterna",
+          "Stapeldiagram som visar hur många bokningar och hur stor intäkt varje tjänst genererat under perioden. Hjälper dig se vilka tjänster som driver din verksamhet.",
+          "### Besökstider (värmekarta)",
+          "En värmekarta som visar vilka dagar och klockslag du har flest bokningar. Mörkare färg = fler bokningar. Användbart för att se mönster och planera ditt schema.",
+          "### Kundretention",
+          "Linjediagram per månad som visar:",
+          "En hög andel återkommande kunder är ett tecken på nöjda kunder och stabil verksamhet."
+        ],
+        "bullets": [
+          "**Nya kunder** -- kunder som bokade för första gången den månaden",
+          "**Återkommande kunder** -- kunder som bokat tidigare"
+        ]
+      },
+      {
+        "heading": "Nyckeltal",
+        "paragraphs": [
+          "| Nyckeltal | Vad det mäter |",
+          "|-----------|--------------|",
+          "| Avbokningsfrekvens | Andel bokningar som avbokats |",
+          "| No-show-frekvens | Andel kunder som inte dök upp |",
+          "| Snittintäkt per bokning | Genomsnittligt belopp per genomförd bokning |",
+          "| Unika kunder | Antal unika kunder under perioden |",
+          "| Andel manuella bokningar | Hur stor del av bokningarna du skapat själv |"
+        ]
+      },
+      {
+        "heading": "Tips",
+        "bullets": [
+          "Hög no-show-frekvens? Läs om no-show-spårning i hjälpen.",
+          "Många manuella bokningar? Uppmuntra kunder att boka själva via app -- sparar tid för dig.",
+          "Få återkommande kunder? Kolla dina tjänsteintervall under Besöksplanering."
         ],
         "tip": "Den här funktionen kan vara inaktiverad och kanske inte är tillgänglig i alla konton."
       }
@@ -1020,6 +1155,65 @@ export const allArticles: HelpArticle[] = [
     ]
   },
   {
+    "slug": "demo-guide",
+    "title": "Demo-guide — Erik Järnfot",
+    "role": "provider",
+    "section": "Demo",
+    "keywords": [
+      "demo",
+      "walkthrough",
+      "guide",
+      "erik järnfot",
+      "järnfots hovslageri"
+    ],
+    "summary": "Steg-för-steg genomgång av demoläget för Erik Järnfot, Järnfots Hovslageri.",
+    "content": [
+      {
+        "paragraphs": [
+          "Rekommenderad ordning för att visa plattformen för en pilot-leverantör."
+        ]
+      },
+      {
+        "heading": "Inloggning",
+        "paragraphs": [
+          "Logga in som **Erik Järnfot** på `/login`:"
+        ],
+        "bullets": [
+          "E-post: `erik.jarnfot@demo.equinet.se`",
+          "Lösenord: `DemoProvider123!`"
+        ]
+      },
+      {
+        "heading": "Genomgång (10 steg)",
+        "bullets": [
+          "**Dashboard** — översikt bokningar, kunder, aktuella händelser",
+          "**Kalender** — veckovy, klicka på Lisa Andersson/Molly-bokningen",
+          "**Bokningsdetalj** — serie-badge (\"Del av återkommande serie\"), kundinfo, tidslinje",
+          "**Bokningslista** — filtrera per status, se historik",
+          "**Kundlista** — klicka på Anders Bergman",
+          "**Kunddetalj Anders Bergman** — öppna Meddelanden-fliken, visa Smart Reply-chips. Klicka \"Jag är framme nu!\" — textrutan fylls i automatiskt med datum, tid och telefon",
+          "**Kunddetalj Lisa Andersson** — visa hästar, anteckningar, \"Bjud in kund\"-knappen",
+          "**Affärsinsikter** — grafer för bokningar, intäkter, populäraste tjänster",
+          "**Tjänster** — visa och redigera en tjänst med rekommenderat intervall",
+          "**Profil** — leverantörsprofil, inställningar, återkommande bokningar-toggle"
+        ]
+      },
+      {
+        "heading": "Bra poänger att lyfta",
+        "bullets": [
+          "**Smart Replies** — svara kunder med ett klick, mallar fylls i automatiskt med datum, tid och telefon",
+          "**Återkommande bokningar** — seriebaserade med automatisk schemaläggning (8-veckorsintervall)",
+          "**Affärsinsikter** — intäkter, populäraste tjänster och populäraste tider",
+          "**Kundinbjudningar** — bjud in kunder via e-post direkt från kundkortet",
+          "**Due-for-service** — kunder vars hästar är försenade med hovvård visas på dashboard",
+          "**Manuell bokning** — leverantören kan lägga in bokningar för kunder",
+          "**Kundanteckningar** — privata journalanteckningar per kund, aldrig synliga för kunden",
+          "**Recensioner** — kundernas omdömen samlade under profilen"
+        ]
+      }
+    ]
+  },
+  {
     "slug": "foretagsprofil",
     "title": "Företagsprofil",
     "role": "provider",
@@ -1169,7 +1363,7 @@ export const allArticles: HelpArticle[] = [
     "keywords": [
       "bokningar",
       "acceptera",
-      "avvisa",
+      "avböja",
       "genomförd",
       "avbokad",
       "väntande",
@@ -1186,7 +1380,7 @@ export const allArticles: HelpArticle[] = [
       {
         "heading": "Statusar",
         "bullets": [
-          "Väntande -- Acceptera eller avvisa (med anledning)",
+          "Väntande -- Acceptera eller avböj (med anledning)",
           "Bekräftad -- Utför tjänsten, markera sedan som genomförd",
           "Genomförd -- Klar, kunden kan nu betala och lämna omdöme",
           "Ej infunnit -- Kunden infann sig inte",
@@ -1342,6 +1536,21 @@ export const allArticles: HelpArticle[] = [
       {
         "paragraphs": [
           "Du kan stänga installationsbannern om du inte vill installera. Den visas inte igen efter att du stängt den."
+        ]
+      },
+      {
+        "heading": "iOS-app (native)",
+        "paragraphs": [
+          "Det finns också en separat Equinet-app för iPhone byggd med native SwiftUI. Den ger:",
+          "Fråga din kontakt på Equinet om tillgänglighet och installation av native iOS-appen."
+        ],
+        "bullets": [
+          "Native dashboard, kalender, bokningslista och kundhantering",
+          "Push-notiser via APNs (bekräfta och avvisa bokningar direkt från notisen)",
+          "Synkronisering med iOS Kalender -- bekräftade bokningar hamnar automatiskt i din kalender (Apple Watch-påminnelser och Siri-förslag inkluderat)",
+          "Widget på hemskärmen som visar din nästa bokning",
+          "Native taligenkänning för röstloggning",
+          "Offline-detektion och amber/grön återanslutningsbanner"
         ]
       }
     ]
@@ -1716,6 +1925,84 @@ export const allArticles: HelpArticle[] = [
       {
         "paragraphs": [
           "Manuellt tillagda kunder visas i kundregistret med samma funktioner som bokningsgenererade kunder. Du kan ta bort en manuellt tillagd kund via kuvert-ikonen."
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "meddelanden",
+    "title": "Meddelanden",
+    "role": "provider",
+    "section": "Dagligt arbete",
+    "keywords": [
+      "meddelanden",
+      "inkorg",
+      "konversation",
+      "kund",
+      "chatt",
+      "kommunikation",
+      "olästa",
+      "badge",
+      "snabbsvar"
+    ],
+    "summary": "Läs och svara på kundmeddelanden direkt i Equinet.",
+    "content": [
+      {
+        "paragraphs": [
+          "# Meddelanden",
+          "Med Meddelanden-funktionen kan du och dina kunder kommunicera direkt kring en specifik bokning utan att behöva byta till e-post eller SMS."
+        ]
+      },
+      {
+        "heading": "Inkorg",
+        "paragraphs": [
+          "Du hittar din inkorg via **Meddelanden**-fliken i navigeringen. Inkorgen visar alla aktiva konversationer, sorterade med olästa meddelanden överst.",
+          "Varje rad visar:"
+        ],
+        "bullets": [
+          "Kundens namn och tjänst",
+          "Bokningsdatum",
+          "Senaste meddelandet",
+          "Rött oläst-märke med antal olästa"
+        ]
+      },
+      {
+        "heading": "Öppna en konversation",
+        "paragraphs": [
+          "Klicka på en rad för att öppna tråden. Alla meddelanden från kunden och dina egna svar visas i kronologisk ordning. Olästa meddelanden markeras automatiskt som lästa när du öppnar tråden."
+        ]
+      },
+      {
+        "heading": "Svara på ett meddelande",
+        "paragraphs": [
+          "Skriv ditt svar i textfältet längst ned och klicka **Skicka**, eller tryck **Ctrl+Enter** (Windows) / **Cmd+Enter** (Mac)."
+        ]
+      },
+      {
+        "heading": "Oläst-badge i navigeringen",
+        "paragraphs": [
+          "Om du har olästa meddelanden visas ett rött märke med antal på Meddelanden-ikonen i navigeringen. Märket uppdateras automatiskt var 30:e sekund."
+        ]
+      },
+      {
+        "heading": "Snabbsvar",
+        "paragraphs": [
+          "Ovanför skriv-fältet visas 4 klickbara snabbsvar:",
+          "Klicka för att fylla i textrutan — du kan redigera innan du skickar."
+        ],
+        "bullets": [
+          "\"Bokningen är bekräftad. Vi ses [datum] kl [tid].\"",
+          "\"Tack! Jag återkommer så snart jag kan.\"",
+          "\"Ring mig på [ditt telefonnummer] om det brådskar.\"",
+          "\"Vilken tid passar dig istället?\""
+        ]
+      },
+      {
+        "heading": "Tips",
+        "bullets": [
+          "Meddelanden är kopplade till en specifik bokning — du och kunden ser bara meddelanden för den gemensamma bokningen.",
+          "Kunden kan initiera en konversation från sin bokningssida. Du svarar i din inkorg.",
+          "Funktionen kräver att Meddelanden är aktiverat i ditt konto. Kontakta support om du inte ser fliken."
         ]
       }
     ]
@@ -2347,6 +2634,73 @@ export const allArticles: HelpArticle[] = [
         "bullets": [
           "E-post-toggle -- stäng av skarp e-postutskick (loggar istället). Användbart under utveckling och testning."
         ]
+      }
+    ]
+  },
+  {
+    "slug": "tva-faktor-autentisering",
+    "title": "Tvåfaktorautentisering (MFA)",
+    "role": "admin",
+    "section": "Säkerhet",
+    "keywords": [
+      "MFA",
+      "tvåfaktor",
+      "2FA",
+      "TOTP",
+      "autentisering",
+      "säkerhet",
+      "Google Authenticator",
+      "Authy",
+      "QR-kod",
+      "verifieringskod"
+    ],
+    "summary": "Hur du aktiverar och använder tvåfaktorautentisering (MFA) för att skydda ditt admin-konto.",
+    "content": [
+      {
+        "paragraphs": [
+          "Som admin kan du aktivera tvåfaktorautentisering (MFA) för att lägga till ett extra skyddslager på ditt konto. MFA kräver att du anger en tidsbegränsad kod från en autentiseringsapp vid varje inloggning."
+        ]
+      },
+      {
+        "heading": "Aktivera MFA",
+        "steps": [
+          "Logga in på ditt admin-konto",
+          "Gå till Kontoinställningar",
+          "Klicka på **Aktivera tvåfaktorautentisering**",
+          "Skanna QR-koden med din autentiseringsapp (t.ex. Google Authenticator, Authy eller Microsoft Authenticator)",
+          "Ange den 6-siffriga koden som visas i appen",
+          "Klicka **Verifiera** -- MFA är nu aktiverat"
+        ]
+      },
+      {
+        "heading": "Logga in med MFA",
+        "steps": [
+          "Ange ditt e-postadress och lösenord som vanligt",
+          "Du omdirigeras till en verifieringssida",
+          "Öppna din autentiseringsapp och ange den aktuella 6-siffriga koden",
+          "Klicka **Verifiera** -- du är nu inloggad"
+        ],
+        "paragraphs": [
+          "Koder är giltiga i 30 sekunder. Om koden har gått ut -- vänta på nästa kod i appen."
+        ]
+      },
+      {
+        "heading": "Autentiseringsappar som fungerar",
+        "bullets": [
+          "**Google Authenticator** (iOS / Android)",
+          "**Authy** (iOS / Android / Desktop)",
+          "**Microsoft Authenticator** (iOS / Android)",
+          "Alla appar som stöder TOTP (RFC 6238)"
+        ]
+      },
+      {
+        "heading": "Viktigt att veta",
+        "bullets": [
+          "MFA gäller enbart admin-konton",
+          "Förlora aldrig åtkomst till din autentiseringsapp -- det finns för tillfället ingen självservice-återställning",
+          "Kontakta Equinet om du är utlåst"
+        ],
+        "tip": "Aktivera MFA omedelbart efter att du fått admin-behörighet. Det är ditt viktigaste skydd mot obehörig åtkomst."
       }
     ]
   },

@@ -297,7 +297,7 @@ export function ProviderNav() {
       </nav>
 
       {/* Mobile bottom tab bar */}
-      <BottomTabBar tabs={tabsWithBadge} moreItems={demo ? visibleMoreItems.filter((i) => i.href === "/provider/profile") : visibleMoreItems} />
+      <BottomTabBar tabs={tabsWithBadge} moreItems={demo ? visibleMoreItems.filter((i) => i.href === "/provider/profile" || i.href === "/provider/help") : visibleMoreItems} />
     </>
   )
 }

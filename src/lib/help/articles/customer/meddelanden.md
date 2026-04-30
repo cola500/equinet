@@ -1,16 +1,17 @@
 ---
-title: "Skicka meddelande till leverantör"
-description: "Hur du kommunicerar med leverantören direkt i din bokning"
-category: guide
-status: active
-last_updated: 2026-04-18
-sections:
-  - Öppna konversationen
-  - Skicka ett meddelande
-  - Läsa svar
+slug: meddelanden
+title: Skicka meddelande till leverantör
+role: customer
+section: Bokningar
+keywords:
+  - meddelande
+  - chatt
+  - kommunikation
+  - leverantör
+  - konversation
+  - bokning
+summary: Kommunicera med din leverantör direkt i appen, kopplat till din specifika bokning.
 ---
-
-# Skicka meddelande till leverantör
 
 Du kan kommunicera med din leverantör direkt i appen, kopplat till din specifika bokning.
 

@@ -135,7 +135,7 @@ function parseArticleMarkdown(markdown: string): HelpArticle {
     title: fm.title as string,
     role: fm.role as string,
     section: fm.section as string,
-    keywords: Array.isArray(fm.keywords) ? fm.keywords : [fm.keywords as string],
+    keywords: Array.isArray(fm.keywords) ? fm.keywords : (fm.keywords ? [fm.keywords as string] : []),
     summary: fm.summary as string,
     content: parseBody(body),
   }
