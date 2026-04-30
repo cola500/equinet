@@ -43,6 +43,12 @@ sections:
 
 **Föreslagen ordning:** 1 → 2 → 3 → 4 → 5 → 6 → 7. S64-7 sist eftersom den dokumenterar slutläget av de andra.
 
+**Pre-existing context:** CSP-hotfix landade på main 2026-04-30 (commit `9410dd21`) — Supabase-URL i `connect-src` läses nu från env-variabel istället för hardkodning. Återimplementera INTE detta i någon story.
+
+**Dashboard-beroenden (Dev har inte access — koordinera med Johan):**
+- S64-2 kräver att Johan ändrar Vercel UI för preview + development env-variabler. Bygg din kod-del först (om någon), kontakta sedan Johan med exakt instruktion på vad som ska ändras och vänta på bekräftelse innan storyn markeras done.
+- S64-6 kräver att `https://equinet-app.vercel.app/auth/callback` läggs till i Supabase Redirect URLs allowlist ([dashboard](https://supabase.com/dashboard/project/xybyzflfxnqqyxnvjklv/auth/url-configuration)). Bygg routen först, be sedan Johan uppdatera dashboarden, verifiera manuellt.
+
 ---
 
 ## Stories
@@ -69,7 +75,7 @@ sections:
 **Acceptanskriterier:**
 - [ ] `AuthService.requestPasswordReset` använder `waitUntil` eller blockerande `await`
 - [ ] `RouteAnnouncementNotifier` audit:erad — fire-and-forget bytt till `waitUntil` där relevant
-- [ ] Test: 5 password reset-försök i rad → 5 mail i Resend dashboard (manuellt test mot prod efter deploy)
+- [ ] **Manuell prod-verifiering** efter deploy: trigga 5 password reset-försök i rad mot prod, verifiera att alla 5 syns i Resend dashboard. Lägg verifieringen som steg i PR-beskrivningen.
 - [ ] Test: integration-test verifierar att routen inte returnerar förrän Resend-anropet är klar (eller med `waitUntil`-mock)
 - [ ] Audit-kommentar i done-fil: lista alla fire-and-forget i kodbasen och vilka som behåller `.catch()` med motivering
 
@@ -239,7 +245,7 @@ export async function GET(request: NextRequest) {
 - **Vercel `NEXT_PUBLIC_SUPABASE_URL`** — Supabase REST/auth-endpoint, används i klient-bundle
 - **Supabase Site URL** — fallback-redirect-URL efter login om `redirect_to` inte matchar allowlist
 - **Supabase Redirect URLs allowlist** — tillåtna `redirect_to`-värden vid magic link/OAuth
-- **CSP `connect-src`** i `next.config.ts` — vilka externa domäner browsern får anropa (måste inkludera Supabase)
+- **CSP `connect-src`** i `next.config.ts` — vilka externa domäner browsern får anropa (måste inkludera Supabase). **Detta var rotorsaken till password reset-incidenten 2026-04-30** — hardkodad gammal projekt-URL → browser blockerade alla auth-anrop. Hotfixad i commit `9410dd21` att läsa från `NEXT_PUBLIC_SUPABASE_URL`.
 - **Stripe webhook endpoint** — URL Stripe POST:ar webhooks till
 - **Resend domän-verifiering** — DKIM/SPF för `FROM_EMAIL`-domänen
 - **iOS prod-URL** i `ios/Equinet/AppConfig.swift` — WKWebView start-URL
