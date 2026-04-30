@@ -26,6 +26,7 @@ import { SubscriptionCard } from "@/components/provider/profile/SubscriptionCard
 import type { SubscriptionStatus } from "@/components/provider/profile/SubscriptionCard"
 import type { ProviderProfile } from "@/components/provider/profile/types"
 import { DeleteAccountDialog } from "@/components/account/DeleteAccountDialog"
+import { ChangePasswordDialog } from "@/components/profile/ChangePasswordDialog"
 import { clientLogger } from "@/lib/client-logger"
 
 const VALID_TABS = ["profile", "availability", "settings"] as const
@@ -51,6 +52,7 @@ function ProviderProfilePageContent() {
   const [activeTab, setActiveTab] = useState<ProfileTab>(initialTab)
   const [isEditingPersonal, setIsEditingPersonal] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false)
 
   const [personalData, setPersonalData] = useState({
     firstName: "",
@@ -486,6 +488,28 @@ function ProviderProfilePageContent() {
           guardMutation={guardMutation}
         />
       )}
+
+      {/* Change Password */}
+      {!demo && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Byt lösenord</CardTitle>
+            <CardDescription>
+              Uppdatera ditt lösenord för att hålla kontot säkert.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button type="button" onClick={() => setShowChangePasswordDialog(true)}>
+              Byt lösenord
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      <ChangePasswordDialog
+        open={showChangePasswordDialog}
+        onOpenChange={setShowChangePasswordDialog}
+      />
 
       {/* Delete Account - hidden in demo */}
       {!demo && (
