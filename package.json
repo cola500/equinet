@@ -6,6 +6,7 @@
     "dev": "DISABLE_SW=true next dev",
     "dev:offline": "FEATURE_OFFLINE_MODE=true next dev --webpack",
     "generate:help": "tsx scripts/generate-help-data.ts",
+    "prebuild": "tsx scripts/check-prod-env.ts",
     "build": "prisma generate && tsx scripts/generate-help-data.ts && next build --webpack",
     "postinstall": "prisma generate",
     "start": "next start",
