@@ -3,6 +3,7 @@ import {
   checkAppUrl,
   checkLoginResponse,
   checkFeatureFlagsResponse,
+  detectBotIdChallenge,
   type CheckResult,
 } from './demo-check-prod'
 
@@ -81,6 +82,81 @@ describe('checkFeatureFlagsResponse', () => {
   it('FAIL when body is not a JSON object', () => {
     const result = checkFeatureFlagsResponse(200, null)
     expect(result.status).toBe('fail')
+  })
+})
+
+describe('detectBotIdChallenge', () => {
+  it('WARN when x-vercel-mitigated=challenge on 429', () => {
+    const result = detectBotIdChallenge(429, {
+      'x-vercel-mitigated': 'challenge',
+      'content-type': 'text/html',
+      server: 'Vercel',
+    })
+    expect(result).not.toBeNull()
+    expect(result!.status).toBe('warn')
+    expect(result!.detail).toMatch(/BotID/)
+    expect(result!.hint).toMatch(/blocked by Vercel BotID/)
+    expect(result!.hint).toMatch(/exit 0/)
+    expect(result!.hint).toMatch(/NOT fully verified/)
+  })
+
+  it('WARN when x-vercel-mitigated=challenge even on 200 (defensive)', () => {
+    const result = detectBotIdChallenge(200, {
+      'x-vercel-mitigated': 'challenge',
+    })
+    expect(result?.status).toBe('warn')
+  })
+
+  it('null when x-vercel-mitigated header is absent and status is 200', () => {
+    const result = detectBotIdChallenge(200, { 'content-type': 'text/html' })
+    expect(result).toBeNull()
+  })
+
+  it('null when x-vercel-mitigated has a non-challenge value', () => {
+    const result = detectBotIdChallenge(429, {
+      'x-vercel-mitigated': 'passed',
+    })
+    expect(result).toBeNull()
+  })
+
+  it('WARN via heuristic: 429 + text/html + server: Vercel', () => {
+    const result = detectBotIdChallenge(429, {
+      'content-type': 'text/html; charset=utf-8',
+      server: 'Vercel',
+    })
+    expect(result?.status).toBe('warn')
+    expect(result?.detail).toMatch(/heuristic/)
+  })
+
+  it('null on 429 with application/json (our own rate-limit, not BotID)', () => {
+    const result = detectBotIdChallenge(429, {
+      'content-type': 'application/json',
+      server: 'Vercel',
+    })
+    expect(result).toBeNull()
+  })
+
+  it('null on 500 even from Vercel (real server errors must not WARN)', () => {
+    const result = detectBotIdChallenge(500, {
+      'content-type': 'text/html',
+      server: 'Vercel',
+    })
+    expect(result).toBeNull()
+  })
+
+  it('case-insensitive header lookup (X-Vercel-Mitigated)', () => {
+    const result = detectBotIdChallenge(429, {
+      'X-Vercel-Mitigated': 'challenge',
+    })
+    expect(result?.status).toBe('warn')
+  })
+
+  it('works with a Headers instance, not just plain object', () => {
+    const headers = new Headers({
+      'x-vercel-mitigated': 'challenge',
+    })
+    const result = detectBotIdChallenge(429, headers)
+    expect(result?.status).toBe('warn')
   })
 })
 

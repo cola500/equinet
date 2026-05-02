@@ -199,6 +199,8 @@ Exit-koder:
 
 Output-format: `✓` OK, `⚠` warning, `✗` fail. Alla rader inkluderar fix-hint vid fel.
 
+**Vercel BotID:** När prod-checken träffas av Vercel BotID / Attack Challenge (header `x-vercel-mitigated: challenge`) rapporteras träffen som `⚠ WARN` och scriptet exit:ar 0. Detta är **inte** en pass — outputen säger uttryckligen att prod demo readiness inte är fullt verifierad av scriptet. Verifiera då manuellt i browser eller kör browserbaserad smoke (`e2e/demo-flow.spec.ts`) som löser challenge:n automatiskt.
+
 ### E2E-konsistensspec
 
 `e2e/demo-flow.spec.ts` loggar in som demo-provider och navigerar fem flikar (Översikt, Kalender, Bokningar, Kunder, Tjänster). Asserterar att UI inte läcker `DEMO-SEED`, `Test Testsson` eller "Registrera"-knappen. Förutsätter demo-seed kört.

@@ -29,9 +29,66 @@ export interface CheckResult {
 const FETCH_TIMEOUT_MS = 10_000
 const EXPECTED_LOGIN_TEXT = 'Logga in på Equinet'
 
+const BOT_ID_WARN_HINT =
+  'Programmatic prod smoke was blocked by Vercel BotID. This is exit 0 because the app itself did not return a verified application failure, but prod demo readiness is NOT fully verified by this script. Verify manually in browser or via Playwright browser-based smoke.'
+
+// ---------------------------------------------------------------------------
+// Header helpers
+// ---------------------------------------------------------------------------
+
+type HeaderInput = Headers | Record<string, string>
+
+function getHeaderValue(headers: HeaderInput, name: string): string | null {
+  const lower = name.toLowerCase()
+  if (typeof (headers as Headers).get === 'function') {
+    return (headers as Headers).get(lower)
+  }
+  for (const [k, v] of Object.entries(headers as Record<string, string>)) {
+    if (k.toLowerCase() === lower) return v
+  }
+  return null
+}
+
 // ---------------------------------------------------------------------------
 // Pure check functions (testable)
 // ---------------------------------------------------------------------------
+
+/**
+ * Detect Vercel BotID / Attack Challenge mitigation.
+ *
+ * Returns a WARN result if the response is a Vercel platform-level challenge
+ * (programmatic clients without browser fingerprint get blocked). Returns null
+ * if no challenge detected — caller should fall through to normal checks.
+ *
+ * Primary signal: `x-vercel-mitigated: challenge` header.
+ * Heuristic: 429 + content-type text/html + server: Vercel.
+ */
+export function detectBotIdChallenge(
+  status: number,
+  headers: HeaderInput
+): CheckResult | null {
+  const mitigated = getHeaderValue(headers, 'x-vercel-mitigated')
+  if (mitigated?.toLowerCase() === 'challenge') {
+    return {
+      status: 'warn',
+      detail: 'Vercel BotID challenge',
+      hint: BOT_ID_WARN_HINT,
+    }
+  }
+  if (status === 429) {
+    const contentType =
+      getHeaderValue(headers, 'content-type')?.toLowerCase() ?? ''
+    const server = getHeaderValue(headers, 'server')?.toLowerCase() ?? ''
+    if (contentType.includes('text/html') && server.includes('vercel')) {
+      return {
+        status: 'warn',
+        detail: 'Vercel BotID challenge (heuristic)',
+        hint: BOT_ID_WARN_HINT,
+      }
+    }
+  }
+  return null
+}
 
 export function checkAppUrl(value: string | undefined): CheckResult {
   if (!value) {
@@ -142,8 +199,13 @@ async function main(): Promise<void> {
   let loginCheck: CheckResult
   try {
     const res = await timedFetch(`${appUrl}/login`)
-    const body = await res.text()
-    loginCheck = checkLoginResponse(res.status, body)
+    const challenge = detectBotIdChallenge(res.status, res.headers)
+    if (challenge) {
+      loginCheck = challenge
+    } else {
+      const body = await res.text()
+      loginCheck = checkLoginResponse(res.status, body)
+    }
   } catch (err) {
     loginCheck = {
       status: 'fail',
@@ -158,22 +220,27 @@ async function main(): Promise<void> {
   let flagsCheck: CheckResult
   try {
     const res = await timedFetch(`${appUrl}/api/feature-flags`)
-    const text = await res.text()
-    let body: unknown = null
-    try {
-      body = JSON.parse(text)
-    } catch {
-      flagsCheck = {
-        status: 'fail',
-        detail: 'malformed JSON',
-        hint: '/api/feature-flags returnerade icke-JSON',
+    const challenge = detectBotIdChallenge(res.status, res.headers)
+    if (challenge) {
+      flagsCheck = challenge
+    } else {
+      const text = await res.text()
+      let body: unknown = null
+      try {
+        body = JSON.parse(text)
+      } catch {
+        flagsCheck = {
+          status: 'fail',
+          detail: 'malformed JSON',
+          hint: '/api/feature-flags returnerade icke-JSON',
+        }
+        results.push({ name: 'GET /api/feature-flags', result: flagsCheck })
+        console.log(format('GET /api/feature-flags', flagsCheck))
+        summarize(results)
+        return
       }
-      results.push({ name: 'GET /api/feature-flags', result: flagsCheck })
-      console.log(format('GET /api/feature-flags', flagsCheck))
-      summarize(results)
-      return
+      flagsCheck = checkFeatureFlagsResponse(res.status, body)
     }
-    flagsCheck = checkFeatureFlagsResponse(res.status, body)
   } catch (err) {
     flagsCheck = {
       status: 'fail',
