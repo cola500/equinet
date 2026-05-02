@@ -3,7 +3,7 @@ title: Demo Mode
 description: Hur demo-mode fungerar -- vilka features som döljs och visas
 category: operations
 status: active
-last_updated: 2026-04-01
+last_updated: 2026-05-02
 sections:
   - Vad demo-mode gör
   - Hur man startar
@@ -11,6 +11,7 @@ sections:
   - Vad som döljs
   - Demo-flöde (produktion)
   - Demo-flöde (lokal)
+  - Verifiera demo-läge
   - Kända begränsningar
 ---
 
@@ -160,6 +161,51 @@ Data seedas med `npx tsx prisma/seed-demo.ts --reset` (kräver DATABASE_URL mot 
 3. `npm run dev`
 4. Öppna `http://localhost:3000/login`
 5. Logga in med `provider@example.com` / `ProviderPass123!`
+
+---
+
+## Verifiera demo-läge
+
+Två CLI-kommandon för snabb stabilitetscheck. Båda är read-only och rör inte data.
+
+### Lokalt
+
+```bash
+npm run demo:check:local
+```
+
+Verifierar:
+- Supabase CLI uppe (`supabase status`)
+- `provider@example.com` finns i lokal DB
+- Demo-kunder (`@demo.equinet.se`) finns
+- Minst en demo-bokning finns
+
+Exit 1 vid första fail med tydlig hint (t.ex. "Kör: `npm run db:seed:demo:reset`").
+
+### Produktion
+
+```bash
+APP_URL=https://equinet-app.vercel.app npm run demo:check:prod
+```
+
+Verifierar (read-only HTTPS GETs, ingen DB-anslutning):
+- `APP_URL` är satt och börjar med `https://`
+- `GET /login` → 200 + texten "Logga in på Equinet"
+- `GET /api/feature-flags` → 200 + JSON med `demo_mode`-flaggan
+
+Exit-koder:
+- **0** = alla checks OK eller bara warnings (`demo_mode` saknas/false)
+- **1** = hard fail (APP_URL fel, /login svarar inte, tekniskt fel på feature-flags)
+
+Output-format: `✓` OK, `⚠` warning, `✗` fail. Alla rader inkluderar fix-hint vid fel.
+
+### E2E-konsistensspec
+
+`e2e/demo-flow.spec.ts` loggar in som demo-provider och navigerar fem flikar (Översikt, Kalender, Bokningar, Kunder, Tjänster). Asserterar att UI inte läcker `DEMO-SEED`, `Test Testsson` eller "Registrera"-knappen. Förutsätter demo-seed kört.
+
+```bash
+npx playwright test e2e/demo-flow.spec.ts
+```
 
 ---
 
