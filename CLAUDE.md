@@ -179,6 +179,9 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **`.env.local` trumfar `.env`**: Uppdatera BÅDA vid byte av DATABASE_URL.
 - **NODE_ENV opålitlig på Vercel**: Använd explicita env-variabler (`ALLOW_TEST_ENDPOINTS`) istället.
 - **Stripe webhook event-ID dedup**: `createMany` + `skipDuplicates` = atomisk INSERT ON CONFLICT DO NOTHING.
+- **Staging-arkitektur (2026-05-06)**: Custom domain `equinet-staging.johanlindengard.com` (separat från prod `equinet.johanlindengard.com`). Egen Supabase-projekt `zzdamokfeenencuggjjp` (Frankfurt) — separat från prod `xybyzflfxnqqyxnvjklv` (Zurich). Egen `DATABASE_URL`/`DIRECT_DATABASE_URL`/`APP_URL` per environment via Vercel env-rader. Custom Access Token Hook installerad i båda. Se `docs/operations/staging-environment-setup.md`.
+- **Vercel sensitive Production-vars-fällor**: (1) UI Edit visar alltid tomt fält — paste landar inte i input → save sparar tomt. (2) CLI `vercel env add --value "$X" --yes` (52.2.1 + 53.1.1) sparar tomt tyst trots success-rapport. (3) CLI `rm <var> <env> --yes` på **delad rad** raderar variabeln för **alla** environments, inte bara den specificerade. **Regel:** Använd Vercel REST API (`DELETE` + `POST`) för sensitive Production-skrivningar. Verifiera ALLTID via `vercel env pull --environment=production` efter skrivning. Splitta delade rader via UI Edit, inte CLI rm. Se retro 2026-05-06.
+- **Pre-build-guard fångar inte tomma env**: `scripts/check-prod-env.ts` (S64-4) verifierar att vars **finns** men inte att de **har värde**. Tom string passerar. Båda 2026-05-06-incidenterna (DATABASE_URL + APP_URL Production tomma) skulle ha fångats av en non-empty-check.
 
 ### Domain Patterns
 
