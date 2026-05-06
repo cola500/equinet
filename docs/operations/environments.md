@@ -1,12 +1,14 @@
 ---
 title: "Miljoer (Environments)"
-description: "Konfiguration och skillnader mellan lokal utveckling, staging och produktion"
+description: "Konfiguration och skillnader mellan lokal utveckling, staging och produktion. Sedan 2026-05-06 har staging fullständig isolation (egen domain, separat Supabase, separat DB)."
 category: operations
 tags: [environments, vercel, supabase, ios, config]
 status: active
-last_updated: 2026-04-20
+last_updated: 2026-05-06
 related:
   - deployment.md
+  - staging-environment-setup.md
+  - url-configuration.md
   - ../../NFR.md
 sections:
   - Oversikt
@@ -26,11 +28,13 @@ sections:
 
 ## Oversikt
 
-| Miljö | Webb-URL | Supabase-projekt | Auth | Deploy |
-|-------|----------|-----------------|------|--------|
-| **Lokal** | `http://localhost:3000` | Lokal CLI (`127.0.0.1:54321`) | Supabase CLI | `npm run dev` |
-| **Staging** | `https://equinet-git-staging-cola500.vercel.app` | `zzdamokfeenencuggjjp` (eu-central-1) | Supabase Auth + RLS | Push till `staging`-branch |
-| **Produktion** | `https://equinet-app.vercel.app` | `xybyzflfxnqqyxnvjklv` (eu-central-2) | Supabase Auth + RLS | Push till `main`-branch |
+| Miljö | Webb-URL (custom domain) | Vercel branch-URL (fallback) | Supabase-projekt | Auth | Deploy |
+|-------|---------------------------|-------------------------------|------------------|------|--------|
+| **Lokal** | `http://localhost:3000` | — | Lokal CLI (`127.0.0.1:54321`) | Supabase CLI | `npm run dev` |
+| **Staging** | `https://equinet-staging.johanlindengard.com` | `equinet-app-git-staging-cola500s-projects.vercel.app` | `zzdamokfeenencuggjjp` (eu-central-1, Frankfurt) | Supabase Auth + RLS | Push till `staging`-branch |
+| **Produktion** | `https://equinet.johanlindengard.com` | `equinet-app.vercel.app` (kvar tills cutover) | `xybyzflfxnqqyxnvjklv` (eu-central-2, Zurich) | Supabase Auth + RLS | Push till `main`-branch |
+
+> **Custom domains skapade 2026-05-06.** Båda pekar på Vercel-projektet `equinet-app` via samma CNAME-target (`58f6e9422ba8b696.vercel-dns-017.com`) — Vercel routar via Host-header. Se [url-configuration.md](url-configuration.md) för matrisen.
 
 > **iOS-not:** iOS-appen använder `zzdamokfeenencuggjjp` för **både** staging och produktion tills Apple Developer Program är köpt (separat bundle ID + prod-projekt). Intentionellt — dokumenterat beslut från S48-1.
 
@@ -84,20 +88,29 @@ Alla feature flags ar styrda av:
 
 ## Staging
 
-- **URL:** `https://equinet-git-staging-cola500.vercel.app` (stabil Vercel branch-preview)
-- **Supabase-projekt:** `zzdamokfeenencuggjjp` (eu-central-1)
-- **Ursprung:** Skapades som PoC for Supabase Auth (S10-5, S11-2)
+- **URL:** `https://equinet-staging.johanlindengard.com` (custom domain, sedan 2026-05-06)
+- **Vercel branch-URL:** `equinet-app-git-staging-cola500s-projects.vercel.app` (fortfarande live, parallell access)
+- **Supabase-projekt:** `zzdamokfeenencuggjjp` ("slot machine", eu-central-1, Frankfurt)
+- **Ursprung:** Skapades som PoC for Supabase Auth (S10-5, S11-2). Block 2 (2026-05-06) gjorde det till fullständigt isolerad staging.
 - **Anvandning:** Manuell testning fore prod-release. Deployar vid push till `staging`-branch.
-- **Data:** Delar schema med prod men separata data — kan divergera
-- **RLS:** 28 policies + Custom Access Token Hook (samma som prod)
+- **Data:** Helt separat från prod — egna 24 users, 5 providers, 8 services. **Inga prod-bokningar/data.**
+- **Schema:** 45 migrations applied (synkad med prod via `prisma migrate deploy` mot staging-pooler).
+- **RLS:** Custom Access Token Hook aktiv (samma kod som prod, separat installation).
+- **Deployment Protection:** Vercel SSO aktiv (kräver Vercel-login för att se). Toggle off om extern delning behövs.
 
 **Deploytrigger:**
 ```bash
 git checkout staging && git merge main && git push origin staging
-# Vercel deployas automatiskt ~1 min
+# Vercel deployas automatiskt ~3 min
 ```
 
-> Staging och prod har **separata Supabase-projekt** — migrationer maste appliceras pa BADA.
+**Vercel env-vars (Preview, branch=`staging`):**
+- `DATABASE_URL` — staging-pooler (transaction mode, port 6543)
+- `DIRECT_DATABASE_URL` — staging-direct (port 5432)
+- `NEXT_PUBLIC_SUPABASE_URL` — `https://zzdamokfeenencuggjjp.supabase.co`
+- `APP_URL` — `https://equinet-staging.johanlindengard.com`
+
+> Staging och prod har **separata Supabase-projekt och separata Vercel env-rader** — migrationer maste appliceras pa BADA. Se [staging-environment-setup.md](staging-environment-setup.md) för fullständig setup-procedur.
 
 ---
 
@@ -105,17 +118,21 @@ git checkout staging && git merge main && git push origin staging
 
 ### Vercel
 
-- **Region:** `fra1` (Frankfurt, matchar Supabase eu-central-2)
+- **Region:** `fra1` (Frankfurt) — matchar Supabase eu-central-2 (Zurich) inom AWS Frankfurt-AZ
+- **Custom domain:** `https://equinet.johanlindengard.com` (sedan 2026-05-06)
+- **Vercel branch-URL:** `https://equinet-app.vercel.app` (kvarstår tills cutover, kan tas bort senare)
 - **Konfiguration:** `vercel.json`
 - **Miljovariabler:** Vercel Project Settings -> Environment Variables
 
 ### Supabase
 
-- **Projekt:** `xybyzflfxnqqyxnvjklv` (eu-central-2, Frankfurt)
+- **Projekt:** `xybyzflfxnqqyxnvjklv` ("equine-app", eu-central-2, Zurich)
 - **Auth:** Supabase Auth med Custom Access Token Hook (claims: userType, providerId, isAdmin)
 - **RLS:** 30 policies pa 8 tabeller (Booking, Service, Horse, Payment, CustomerReview, User, Provider, BookingSeries)
 - **Connection pooling:** PgBouncer (session mode port 5432, transaction mode port 6543)
 - **`connection_limit=1`** i DATABASE_URL (krävs for serverless)
+- **Site URL:** `https://equinet.johanlindengard.com`
+- **Redirect URLs allowlist:** innehåller både ny och gammal domän under cutover-perioden
 
 ```
 DATABASE_URL=postgresql://postgres.REF:PWD@pooler.supabase.com:5432/postgres?pgbouncer=true&connection_limit=1
