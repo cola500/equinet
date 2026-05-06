@@ -1,11 +1,12 @@
 ---
 title: "Staging Environment Setup"
-description: "Plan för en riktig isolerad staging-miljö (Preview = Staging) med egen Supabase, egen DB och egen seed. Ingen prod-data i staging."
+description: "Plan + utfall för isolerad staging-miljö (egen domain, egen Supabase, egen DB). Block 2 klart 2026-05-06."
 category: operations
-status: draft
-last_updated: 2026-05-02
+status: active
+last_updated: 2026-05-06
 tags: [staging, preview, vercel, supabase, environment, demo]
 sections:
+  - Resultat 2026-05-06 (Block 2 klart)
   - 1. Målbild
   - 2. Environment model
   - 3. Nuläge och gap
@@ -18,6 +19,54 @@ sections:
 ---
 
 # Staging Environment Setup
+
+> **Status:** Block 2 implementerat och verifierat 2026-05-06. Staging är fullständigt isolerad från prod på alla lager (domain, Auth, DB). Plan-sektionerna nedan beskriver vägen dit.
+
+## Resultat 2026-05-06 (Block 2 klart)
+
+| Lager | Production | Staging |
+|-------|------------|---------|
+| Domain | `https://equinet.johanlindengard.com` | `https://equinet-staging.johanlindengard.com` |
+| TLS-cert | Let's Encrypt via Vercel | Let's Encrypt via Vercel |
+| Vercel env `APP_URL` | Production-rad → prod-domän | Preview branch=`staging` → staging-domän |
+| Supabase Auth | `xybyzflfxnqqyxnvjklv` (prod) | `zzdamokfeenencuggjjp` (staging, separat projekt) |
+| `DATABASE_URL` | Prod-pooler | Staging-pooler (Preview branch=`staging`) |
+| `DIRECT_DATABASE_URL` | Prod-direct (delar med Development) | Staging-direct (Preview branch=`staging`) |
+| Schema migrations | (synkade) | 45/45 applied (verifierat) |
+| Custom Access Token Hook | aktiv | aktiv ✓ |
+| Supabase Site URL | `equinet.johanlindengard.com` | `equinet-staging.johanlindengard.com` |
+| End-to-end login | (oförändrat) | ✅ verifierat |
+
+### Block 2 detaljerad status
+
+| Block | Status |
+|-------|--------|
+| 2A — Custom domains live (prod + staging) | ✅ |
+| 2B — `staging`-branch + Vercel auto-deploy | ✅ |
+| 2C.1 — APP_URL split per environment | ✅ |
+| 2C.2 — DATABASE_URL split (Production / Preview-staging) | ✅ (via Vercel UI efter CLI-incident; se Lärdom nedan) |
+| 2C.3 — DIRECT_DATABASE_URL split | ✅ (via Vercel UI) |
+| 2D — Supabase Site URL + Redirect URLs (båda projekt) | ✅ |
+| 2E — End-to-end login verifierat i browser | ✅ |
+| 2C.4 — Cleanup Development DB-vars | ⏳ Frivilligt — `DATABASE_URL` Development är redan tom; `DIRECT_DATABASE_URL` Development delar med Production |
+| 2F — Cutover prod till `equinet.johanlindengard.com` (byta APP_URL Production + Supabase prod Site URL bort från `equinet-app.vercel.app`, ta bort gamla domain `equinet-app-test.johanlindengard.com`) | ⏳ Separat slice |
+
+### Kvarvarande arbete (utanför Block 2)
+
+- **Demo-seed mot staging** — staging-DB har 24 users, 5 providers, 8 services men 0 bookings/horses. För demo-walkthrough behöver vi köra `db:seed:demo:reset` mot staging.
+- **Email-flow-test** — trigga password reset från staging-domain och verifiera att mail innehåller staging-URL. Bevisar Site URL-config end-to-end.
+- **Skapa `johan@jaernfoten.se` i staging-Supabase** om eget login-konto önskas.
+- **Sprint 65 stories** (S65-1..S65-7) — auth-säkerhet och leveransgarantier från Sprint 64-review. Inte staging-relaterat men kvarstår.
+- **Doc-cleanup** — uppdatera `CLAUDE.md`, `docs/demo-mode.md`, `docs/operations/url-configuration.md` med nya domain-namn när cutover är gjord.
+- **Vercel Deployment Protection-beslut** för staging-domänen — krävs Vercel-login idag, vilket hindrar att dela URL externt för demo. Toggle off om extern delning behövs.
+
+### Lärdom: `vercel env rm` på delade rader
+
+CLI-kommandot `vercel env rm <var> <env> --yes` **tar bort hela variabeln** för alla environments den delar rad med, inte bara den specifika environment-tilldelningen. Vid 2C.2 togs `DATABASE_URL` av misstag bort från Production + Development när vi försökte separera Preview. Återställdes via Vercel UI.
+
+**Regel framåt:** Splittring av delade rader görs via **Vercel UI**, inte CLI. UI:s "Edit"-flöde tillåter att avmarkera environment-tilldelning utan att radera värdet. CLI är fortfarande OK för `add` av nya rader eller `rm` av rader med en enda environment-tilldelning.
+
+---
 
 > Plan, inte kod. Inga env-ändringar gjorda. Inga secrets i denna fil — bara `NEXT_PUBLIC_*`-värden (publika i klient-bundlen) och project-IDn som ändå syns publikt.
 

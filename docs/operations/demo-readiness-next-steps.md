@@ -1,9 +1,9 @@
 ---
 title: "Demo Readiness — Next Steps"
-description: "Post-incident plan för konsekvent demo-läge i lokal och produktion. Kort, hårt prioriterad — incident mode avslutad."
+description: "Post-incident plan för konsekvent demo-läge. Block 2 (staging environment) klart 2026-05-06. Behålls som referens; aktuell status finns i staging-environment-setup.md."
 category: operations
-status: active
-last_updated: 2026-05-02
+status: superseded
+last_updated: 2026-05-06
 tags: [demo-mode, production-readiness, checklist, post-incident]
 sections:
   - 1. Current verified status
