@@ -53,6 +53,7 @@ sections:
 | Commit-strategi (PR vs direkt) | [.claude/rules/commit-strategy.md](.claude/rules/commit-strategy.md) |
 | Deploy | [docs/operations/deployment.md](docs/operations/deployment.md) |
 | Bokningsflöde | [docs/architecture/booking-flow.md](docs/architecture/booking-flow.md) |
+| **Refactor triggers** | [docs/architecture/refactor-triggers.md](docs/architecture/refactor-triggers.md) (kolla FÖRE varje refactor) |
 | Retros | [docs/retrospectives/](docs/retrospectives/) |
 | NFR / Prod Readiness | [NFR.md](NFR.md) |
 | Metrics | [docs/metrics/](docs/metrics/) | aktuell rapport: [latest.md](docs/metrics/latest.md) |
@@ -126,6 +127,18 @@ src/app/api/ (routes) -> src/domain/ (services) -> src/infrastructure/ (repos) |
 
 - Start minimal: "Kan detta lösas genom att ta bort kod?" Inga nya patterns utan diskussion.
 - Filer: 300 rader OK, dela vid ~400-500. Extrahera vid 3+ återanvändningar.
+
+### Refactor Trigger Policy
+
+- **Refactor får INTE göras bara för att koden "känns ful"** eller för att DDD/repository-pattern vore estetiskt renare. Refactor styrs av konkret smärta, inte preferens.
+- **Vid ny feature, schemaändring, återkommande bug eller upptäckt duplicering** ska du kontrollera [docs/architecture/refactor-triggers.md](docs/architecture/refactor-triggers.md).
+- **Om en trigger verkar ha fyrat:**
+  1. Namnge triggern (T1-T12 från refactor-triggers.md)
+  2. Beskriv konkret smärta (vilka filer, hur ofta, mätbart)
+  3. Föreslå minsta separata refactor-slice (inte "förbättra hela domänen")
+  4. **Vänta på Johans godkännande** innan refactor påbörjas
+- **Refactor ska INTE blandas in i feature-slice utan explicit beslut** — det är separat slice med eget review.
+- **Om ingen trigger har fyrat:** bygg minsta möjliga lösning. Eventuell observation som verkar peka mot framtida refactor — dokumentera som "watch" i done-fil eller notering, inte som refactor i pågående arbete.
 
 ---
 
