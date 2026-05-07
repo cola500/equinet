@@ -3,7 +3,7 @@ title: "Demo Parity — Local vs Staging"
 description: "Audit av skillnader mellan lokal demo och staging-demo. Staging är inte demo-redo idag: demo_mode inaktivt, demo-seed inte körd, Test Testsson läcker. Konkret minsta åtgärd dokumenterad. Inkluderar Erik Järnfot vs Maria Lindgren persona-bedömning."
 category: operations
 status: active
-last_updated: 2026-05-06
+last_updated: 2026-05-07
 tags: [demo-mode, staging, parity, audit, demo-readiness, demo-persona]
 related:
   - ../demo-mode.md
@@ -442,15 +442,23 @@ Efter slicen utförd:
 
 ---
 
-## STOPP — inväntar Johan innan staging ändras
+## Utfall (2026-05-07)
 
-**Inga writes mot staging. Inga commits. Inga env-ändringar utförda.**
+| Steg | Status | Detalj |
+|------|--------|--------|
+| Steg A — sätt demo_mode env via REST API | KLAR | `NEXT_PUBLIC_DEMO_MODE=true` + `DEMO_MODE_SEED_FALLBACK=true` på Preview/staging via REST API DELETE+POST. Redeploy commit `e904eb97`. |
+| Steg B — seed staging-DB med Erik Järnfot | KLAR | `seed-demo-provider.ts --reset` mot staging-pooler. Erik + 5 tjänster + 9 kunder + 14 hästar + 18 bokningar + 7 recensioner + 1 bokningsserie + Smart Reply-konversation. |
+| Steg C — redeploy för att aktivera flag | KLAR | Kombinerades med Steg A:s redeploy (commit `e904eb97`). |
+| Steg D — manuell verifiering via DemoLoginButton | KLAR | Johan verifierade browser-baserat 2026-05-07. Demo-login fungerar mot staging. |
 
-Säg:
-- **"kör Steg A — sätt demo_mode env via REST API"** — ~5 min, ingen DB-impact
-- **"kör Steg B — seed staging-DB"** — kräver att du först exportera STAGING_POOLER_URL via `read -rsp`-kommando
-- **"kör hela A→D"** — 30 min totalt, du verifierar efter Steg D i browser
-- **"vänta, fråga om X"** — annan riktning
-- **"committa rapporten själv"** — på `staging`-branch utan att utföra slicen
+### Gotcha upptäckt under Steg B
 
-Min rekommendation: **committa rapporten + kör Steg A**. Steg A är låg-risk och bevisar REST API-vägen igen efter dagens incident.
+`supabase/.temp/pooler-url` (cachad av `supabase link`) **saknar password helt** — formatet är `postgresql://user@host:port/db` utan `:password@`-segmentet. `supabase`-CLI läser password från egen credential-store under runtime, men direkt-Prisma/`pg`-anrop får tom string och failar med `P1000: Authentication failed`. **Lösning:** vid manuell DB-access mot staging — bygg URL från lösenordshanterare och paste:a via tyst prompt (`read -rsp`) till `.env.local` (variabelnamn: `STAGING_POOLER_URL`). Inte återanvänd `.temp/pooler-url`.
+
+### Eftersläp
+
+| Vad | Hantering |
+|-----|-----------|
+| `Test Testsson` finns kvar i staging | Inte demo-blocker. Kan rensas via SQL om det stör i nästa demo. |
+| Maria Lindgren rebrand till `maria.lindgren@demo.equinet.se` | Optional, inte gjort. Maria är teknisk fixture, inte demo-persona. |
+| Pre-build-guard som rejecter tomma critical env vars | Föreslagen efter S64-4 + 2026-05-06-incident, inte byggd. Separat slice. |
