@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { checkProdEnv, REQUIRED_PROD_VARS } from './check-prod-env'
+import { checkProdEnv, checkCronsEnabled, REQUIRED_PROD_VARS } from './check-prod-env'
 
 const allVarsPresent = Object.fromEntries(REQUIRED_PROD_VARS.map(v => [v, 'value']))
 
@@ -35,6 +35,42 @@ describe('checkProdEnv', () => {
   })
 
   it('exports the full list of required vars', () => {
+    expect(REQUIRED_PROD_VARS).toBeDefined()
+  })
+})
+
+describe('checkCronsEnabled', () => {
+  it('returns ok when DISABLE_CRONS is unset', () => {
+    const result = checkCronsEnabled({})
+    expect(result.ok).toBe(true)
+    expect(result.reason).toBeUndefined()
+  })
+
+  it('returns ok when DISABLE_CRONS is empty', () => {
+    const result = checkCronsEnabled({ DISABLE_CRONS: '' })
+    expect(result.ok).toBe(true)
+  })
+
+  it('returns ok when DISABLE_CRONS is "false"', () => {
+    const result = checkCronsEnabled({ DISABLE_CRONS: 'false' })
+    expect(result.ok).toBe(true)
+  })
+
+  it('returns FAIL when DISABLE_CRONS is "true"', () => {
+    const result = checkCronsEnabled({ DISABLE_CRONS: 'true' })
+    expect(result.ok).toBe(false)
+    expect(result.reason).toMatch(/DISABLE_CRONS=true/)
+    expect(result.reason).toMatch(/skipped/)
+  })
+
+  it('treats non-"true" string as enabled (truthy strings other than "true" do not skip)', () => {
+    const result = checkCronsEnabled({ DISABLE_CRONS: '1' })
+    expect(result.ok).toBe(true)
+  })
+})
+
+describe('REQUIRED_PROD_VARS', () => {
+  it('is the canonical list of required vars', () => {
     const expectedVars = [
       'APP_URL',
       'DATABASE_URL',

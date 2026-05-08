@@ -15,6 +15,7 @@ describe("GET /api/cron/send-reminders", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.unstubAllEnvs()
     vi.stubEnv("CRON_SECRET", CRON_SECRET)
   })
 
@@ -63,6 +64,58 @@ describe("GET /api/cron/send-reminders", () => {
 
     expect(response.status).toBe(401)
     expect(mockProcessAll).not.toHaveBeenCalled()
+  })
+
+  it("skips with 200 when DISABLE_CRONS=true (skip wins before auth)", async () => {
+    vi.stubEnv("DISABLE_CRONS", "true")
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/cron/send-reminders",
+      {
+        headers: {
+          authorization: `Bearer ${CRON_SECRET}`,
+        },
+      }
+    )
+
+    const response = await GET(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data).toEqual({ skipped: true, reason: "DISABLE_CRONS" })
+    expect(mockProcessAll).not.toHaveBeenCalled()
+  })
+
+  it("skips with 200 when DISABLE_CRONS=true even without valid auth (skip is first guard)", async () => {
+    vi.stubEnv("DISABLE_CRONS", "true")
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/cron/send-reminders"
+    )
+
+    const response = await GET(request)
+
+    expect(response.status).toBe(200)
+    expect(mockProcessAll).not.toHaveBeenCalled()
+  })
+
+  it("processes normally when DISABLE_CRONS is empty string", async () => {
+    vi.stubEnv("DISABLE_CRONS", "")
+    mockProcessAll.mockResolvedValue(0)
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/cron/send-reminders",
+      {
+        headers: {
+          authorization: `Bearer ${CRON_SECRET}`,
+        },
+      }
+    )
+
+    const response = await GET(request)
+
+    expect(response.status).toBe(200)
+    expect(mockProcessAll).toHaveBeenCalledTimes(1)
   })
 
   it("should return 500 when processing fails", async () => {

@@ -17,6 +17,13 @@ import { logger } from "@/lib/logger"
  * 3. Notified 30+ days ago -> delete/anonymize account
  */
 export async function GET(request: NextRequest) {
+  if (process.env.DISABLE_CRONS === "true") {
+    return NextResponse.json(
+      { skipped: true, reason: "DISABLE_CRONS" },
+      { status: 200 }
+    )
+  }
+
   const auth = verifyCronAuth(
     request.headers.get("authorization"),
     process.env.CRON_SECRET,

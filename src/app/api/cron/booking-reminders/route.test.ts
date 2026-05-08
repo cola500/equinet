@@ -17,7 +17,10 @@ import { GET } from "./route"
 describe("GET /api/cron/booking-reminders", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.unstubAllEnvs()
     process.env.CRON_SECRET = "test-secret"
+    delete process.env.DISABLE_CRONS
+    mockProcessAll.mockResolvedValue(3)
   })
 
   it("returns 200 and processes reminders with valid CRON_SECRET", async () => {
@@ -50,6 +53,32 @@ describe("GET /api/cron/booking-reminders", () => {
     const response = await GET(request as never)
 
     expect(response.status).toBe(401)
+  })
+
+  it("skips with 200 when DISABLE_CRONS=true (skip wins before auth)", async () => {
+    vi.stubEnv("DISABLE_CRONS", "true")
+
+    const request = new Request("http://localhost/api/cron/booking-reminders", {
+      headers: { authorization: "Bearer test-secret" },
+    })
+
+    const response = await GET(request as never)
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body).toEqual({ skipped: true, reason: "DISABLE_CRONS" })
+    expect(mockProcessAll).not.toHaveBeenCalled()
+  })
+
+  it("skips with 200 when DISABLE_CRONS=true even without valid auth", async () => {
+    vi.stubEnv("DISABLE_CRONS", "true")
+
+    const request = new Request("http://localhost/api/cron/booking-reminders")
+
+    const response = await GET(request as never)
+
+    expect(response.status).toBe(200)
+    expect(mockProcessAll).not.toHaveBeenCalled()
   })
 
   it("returns 500 on database error", async () => {

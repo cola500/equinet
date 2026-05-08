@@ -4,7 +4,7 @@ description: "Konfiguration och skillnader mellan lokal utveckling, staging och 
 category: operations
 tags: [environments, vercel, supabase, ios, config]
 status: active
-last_updated: 2026-05-06
+last_updated: 2026-05-08
 related:
   - deployment.md
   - staging-environment-setup.md
@@ -163,7 +163,20 @@ Autentiseras med `CRON_SECRET` (Bearer token).
 | `UPSTASH_REDIS_REST_URL` | (tom = in-memory) | Prod Redis | Prod Redis | Rate limiting |
 | `RESEND_API_KEY` | (tom = konsol-logg) | -- | Resend API-nyckel | E-post |
 | `CRON_SECRET` | Valfri | -- | Stark slumpad | Cron-autentisering |
+| `DISABLE_CRONS` | -- | `true` (i isolerat staging-projekt) | -- (FAR ALDRIG vara satt) | Skip-flagga for cron-jobb. Pre-build-guard avvisar prod-deploy om DISABLE_CRONS=true. |
 | `SUBSCRIPTION_PROVIDER` | `mock` | `mock` | `stripe` | Betalning |
+
+### DISABLE_CRONS — anvandning
+
+`DISABLE_CRONS=true` far cron-routes (`/api/cron/*`) att returnera `200 { skipped: true, reason: "DISABLE_CRONS" }` istallet for att exekvera. Anvands i isolerade staging/preview-projekt dar Vercel klassar staging-branch som production (vilket annars triggar duplicerade cron-jobb mot staging-DB).
+
+**Belt-and-suspenders i staging-projekt:**
+1. `DISABLE_CRONS=true` (explicit guard, syns i kod)
+2. `CRON_SECRET` satts INTE (om guarden av nagon anledning hoppas over → `verifyCronAuth` returnerar 401, ingen exekvering)
+
+**Skydd mot misstag:** `scripts/check-prod-env.ts` har en `checkCronsEnabled`-funktion som kor i pre-build pa Vercel Production. Om `DISABLE_CRONS=true` upptäcks pa production faller bygget med tydligt felmeddelande.
+
+**Sla av guarden i staging:** ta bort env-flaggan (eller satt `false`) → cron-routes kor som vanligt vid nasta deploy. Reversibelt utan kodandring.
 
 ---
 
