@@ -159,6 +159,24 @@ Nya Vercel-projektet `equinet-staging-app` får sin egen env-namespace. Vi kopie
 
 **Allt sätts som `target: ["production"]`** i nya projektet (eftersom `staging`-branchen är production där). Inga preview-rader behövs initialt.
 
+### Upstash Redis: temporär delning med prod (Batch 5, 2026-05-08)
+
+Staging delar Upstash Redis-instansen (`strong-mut*****`) med prod via samma `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`. Bakgrund: Upstash Free tier tillåter bara en Redis-DB per konto, så att skapa separat staging-instans skulle kräva uppgradering.
+
+**Accepterat för Sprint 67 eftersom:**
+- Staging-volym är minimal (Erik Järnfot demo-data, lågfrekvent manuell testning)
+- `DISABLE_CRONS=true` (Batch 1) eliminerar all bakgrundstrafik från staging
+- Cache-keys är SHA-256-hashade per input (geocoding deterministiskt OK; provider/customer/insights-cache differs per ID) → låg risk för cross-contamination
+- Rate-limit-namespace delas men staging-trafik är försumbar mot prod
+
+**Triggers för separat Upstash (future improvement):**
+- Free tier-quota närmar sig 10k commands/dag
+- Cache-key-kollision observeras (felaktig cache-data i staging eller prod)
+- Säkerhetskrav kräver strikt isolation
+- Upstash plan uppgraderas till plan som rymmer flera DB:er
+
+**Lösning vid trigger:** Skapa ny Redis via Upstash Dashboard (rekommenderat namn `equinet-staging-redis`, region EU - Frankfurt) eller via Vercel Marketplace-integration. POST de nya `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` till `equinet-staging-app` target=production. Inte i scope för Sprint 67.
+
 ### CI/CD-strategi
 
 Vercel deployar direkt på push via GitHub-integration. Inga GitHub Actions-ändringar krävs. Gamla `quality-gates.yml` + `ios-tests.yml` förblir oförändrade.
