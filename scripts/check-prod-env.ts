@@ -18,6 +18,12 @@ export function checkProdEnv(env: Record<string, string | undefined>): { missing
 }
 
 export function checkCronsEnabled(env: Record<string, string | undefined>): { ok: boolean; reason?: string } {
+  // Staging projects (e.g. equinet-staging-app) are deployed with VERCEL_ENV=production
+  // since their staging branch is the production target. STAGING_PROJECT=true marks
+  // them as staging so DISABLE_CRONS=true is allowed (and required) there.
+  if (env.STAGING_PROJECT === 'true') {
+    return { ok: true }
+  }
   if (env.DISABLE_CRONS === 'true') {
     return {
       ok: false,
@@ -47,5 +53,9 @@ if (process.env.VERCEL_ENV === 'production') {
     process.exit(1)
   }
 
-  console.log('[check-prod-env] OK: All required production environment variables are set and crons are enabled.')
+  if (env.STAGING_PROJECT === 'true') {
+    console.log('[check-prod-env] OK: Staging project detected (STAGING_PROJECT=true). Required vars set; cron-enabled-check skipped.')
+  } else {
+    console.log('[check-prod-env] OK: All required production environment variables are set and crons are enabled.')
+  }
 }

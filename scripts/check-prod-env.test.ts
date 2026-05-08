@@ -67,6 +67,35 @@ describe('checkCronsEnabled', () => {
     const result = checkCronsEnabled({ DISABLE_CRONS: '1' })
     expect(result.ok).toBe(true)
   })
+
+  it('FAILs in real prod (no STAGING_PROJECT) when DISABLE_CRONS=true', () => {
+    const result = checkCronsEnabled({ DISABLE_CRONS: 'true' })
+    expect(result.ok).toBe(false)
+    expect(result.reason).toMatch(/DISABLE_CRONS=true/)
+  })
+
+  it('PASSes in staging-project (STAGING_PROJECT=true) with DISABLE_CRONS=true', () => {
+    const result = checkCronsEnabled({
+      STAGING_PROJECT: 'true',
+      DISABLE_CRONS: 'true',
+    })
+    expect(result.ok).toBe(true)
+    expect(result.reason).toBeUndefined()
+  })
+
+  it('PASSes in staging-project even when DISABLE_CRONS unset', () => {
+    const result = checkCronsEnabled({ STAGING_PROJECT: 'true' })
+    expect(result.ok).toBe(true)
+  })
+
+  it('treats STAGING_PROJECT=other-value as not staging (still blocks DISABLE_CRONS=true)', () => {
+    const result = checkCronsEnabled({
+      STAGING_PROJECT: '1',
+      DISABLE_CRONS: 'true',
+    })
+    expect(result.ok).toBe(false)
+    expect(result.reason).toMatch(/DISABLE_CRONS=true/)
+  })
 })
 
 describe('REQUIRED_PROD_VARS', () => {
