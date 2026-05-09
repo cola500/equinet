@@ -366,6 +366,29 @@ Ta bort gammal mappning + uppdatera dokumentation.
 | iOS Release-build-test mot prod | Out of scope — vi verifierar staging, inte prod-iOS. |
 | Sentry-projekt-separation (staging vs prod) | Idag kan staging logga till samma Sentry — separat slice om det blir bullrigt. |
 
+### S67-4 Stripe webhook (deferred 2026-05-09)
+
+S67-4 markeras som **deferred** för Sprint 67. Stripe webhook konfigureras inte
+i staging eftersom:
+
+1. `STRIPE_WEBHOOK_SECRET` krävs inte av build (saknas i `scripts/check-prod-env.ts`)
+2. `SUBSCRIPTION_PROVIDER` är inte satt i staging → MockSubscriptionGateway används,
+   ingen webhook-init triggas
+3. `stripe_payments` och `provider_subscription` feature flags är `defaultEnabled: false`
+   → checkout/subscription-routes returnerar 404
+4. Demo-mode (`demo_mode=true`) strippar UI:t från payment-flöden
+5. Ingen Stripe-webhook är konfigurerad mot `equinet-staging.johanlindengard.com`
+   i Stripe Dashboard — events levereras inte
+
+**Trigger för att återöppna:** När `stripe_payments` eller `provider_subscription`
+aktiveras i staging, eller när poddtest behöver verifiera betalningsflöde end-to-end.
+Då krävs ny Stripe webhook endpoint mot staging-domain + sätt
+`STRIPE_WEBHOOK_SECRET` + `SUBSCRIPTION_PROVIDER=stripe` i staging-app.
+
+**Verifiering att deferral är säker:** senaste staging-deploy
+(`dpl_4jv7zTrVaPHneQVhHGXm2iSfy4PH`) är READY utan webhook-secret;
+`/api/feature-flags` returnerar `stripe_payments: false`, `provider_subscription: false`.
+
 ---
 
 ## STOPP — inväntar Johan innan någon infra ändras
