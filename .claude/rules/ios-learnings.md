@@ -111,6 +111,16 @@ xcodebuild test ... -only-testing:EquinetTests
 - Kör testsviten EN gång. Kör ALDRIG om bara för att räkna resultat.
 - xcodebuild visar `Executed` tre gånger (suite, bundle, selected) -- det är samma körning, inte tre.
 
+**Disk-management:**
+- `xcodebuild test` genererar ~150-200 MB `xcresult` per körning i `ios/Equinet/build/derived/Logs/Test/`. Iterativ utveckling fyller disken på timmar.
+- Kör `bash scripts/ios-test-cleanup.sh` efter varje test-runda (eller schemalägg som post-test-hook).
+- Vid disk-full: rensa `~/Library/Developer/Xcode/DerivedData/*` + `xcrun simctl delete unavailable` ger typiskt 5-10 GB direkt.
+
+**Exit-code 65 trots att alla tester passerar:**
+- Default `xcodebuild test` har `-parallel-testing-enabled YES` som splittar test-svit över flera runner-processer.
+- Om en runner-process inte rapporterar fullständigt får man exit 65 trots `0 failures`. Output visar två `Test Suite 'Selected tests' started`-rader.
+- **Fix:** lägg till `-parallel-testing-enabled NO` för små test-suiter med en simulator. Eller acceptera exit 65 om individuella `Test Case ... passed`-rader ser rena ut.
+
 ## Mobile-mcp och simulator-verifiering
 
 ### När använda vad
