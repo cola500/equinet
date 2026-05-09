@@ -88,29 +88,38 @@ Alla feature flags ar styrda av:
 
 ## Staging
 
-- **URL:** `https://equinet-staging.johanlindengard.com` (custom domain, sedan 2026-05-06)
-- **Vercel branch-URL:** `equinet-app-git-staging-cola500s-projects.vercel.app` (fortfarande live, parallell access)
+- **URL:** `https://equinet-staging.johanlindengard.com` (custom domain, **production-custom-domain på `equinet-staging-app` sedan 2026-05-09**)
+- **Vercel-projekt:** `equinet-staging-app` (`prj_KKtKkiDRWp3OX67A52iUHuk3UoF4`) — separat från prod-projektet
+- **Vercel branch-URL:** `equinet-staging-app.vercel.app` (default, SSO-skyddad)
 - **Supabase-projekt:** `zzdamokfeenencuggjjp` ("slot machine", eu-central-1, Frankfurt)
-- **Ursprung:** Skapades som PoC for Supabase Auth (S10-5, S11-2). Block 2 (2026-05-06) gjorde det till fullständigt isolerad staging.
-- **Anvandning:** Manuell testning fore prod-release. Deployar vid push till `staging`-branch.
-- **Data:** Helt separat från prod — egna 24 users, 5 providers, 8 services. **Inga prod-bokningar/data.**
-- **Schema:** 45 migrations applied (synkad med prod via `prisma migrate deploy` mot staging-pooler).
+- **Ursprung:** Skapades som PoC for Supabase Auth (S10-5, S11-2). Block 2 (2026-05-06) gjorde det till fullständigt isolerad staging. **Sprint 67 (2026-05-09)** flyttade staging till eget Vercel-projekt så iOS Bearer JWT inte blockas av Vercel SSO.
+- **Anvandning:** Manuell testning + iOS demo. Deployar vid push till `staging`-branch.
+- **Data:** Helt separat från prod — Erik Järnfot demo-persona med 5 tjänster, 9 kunder, 14 hästar, 18 bokningar, 7 reviews. **Inga prod-bokningar/data.**
+- **Schema:** Synkad med prod via `prisma migrate deploy` mot staging-pooler.
 - **RLS:** Custom Access Token Hook aktiv (samma kod som prod, separat installation).
-- **Deployment Protection:** Vercel SSO aktiv (kräver Vercel-login för att se). Toggle off om extern delning behövs.
+- **Deployment Protection:** `Standard Protection` (`all_except_custom_domains`) — custom domain publik, default `*.vercel.app`-URL fortfarande SSO-skyddad.
+- **Crons:** `DISABLE_CRONS=true` — staging utför ALDRIG bakgrundsjobb. Pre-build-guard tillåter detta via `STAGING_PROJECT=true`-flag.
+- **iOS APIClient:** Pekar på custom domain via `AppConfig.staging.baseURL`. Bearer JWT från Supabase staging accepteras av Next.js auth-handler.
 
 **Deploytrigger:**
 ```bash
 git checkout staging && git merge main && git push origin staging
-# Vercel deployas automatiskt ~3 min
+# Vercel deployar automatiskt till equinet-staging-app som production (~3 min)
 ```
 
-**Vercel env-vars (Preview, branch=`staging`):**
+**Vercel env-vars i `equinet-staging-app` (target=production):**
+17 vars totalt. Viktigaste:
 - `DATABASE_URL` — staging-pooler (transaction mode, port 6543)
-- `DIRECT_DATABASE_URL` — staging-direct (port 5432)
+- `DIRECT_DATABASE_URL` — staging Session Pooler (port 5432)
 - `NEXT_PUBLIC_SUPABASE_URL` — `https://zzdamokfeenencuggjjp.supabase.co`
 - `APP_URL` — `https://equinet-staging.johanlindengard.com`
+- `NEXT_PUBLIC_DEMO_MODE=true`, `DISABLE_EMAILS=true`, `DISABLE_CRONS=true`, `STAGING_PROJECT=true`
+- Stripe test-mode keys (sk_test_/pk_test_), `PAYMENT_PROVIDER=stripe`
+- Upstash Redis: **delar instans med prod** tills volym/kvot blir problem (Free tier-begränsning)
 
-> Staging och prod har **separata Supabase-projekt och separata Vercel env-rader** — migrationer maste appliceras pa BADA. Se [staging-environment-setup.md](staging-environment-setup.md) för fullständig setup-procedur.
+> Staging och prod har **separata Vercel-projekt och separata env-namespaces** — env-rader är inte delade. Se [staging-environment-setup.md](staging-environment-setup.md) och [sprint-67-doc](../sprints/sprint-67-ios-staging-capability.md) för fullständig topologi.
+
+**Kvar att städa:** `equinet-app` deployar fortfarande `staging`-branchen som preview (dubbelarbete). Se [staging-cleanup-followups.md](staging-cleanup-followups.md) S67-8.
 
 ---
 

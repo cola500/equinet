@@ -18,7 +18,26 @@ sections:
 
 ## Aktiv sprint
 
-**Sprint 65** — Sprint 64 follow-through (auth-säkerhet och leveransgarantier). Se [sprint-65.md](sprint-65.md).
+**Sprint 67** — iOS staging capability via separat Vercel-projekt. **KLAR 2026-05-09.** Se [sprint-67-ios-staging-capability.md](sprint-67-ios-staging-capability.md).
+
+| Story | Beskrivning | Status |
+|-------|-------------|--------|
+| S67-0 | Cron disable guard | done (1da4ed34, PR #328) |
+| S67-1 | Skapa `equinet-staging-app` Vercel-projekt | done |
+| S67-2 | Kopiera env-vars (Batch 1-5 + STAGING_PROJECT) | done |
+| S67-3 | Verifiera ssoProtection-policy | done (no-op, redan korrekt) |
+| S67-4 | Stripe webhook | deferred — out of scope, dokumenterat |
+| S67-5 | DNS-flytt till nya projektet | done |
+| S67-6 | Verifiera webb publikt | done |
+| S67-7 | Verifiera iOS Simulator end-to-end | done (Erik Järnfot demo-flow renderar) |
+| S67-8 | Cleanup `equinet-app` staging-mappning | follow-up — manuell UI-action |
+| S67-9 | Slutdokumentation | done |
+
+*(Sprint 67 klar 2026-05-09. 9 stories planerade, 8 done + 1 deferred + 1 follow-up. iOS Simulator verifierad mot `equinet-staging.johanlindengard.com`: dashboard + kalender + bokningar + tjänster renderar Erik:s demo-data utan SSO-blockering. Bonusvärde: cache-bug i URLSession identifierad och fixad i `APIClient.swift`. Story i `docs/stories/ios-api-cache-policy-hardening.md`. Walkthrough i `docs/operations/ios-staging-2026-05-09-walkthrough.md`. Follow-ups i `docs/operations/staging-cleanup-followups.md`.)*
+
+---
+
+**Sprint 65** — Sprint 64 follow-through (auth-säkerhet och leveransgarantier). PAUSAD till förmån för Sprint 67. Se [sprint-65.md](sprint-65.md).
 
 | Story | Beskrivning | Status |
 |-------|-------------|--------|
@@ -30,7 +49,7 @@ sections:
 | S65-6 | Egen rate-limiter för change-password | pending |
 | S65-7 | userType-guard på change-password + synkad lösenordspolicy i UI | pending |
 
-*(Sprint 65 planerad 2026-04-30. 7 stories från tech-lead-review av Sprint 64 samma dag — 3 BLOCKERS + 7 MAJORS hittades post-merge. Total effort ~2-3 dagar. S65-1 är hotfix; auth/callback får INTE aktiveras i Supabase Redirect URLs förrän klart. Komplett kontext i sprint-65.md.)*
+*(Sprint 65 planerad 2026-04-30 men pausad. 7 stories från tech-lead-review av Sprint 64 samma dag — 3 BLOCKERS + 7 MAJORS hittades post-merge. Total effort ~2-3 dagar. S65-1 är hotfix; auth/callback får INTE aktiveras i Supabase Redirect URLs förrän klart. Komplett kontext i sprint-65.md.)*
 
 ---
 

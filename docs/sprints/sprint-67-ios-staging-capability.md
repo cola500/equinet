@@ -1,12 +1,13 @@
 ---
 title: "Sprint 67: iOS staging capability — separat Vercel-projekt för publik staging"
-description: "Sprint-mål: iOS staging demo fungerar end-to-end utan Vercel SSO-blockering. Lösningen är ett separat Vercel-projekt där staging-domänen är production-custom-domain (automatiskt SSO-undantagen) istället för dagens preview-mappning som tvingar SSO-skydd."
+description: "Sprint-mål: iOS staging demo fungerar end-to-end utan Vercel SSO-blockering. Lösningen är ett separat Vercel-projekt där staging-domänen är production-custom-domain (automatiskt SSO-undantagen) istället för dagens preview-mappning som tvingar SSO-skydd. KLAR 2026-05-09."
 category: sprint
-status: planned
-last_updated: 2026-05-08
-tags: [sprint, ios, staging, vercel, infra, demo-mode, sso]
+status: active
+last_updated: 2026-05-09
+tags: [sprint, ios, staging, vercel, infra, demo-mode, sso, done]
 sections:
   - Sprint Overview
+  - Sprint Result (2026-05-09)
   - Current State
   - Root Cause
   - Target Architecture
@@ -16,7 +17,6 @@ sections:
   - Verification Plan
   - Rollback Strategy
   - Out of Scope
-  - STOPP — inväntar Johan
 ---
 
 # Sprint 67: iOS staging capability
@@ -30,6 +30,55 @@ sections:
 **Strategi:** Separat Vercel-projekt där staging-branchen deployas som production. Då blir `equinet-staging.johanlindengard.com` en production-custom-domain på det nya projektet och undantas automatiskt av befintlig `ssoProtection: all_except_custom_domains`-policy. Inga plan-uppgraderingar, inga kodändringar, ingen bypass-token-hantering.
 
 **Förväntad effort:** ~1-1.5 dagar fördelade över 7-9 stories. Mycket Vercel-konfiguration, lite kod.
+
+---
+
+## Sprint Result (2026-05-09)
+
+**Status: KLAR.** iOS staging end-to-end verifierad via mobile-mcp simulator-walkthrough mot `equinet-staging.johanlindengard.com`. Erik Järnfot demo-flow renderar dashboard, kalender, bokningar, tjänster utan SSO-blockering.
+
+### Story-utfall
+
+| Story | Status | Notering |
+|---|---|---|
+| S67-0 | ✅ done | cron disable guard mergad (PR #328) |
+| S67-1 | ✅ done | `equinet-staging-app` skapat (`prj_KKtKkiDRWp3OX67A52iUHuk3UoF4`) |
+| S67-2 | ✅ done | 17 env-vars i target=production (Batch 1-5 + STAGING_PROJECT) |
+| S67-3 | ✅ done | ssoProtection redan `Standard Protection` på båda projekt — no-op |
+| S67-4 | ✅ deferred | Stripe webhook out of scope; dokumenterat |
+| S67-5 | ✅ done | DNS-flytt — domain på `equinet-staging-app` som production-custom-domain |
+| S67-6 | ✅ done | curl mot custom domain → 200; `/api/feature-flags` → JSON med demo_mode:true |
+| S67-7 | ✅ done | iOS Simulator end-to-end: dashboard + kalender + bokningar + tjänster (Erik:s data) |
+| S67-8 | ⏳ follow-up | Begränsa staging-deploys i `equinet-app` — manuell UI-action krävs, dokumenterat i staging-cleanup-followups.md |
+| S67-9 | ✅ done | environments.md + walkthrough.md + this update + cleanup-followups.md |
+
+### Bonusvärde
+
+- **iOS API cache-policy hardening** — bug upptäckt under S67-7 (URLSession cachade Vercel CDN 404), fix landad i `APIClient.swift`, story i `docs/stories/ios-api-cache-policy-hardening.md`
+- **Pre-build-guard utvidgning** — `STAGING_PROJECT=true`-pattern dokumenterad och implementerad (`scripts/check-prod-env.ts`)
+- **5 Whys-process kördes** för cache-buggen — exemplariskt rotorsaksanalys
+- **Walkthrough-screenshots arkiverade** i `docs/operations/screenshots/ios-staging-2026-05-09/`
+
+### Cutover-tidslinje
+
+- 08:13 UTC — Senaste deploy READY på equinet-staging-app (`p4dz393s3`)
+- ~08:20 UTC — Johan utförde DNS-cutover via Vercel UI (S67-5)
+- 08:30 UTC — curl-verifiering: 200 från custom domain, JSON från /api/feature-flags
+- 08:31 UTC — iOS APIClient cache-bug observerades
+- 08:39 UTC — Cache rensad (uninstall+reinstall), dashboard renderar
+- 08:44 UTC — APIClient-fix landad lokalt (cachePolicy = .reloadIgnoringLocalCacheData)
+- 14:30 UTC — Full mobile-mcp walkthrough (dashboard + kalender + bokningar + mer + tjänster)
+
+### Verifiering
+
+Komplett detaljer i [`docs/operations/ios-staging-2026-05-09-walkthrough.md`](../operations/ios-staging-2026-05-09-walkthrough.md).
+
+### Återstående follow-ups
+
+Se [`docs/operations/staging-cleanup-followups.md`](../operations/staging-cleanup-followups.md):
+- S67-8 begränsa staging-deploys i `equinet-app` (manuell UI-action)
+- Stripe webhook (deferred från S67-4 — återöppnas vid stripe_payments-aktivering)
+- iOS APIClient cache-policy-test (test-tillägg väntar på diskutrymme)
 
 ---
 
