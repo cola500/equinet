@@ -53,6 +53,7 @@ sections:
 | Commit-strategi (PR vs direkt) | [.claude/rules/commit-strategy.md](.claude/rules/commit-strategy.md) |
 | Deploy | [docs/operations/deployment.md](docs/operations/deployment.md) |
 | Bokningsflöde | [docs/architecture/booking-flow.md](docs/architecture/booking-flow.md) |
+| **Refactor triggers** | [docs/architecture/refactor-triggers.md](docs/architecture/refactor-triggers.md) (kolla FÖRE varje refactor) |
 | Retros | [docs/retrospectives/](docs/retrospectives/) |
 | NFR / Prod Readiness | [NFR.md](NFR.md) |
 | Metrics | [docs/metrics/](docs/metrics/) | aktuell rapport: [latest.md](docs/metrics/latest.md) |
@@ -127,6 +128,18 @@ src/app/api/ (routes) -> src/domain/ (services) -> src/infrastructure/ (repos) |
 - Start minimal: "Kan detta lösas genom att ta bort kod?" Inga nya patterns utan diskussion.
 - Filer: 300 rader OK, dela vid ~400-500. Extrahera vid 3+ återanvändningar.
 
+### Refactor Trigger Policy
+
+- **Refactor får INTE göras bara för att koden "känns ful"** eller för att DDD/repository-pattern vore estetiskt renare. Refactor styrs av konkret smärta, inte preferens.
+- **Vid ny feature, schemaändring, återkommande bug eller upptäckt duplicering** ska du kontrollera [docs/architecture/refactor-triggers.md](docs/architecture/refactor-triggers.md).
+- **Om en trigger verkar ha fyrat:**
+  1. Namnge triggern (T1-T12 från refactor-triggers.md)
+  2. Beskriv konkret smärta (vilka filer, hur ofta, mätbart)
+  3. Föreslå minsta separata refactor-slice (inte "förbättra hela domänen")
+  4. **Vänta på Johans godkännande** innan refactor påbörjas
+- **Refactor ska INTE blandas in i feature-slice utan explicit beslut** — det är separat slice med eget review.
+- **Om ingen trigger har fyrat:** bygg minsta möjliga lösning. Eventuell observation som verkar peka mot framtida refactor — dokumentera som "watch" i done-fil eller notering, inte som refactor i pågående arbete.
+
 ---
 
 ## Gotchas
@@ -179,6 +192,9 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **`.env.local` trumfar `.env`**: Uppdatera BÅDA vid byte av DATABASE_URL.
 - **NODE_ENV opålitlig på Vercel**: Använd explicita env-variabler (`ALLOW_TEST_ENDPOINTS`) istället.
 - **Stripe webhook event-ID dedup**: `createMany` + `skipDuplicates` = atomisk INSERT ON CONFLICT DO NOTHING.
+- **Staging-arkitektur (2026-05-06)**: Custom domain `equinet-staging.johanlindengard.com` (separat från prod `equinet.johanlindengard.com`). Egen Supabase-projekt `zzdamokfeenencuggjjp` (Frankfurt) — separat från prod `xybyzflfxnqqyxnvjklv` (Zurich). Egen `DATABASE_URL`/`DIRECT_DATABASE_URL`/`APP_URL` per environment via Vercel env-rader. Custom Access Token Hook installerad i båda. Se `docs/operations/staging-environment-setup.md`.
+- **Vercel sensitive Production-vars-fällor**: (1) UI Edit visar alltid tomt fält — paste landar inte i input → save sparar tomt. (2) CLI `vercel env add --value "$X" --yes` (52.2.1 + 53.1.1) sparar tomt tyst trots success-rapport. (3) CLI `rm <var> <env> --yes` på **delad rad** raderar variabeln för **alla** environments, inte bara den specificerade. **Regel:** Använd Vercel REST API (`DELETE` + `POST`) för sensitive Production-skrivningar. Verifiera ALLTID via `vercel env pull --environment=production` efter skrivning. Splitta delade rader via UI Edit, inte CLI rm. Se retro 2026-05-06.
+- **Pre-build-guard fångar inte tomma env**: `scripts/check-prod-env.ts` (S64-4) verifierar att vars **finns** men inte att de **har värde**. Tom string passerar. Båda 2026-05-06-incidenterna (DATABASE_URL + APP_URL Production tomma) skulle ha fångats av en non-empty-check.
 
 ### Domain Patterns
 

@@ -48,6 +48,8 @@ function makeRequest(): NextRequest {
 describe("GET /api/cron/data-retention", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.unstubAllEnvs()
+    delete process.env.DISABLE_CRONS
     mockVerifyCronAuth.mockReturnValue({ ok: true })
     mockIsFeatureEnabled.mockResolvedValue(true)
     mockProcessRetention.mockResolvedValue({
@@ -99,5 +101,18 @@ describe("GET /api/cron/data-retention", () => {
     const res = await GET(makeRequest())
 
     expect(res.status).toBe(500)
+  })
+
+  it("skips with 200 when DISABLE_CRONS=true (skip wins before auth and feature flag)", async () => {
+    vi.stubEnv("DISABLE_CRONS", "true")
+
+    const res = await GET(makeRequest())
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body).toEqual({ skipped: true, reason: "DISABLE_CRONS" })
+    expect(mockVerifyCronAuth).not.toHaveBeenCalled()
+    expect(mockIsFeatureEnabled).not.toHaveBeenCalled()
+    expect(mockProcessRetention).not.toHaveBeenCalled()
   })
 })

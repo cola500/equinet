@@ -422,7 +422,12 @@ final class APIClient {
         guard let url = URL(string: "/api/feature-flags", relativeTo: baseURL) else {
             throw APIError.networkError(URLError(.badURL))
         }
-        let (data, response) = try await session.data(from: url)
+        // Vercel CDN may set cache-control on 4xx responses, which URLSession
+        // would honor. Force a fresh request so transient 404 (e.g. during
+        // domain cutover) doesn't stick. See docs/stories/ios-api-cache-policy-hardening.md
+        var request = URLRequest(url: url)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        let (data, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
             throw APIError.serverError((response as? HTTPURLResponse)?.statusCode ?? 0)
@@ -467,6 +472,7 @@ final class APIClient {
 
         let boundary = "Boundary-\(UUID().uuidString)"
         var request = URLRequest(url: url)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.httpMethod = "POST"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
@@ -616,6 +622,9 @@ final class APIClient {
             throw APIError.networkError(URLError(.badURL))
         }
         var request = URLRequest(url: url)
+        // Vercel CDN may cache 4xx; force fresh request to avoid sticky 404
+        // during domain cutover or edge-routing glitches.
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.httpMethod = method
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 15

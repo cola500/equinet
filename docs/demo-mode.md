@@ -3,7 +3,7 @@ title: Demo Mode
 description: Hur demo-mode fungerar -- vilka features som döljs och visas
 category: operations
 status: active
-last_updated: 2026-04-01
+last_updated: 2026-05-06
 sections:
   - Vad demo-mode gör
   - Hur man startar
@@ -125,13 +125,14 @@ Ta bort raden `NEXT_PUBLIC_DEMO_MODE=true` från `.env.local` och starta om.
 
 ## Demo-flöde (produktion)
 
-**URL:** `https://equinet-app.vercel.app/login`
+**URL:** `https://equinet.johanlindengard.com/login` (custom domain, sedan 2026-05-06)
+**Alt URL:** `https://equinet-app.vercel.app/login` (kvarstår tills cutover)
 **Inloggning:** `provider@example.com` / `ProviderPass123!`
 **Leverantör:** Maria Lindgren, Lindgrens Hovslageri & Ridskola
 
 ### Walkthrough
 
-1. Öppna `https://equinet-app.vercel.app/login`
+1. Öppna `https://equinet.johanlindengard.com/login`
 2. Logga in med uppgifterna ovan
 3. **Dashboard** -- statistik, kommande bokningar, pending-förfrågningar
 4. **Bokningar** -- bekräfta pending, se kommande och historik

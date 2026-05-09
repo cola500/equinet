@@ -1,10 +1,11 @@
 ---
 title: "URL-konfigurationsmatris"
-description: "Alla URL-config-platser i Equinet: vad de styr, var de ändras och vilka incidenter som inträffat vid felkonfiguration"
+description: "Alla URL-config-platser i Equinet: vad de styr, var de ändras, miljöer (prod + staging) och vilka incidenter som inträffat vid felkonfiguration"
 category: operations
 status: active
-last_updated: 2026-04-30
+last_updated: 2026-05-06
 sections:
+  - Miljöer och domäner
   - Matris
   - Checklista vid domänbyte
   - Historik
@@ -13,6 +14,18 @@ sections:
 # URL-konfigurationsmatris
 
 Equinet har flera separata ställen där URL-konfiguration sätts. Fel i ett enda led orsakar tysta leveransfel eller blockerade auth-flöden. Dokumentet listar alla platser, vad varje styr och var de ändras.
+
+## Miljöer och domäner
+
+Sedan 2026-05-06 har Equinet två fullständigt isolerade miljöer:
+
+| Miljö | Domain | Vercel Branch | Supabase project-ref | Supabase namn |
+|-------|--------|---------------|----------------------|---------------|
+| **Production** | `https://equinet.johanlindengard.com` (fortfarande också på `https://equinet-app.vercel.app` tills cutover) | `main` | `xybyzflfxnqqyxnvjklv` | "equine-app" (region: Zurich, `eu-central-2`) |
+| **Staging** | `https://equinet-staging.johanlindengard.com` | `staging` | `zzdamokfeenencuggjjp` | "slot machine" (region: Frankfurt, `eu-central-1`) |
+| **Local development** | `http://localhost:3000` | (lokal) | Supabase CLI på `127.0.0.1:54321` | n/a |
+
+Staging är fullständigt isolerad: egen domain, egen Auth, egen DB, egen Site URL. Inga av staging-deploys queries når prod.
 
 ## Matris
 
@@ -46,3 +59,5 @@ Vid byte från gammal till ny prod-domän — gå igenom ALLA punkter:
 | Datum | Incident | Rotorsak | Fix |
 |-------|---------|----------|-----|
 | 2026-04-30 | Password reset-mail levererades men användare kunde inte återställa lösenord. Tre försök, alla tystade. | `NEXT_PUBLIC_SUPABASE_URL` hade gammal URL → browser blockerade auth-anrop via CSP. `APP_URL` saknades i Vercel. | CSP läser nu från env-variabel (commit `9410dd21`). `APP_URL` tillagd i Vercel. CI-guard i prebuild (S64-4). |
+| 2026-05-02 | Login mot preview failade trots att prod-login fungerade. | Preview talade med staging-Supabase Auth (`zzdamokfeenencuggjjp`) men Prisma-queries hamnade i prod-DB (`DATABASE_URL` delad rad). Inkonsistent identitet — `johan@jaernfoten.se` finns bara i prod-Auth, inte staging. | Plan: bygga isolerad staging-miljö (genomfört 2026-05-06). |
+| 2026-05-06 | Vid splittring av `DATABASE_URL` Preview tog `vercel env rm DATABASE_URL preview --yes` bort variabeln för **alla** environments (Production, Preview, Development) — inte bara Preview-tilldelningen som förväntat. Aktuell prod-deploy fortsatte fungera (build-time-värdet var inbakat) men nästa redeploy hade kraschat. | Vercel CLI 52.2.1 tolkar `rm <var> <env>` på en delad rad som "ta bort hela variabeln". Misstas som "ta bort bara environment-tilldelningen". | Återställd via Vercel UI manuellt. **Regel:** Splittra delade env-rader via UI, inte CLI. |

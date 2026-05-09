@@ -1,12 +1,14 @@
 ---
 title: "Miljoer (Environments)"
-description: "Konfiguration och skillnader mellan lokal utveckling, staging och produktion"
+description: "Konfiguration och skillnader mellan lokal utveckling, staging och produktion. Sedan 2026-05-06 har staging fullständig isolation (egen domain, separat Supabase, separat DB)."
 category: operations
 tags: [environments, vercel, supabase, ios, config]
 status: active
-last_updated: 2026-04-20
+last_updated: 2026-05-08
 related:
   - deployment.md
+  - staging-environment-setup.md
+  - url-configuration.md
   - ../../NFR.md
 sections:
   - Oversikt
@@ -26,11 +28,13 @@ sections:
 
 ## Oversikt
 
-| Miljö | Webb-URL | Supabase-projekt | Auth | Deploy |
-|-------|----------|-----------------|------|--------|
-| **Lokal** | `http://localhost:3000` | Lokal CLI (`127.0.0.1:54321`) | Supabase CLI | `npm run dev` |
-| **Staging** | `https://equinet-git-staging-cola500.vercel.app` | `zzdamokfeenencuggjjp` (eu-central-1) | Supabase Auth + RLS | Push till `staging`-branch |
-| **Produktion** | `https://equinet-app.vercel.app` | `xybyzflfxnqqyxnvjklv` (eu-central-2) | Supabase Auth + RLS | Push till `main`-branch |
+| Miljö | Webb-URL (custom domain) | Vercel branch-URL (fallback) | Supabase-projekt | Auth | Deploy |
+|-------|---------------------------|-------------------------------|------------------|------|--------|
+| **Lokal** | `http://localhost:3000` | — | Lokal CLI (`127.0.0.1:54321`) | Supabase CLI | `npm run dev` |
+| **Staging** | `https://equinet-staging.johanlindengard.com` | `equinet-app-git-staging-cola500s-projects.vercel.app` | `zzdamokfeenencuggjjp` (eu-central-1, Frankfurt) | Supabase Auth + RLS | Push till `staging`-branch |
+| **Produktion** | `https://equinet.johanlindengard.com` | `equinet-app.vercel.app` (kvar tills cutover) | `xybyzflfxnqqyxnvjklv` (eu-central-2, Zurich) | Supabase Auth + RLS | Push till `main`-branch |
+
+> **Custom domains skapade 2026-05-06.** Båda pekar på Vercel-projektet `equinet-app` via samma CNAME-target (`58f6e9422ba8b696.vercel-dns-017.com`) — Vercel routar via Host-header. Se [url-configuration.md](url-configuration.md) för matrisen.
 
 > **iOS-not:** iOS-appen använder `zzdamokfeenencuggjjp` för **både** staging och produktion tills Apple Developer Program är köpt (separat bundle ID + prod-projekt). Intentionellt — dokumenterat beslut från S48-1.
 
@@ -84,20 +88,38 @@ Alla feature flags ar styrda av:
 
 ## Staging
 
-- **URL:** `https://equinet-git-staging-cola500.vercel.app` (stabil Vercel branch-preview)
-- **Supabase-projekt:** `zzdamokfeenencuggjjp` (eu-central-1)
-- **Ursprung:** Skapades som PoC for Supabase Auth (S10-5, S11-2)
-- **Anvandning:** Manuell testning fore prod-release. Deployar vid push till `staging`-branch.
-- **Data:** Delar schema med prod men separata data — kan divergera
-- **RLS:** 28 policies + Custom Access Token Hook (samma som prod)
+- **URL:** `https://equinet-staging.johanlindengard.com` (custom domain, **production-custom-domain på `equinet-staging-app` sedan 2026-05-09**)
+- **Vercel-projekt:** `equinet-staging-app` (`prj_KKtKkiDRWp3OX67A52iUHuk3UoF4`) — separat från prod-projektet
+- **Vercel branch-URL:** `equinet-staging-app.vercel.app` (default, SSO-skyddad)
+- **Supabase-projekt:** `zzdamokfeenencuggjjp` ("slot machine", eu-central-1, Frankfurt)
+- **Ursprung:** Skapades som PoC for Supabase Auth (S10-5, S11-2). Block 2 (2026-05-06) gjorde det till fullständigt isolerad staging. **Sprint 67 (2026-05-09)** flyttade staging till eget Vercel-projekt så iOS Bearer JWT inte blockas av Vercel SSO.
+- **Anvandning:** Manuell testning + iOS demo. Deployar vid push till `staging`-branch.
+- **Data:** Helt separat från prod — Erik Järnfot demo-persona med 5 tjänster, 9 kunder, 14 hästar, 18 bokningar, 7 reviews. **Inga prod-bokningar/data.**
+- **Schema:** Synkad med prod via `prisma migrate deploy` mot staging-pooler.
+- **RLS:** Custom Access Token Hook aktiv (samma kod som prod, separat installation).
+- **Deployment Protection:** `Standard Protection` (`all_except_custom_domains`) — custom domain publik, default `*.vercel.app`-URL fortfarande SSO-skyddad.
+- **Crons:** `DISABLE_CRONS=true` — staging utför ALDRIG bakgrundsjobb. Pre-build-guard tillåter detta via `STAGING_PROJECT=true`-flag.
+- **iOS APIClient:** Pekar på custom domain via `AppConfig.staging.baseURL`. Bearer JWT från Supabase staging accepteras av Next.js auth-handler.
 
 **Deploytrigger:**
 ```bash
 git checkout staging && git merge main && git push origin staging
-# Vercel deployas automatiskt ~1 min
+# Vercel deployar automatiskt till equinet-staging-app som production (~3 min)
 ```
 
-> Staging och prod har **separata Supabase-projekt** — migrationer maste appliceras pa BADA.
+**Vercel env-vars i `equinet-staging-app` (target=production):**
+17 vars totalt. Viktigaste:
+- `DATABASE_URL` — staging-pooler (transaction mode, port 6543)
+- `DIRECT_DATABASE_URL` — staging Session Pooler (port 5432)
+- `NEXT_PUBLIC_SUPABASE_URL` — `https://zzdamokfeenencuggjjp.supabase.co`
+- `APP_URL` — `https://equinet-staging.johanlindengard.com`
+- `NEXT_PUBLIC_DEMO_MODE=true`, `DISABLE_EMAILS=true`, `DISABLE_CRONS=true`, `STAGING_PROJECT=true`
+- Stripe test-mode keys (sk_test_/pk_test_), `PAYMENT_PROVIDER=stripe`
+- Upstash Redis: **delar instans med prod** tills volym/kvot blir problem (Free tier-begränsning)
+
+> Staging och prod har **separata Vercel-projekt och separata env-namespaces** — env-rader är inte delade. Se [staging-environment-setup.md](staging-environment-setup.md) och [sprint-67-doc](../sprints/sprint-67-ios-staging-capability.md) för fullständig topologi.
+
+**Kvar att städa:** `equinet-app` deployar fortfarande `staging`-branchen som preview (dubbelarbete). Se [staging-cleanup-followups.md](staging-cleanup-followups.md) S67-8.
 
 ---
 
@@ -105,17 +127,21 @@ git checkout staging && git merge main && git push origin staging
 
 ### Vercel
 
-- **Region:** `fra1` (Frankfurt, matchar Supabase eu-central-2)
+- **Region:** `fra1` (Frankfurt) — matchar Supabase eu-central-2 (Zurich) inom AWS Frankfurt-AZ
+- **Custom domain:** `https://equinet.johanlindengard.com` (sedan 2026-05-06)
+- **Vercel branch-URL:** `https://equinet-app.vercel.app` (kvarstår tills cutover, kan tas bort senare)
 - **Konfiguration:** `vercel.json`
 - **Miljovariabler:** Vercel Project Settings -> Environment Variables
 
 ### Supabase
 
-- **Projekt:** `xybyzflfxnqqyxnvjklv` (eu-central-2, Frankfurt)
+- **Projekt:** `xybyzflfxnqqyxnvjklv` ("equine-app", eu-central-2, Zurich)
 - **Auth:** Supabase Auth med Custom Access Token Hook (claims: userType, providerId, isAdmin)
 - **RLS:** 30 policies pa 8 tabeller (Booking, Service, Horse, Payment, CustomerReview, User, Provider, BookingSeries)
 - **Connection pooling:** PgBouncer (session mode port 5432, transaction mode port 6543)
 - **`connection_limit=1`** i DATABASE_URL (krävs for serverless)
+- **Site URL:** `https://equinet.johanlindengard.com`
+- **Redirect URLs allowlist:** innehåller både ny och gammal domän under cutover-perioden
 
 ```
 DATABASE_URL=postgresql://postgres.REF:PWD@pooler.supabase.com:5432/postgres?pgbouncer=true&connection_limit=1
@@ -146,7 +172,20 @@ Autentiseras med `CRON_SECRET` (Bearer token).
 | `UPSTASH_REDIS_REST_URL` | (tom = in-memory) | Prod Redis | Prod Redis | Rate limiting |
 | `RESEND_API_KEY` | (tom = konsol-logg) | -- | Resend API-nyckel | E-post |
 | `CRON_SECRET` | Valfri | -- | Stark slumpad | Cron-autentisering |
+| `DISABLE_CRONS` | -- | `true` (i isolerat staging-projekt) | -- (FAR ALDRIG vara satt) | Skip-flagga for cron-jobb. Pre-build-guard avvisar prod-deploy om DISABLE_CRONS=true. |
 | `SUBSCRIPTION_PROVIDER` | `mock` | `mock` | `stripe` | Betalning |
+
+### DISABLE_CRONS — anvandning
+
+`DISABLE_CRONS=true` far cron-routes (`/api/cron/*`) att returnera `200 { skipped: true, reason: "DISABLE_CRONS" }` istallet for att exekvera. Anvands i isolerade staging/preview-projekt dar Vercel klassar staging-branch som production (vilket annars triggar duplicerade cron-jobb mot staging-DB).
+
+**Belt-and-suspenders i staging-projekt:**
+1. `DISABLE_CRONS=true` (explicit guard, syns i kod)
+2. `CRON_SECRET` satts INTE (om guarden av nagon anledning hoppas over → `verifyCronAuth` returnerar 401, ingen exekvering)
+
+**Skydd mot misstag:** `scripts/check-prod-env.ts` har en `checkCronsEnabled`-funktion som kor i pre-build pa Vercel Production. Om `DISABLE_CRONS=true` upptäcks pa production faller bygget med tydligt felmeddelande.
+
+**Sla av guarden i staging:** ta bort env-flaggan (eller satt `false`) → cron-routes kor som vanligt vid nasta deploy. Reversibelt utan kodandring.
 
 ---
 

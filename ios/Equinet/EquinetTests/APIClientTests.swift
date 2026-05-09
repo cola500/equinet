@@ -256,4 +256,42 @@ final class APIClientTests: XCTestCase {
 
         XCTAssertEqual(capturedRequest?.value(forHTTPHeaderField: "Authorization"), "Bearer test-jwt-token")
     }
+
+    // MARK: - Cache policy
+
+    func testAuthenticatedRequestUsesReloadIgnoringLocalCacheData() async throws {
+        // Regression: prevent Vercel CDN 4xx-caching bug observed in S67-7
+        // (docs/stories/ios-api-cache-policy-hardening.md).
+        let json = """
+        { "todayBookings": [], "todayBookingCount": 0, "upcomingBookingCount": 0, "pendingBookingCount": 0, "reviewStats": { "averageRating": null, "totalCount": 0 }, "onboarding": { "profileComplete": false, "hasServices": false, "hasAvailability": false, "isActive": false, "allComplete": false }, "priorityAction": { "type": "none", "count": 0, "label": "" } }
+        """.data(using: .utf8)!
+
+        var capturedPolicy: URLRequest.CachePolicy?
+        MockURLProtocol.mockHandler = { request in
+            capturedPolicy = request.cachePolicy
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, json)
+        }
+
+        _ = try await sut.fetchDashboard()
+
+        XCTAssertEqual(capturedPolicy, .reloadIgnoringLocalCacheData)
+    }
+
+    func testFeatureFlagsRequestUsesReloadIgnoringLocalCacheData() async throws {
+        let json = """
+        { "flags": { "demo_mode": true } }
+        """.data(using: .utf8)!
+
+        var capturedPolicy: URLRequest.CachePolicy?
+        MockURLProtocol.mockHandler = { request in
+            capturedPolicy = request.cachePolicy
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, json)
+        }
+
+        _ = try await sut.fetchFeatureFlags()
+
+        XCTAssertEqual(capturedPolicy, .reloadIgnoringLocalCacheData)
+    }
 }
