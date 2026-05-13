@@ -1,16 +1,15 @@
 ---
 title: "Staging cleanup follow-ups efter Sprint 67"
-description: "S67-8 + andra cleanup-uppgifter som inte avslutades inom Sprint 67. Manuell action i Vercel UI krävs."
+description: "S67-8 done 2026-05-09. Övriga cleanup-uppgifter kvarstår: legacy custom-domain, pre-build-guard tomma värden, Sentry-separation, cron empirisk verifiering."
 category: operations
 status: active
 last_updated: 2026-05-09
-tags: [sprint-67, vercel, staging, cleanup, follow-up]
+tags: [sprint-67, vercel, staging, cleanup, follow-up, done]
 related:
   - ../sprints/sprint-67-ios-staging-capability.md
 sections:
   - Bakgrund
-  - S67-8 Begränsa staging-deploys i equinet-app
-  - Hur det görs
+  - S67-8 Begränsa korsdeploys (DONE 2026-05-09)
   - Andra cleanup-uppgifter
 ---
 
@@ -27,47 +26,71 @@ Efter Sprint 67 DNS-flytt (S67-5) pekar `equinet-staging.johanlindengard.com` p�
 
 Custom-domänen är inte längre kopplad till equinet-app:s preview — så funktionellt fungerar det. Men det är onödigt dubbelarbete.
 
-## S67-8 Begränsa staging-deploys i equinet-app
+## S67-8 Begränsa korsdeploys (DONE 2026-05-09)
 
-### Mål
+### Status: ✅ KLAR
 
-`equinet-app` (prod-projektet) ska INTE bygga eller deploya `staging`-branchen alls. Push till `staging` ska bara trigga deploy i `equinet-staging-app` som production.
+Ignored Build Step satt i båda Vercel-projekten 2026-05-09. Symmetrisk lösning — varje projekt bygger bara sin avsedda branch.
 
-### Varför inte automatiskt löst via vercel.json
+### Vad som upptäcktes under S67-8
 
-`vercel.json` ligger i samma branch (i.e. samma fil för båda projekten på `staging`-branchen). Att sätta `git.deploymentEnabled: { "staging": false }` skulle blocka **båda** projekten — inkl. `equinet-staging-app` som har `staging` som production-branch. Detta skulle döda staging helt.
+S67-8 var ursprungligen formulerat som ensidig fix på `equinet-app`. Efter main-push 2026-05-09 visade det sig att korsdeploys gick åt **båda hållen**:
 
-### Hur det görs (manuell UI-action)
+- `staging`-push → `equinet-app` Preview byggde (overhead)
+- `main`-push → `equinet-staging-app` Preview byggde och **failade** med `PrismaConfigEnvError: Missing required environment variable: DATABASE_URL` (Sprint 67 Batch 1 satte env-vars med target=["production"] only, så Preview-target i staging-projektet hade inga DB-credentials)
 
-1. Öppna `https://vercel.com/cola500s-projects/equinet-app/settings/git`
-2. Hitta sektionen **Ignored Build Step** eller **Production Branch + Branch Tracking**
-3. Sätt en av följande:
-   - **Ignored Build Step** (CLI-formel):
-     ```bash
-     if [ "$VERCEL_GIT_COMMIT_REF" = "staging" ]; then exit 0; fi
-     exit 1
-     ```
-     (`exit 0` = skippa build, `exit 1` = build)
-   - ELLER **Branch Tracking** → välj "Only specified branches" och uteslut `staging`
+Symmetrisk lösning krävdes — Ignored Build Step på båda projekten.
 
-4. Spara
-5. Verifiera vid nästa `staging`-push: bara `equinet-staging-app` får ny deploy
+### Implementerad konfig
 
-### Verifiering
+Båda projekten i `https://vercel.com/cola500s-projects/<projekt>/settings/git` → **Ignored Build Step**:
 
+**`equinet-staging-app`** (bygger BARA staging-branchen):
 ```bash
-# Push en docs-only commit till staging
-git commit --allow-empty -m "test: verify only equinet-staging-app deploys"
-git push origin staging
-
-# Vänta 2 min, kolla deployments
-vercel list equinet-app | head -5            # Ska INTE visa ny deploy
-vercel list equinet-staging-app | head -5    # SKA visa ny deploy (Ready efter ~2 min)
+if [ "$VERCEL_GIT_COMMIT_REF" = "staging" ]; then exit 1; fi; exit 0
 ```
 
-### Rollback
+**`equinet-app`** (skippar staging-branchen, bygger allt annat):
+```bash
+if [ "$VERCEL_GIT_COMMIT_REF" = "staging" ]; then exit 0; fi; exit 1
+```
 
-Ta bort Ignored Build Step / återställ Branch Tracking i UI.
+(`exit 0` = skip build, `exit 1` = build)
+
+**Bash-syntax-detalj:** `;` mellan `fi` och `exit` är obligatoriskt. Spaces eller newlines via UI-paste sparas som spaces, vilket ger syntax error → Vercel exit 2 → tolkas som "build" (skip-flagga off). Verifiera alltid via `bash -n -c "<snippet>"` lokalt eller via `commandForIgnoringBuildStep`-fältet i Vercel REST API.
+
+### Effekt
+
+| Scenario | Före | Efter |
+|---|---|---|
+| Push till `main` → `equinet-staging-app` Preview | ❌ Error (DATABASE_URL missing) | ✅ Skipped |
+| Push till `staging` → `equinet-app` Preview | Ready (overhead) | ✅ Skipped |
+| Push till `main` → `equinet-app` Production | ✅ Ready | ✅ Ready (oförändrat) |
+| Push till `staging` → `equinet-staging-app` Production | ✅ Ready | ✅ Ready (oförändrat) |
+| Feature-branch PR → `equinet-app` Preview | Ready | ✅ Ready (oförändrat — PR-previews bevarade) |
+| Feature-branch PR → `equinet-staging-app` Preview | Ready | ✅ Skipped (staging-projektet är dedikerat) |
+
+### Verifiering 2026-05-09
+
+API-check via `vercel-token`:
+
+```
+=== equinet-app ===
+commandForIgnoringBuildStep: 'if [ "$VERCEL_GIT_COMMIT_REF" = "staging" ]; then exit 0; fi; exit 1'
+Bash syntax: OK
+branch=staging → exit 0 (SKIP) ✅
+branch=main    → exit 1 (BUILD) ✅
+
+=== equinet-staging-app ===
+commandForIgnoringBuildStep: 'if [ "$VERCEL_GIT_COMMIT_REF" = "staging" ]; then exit 1; fi; exit 0'
+Bash syntax: OK
+branch=staging → exit 1 (BUILD) ✅
+branch=main    → exit 0 (SKIP) ✅
+```
+
+### Rollback (om problem)
+
+Ta bort `Ignored Build Step` i båda projekten via UI → tom string sparar = återgå till default (alla branches deployar).
 
 ## Andra cleanup-uppgifter
 
