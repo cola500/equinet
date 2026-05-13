@@ -95,15 +95,17 @@ const customerInsightSchema = z.object({
 // Helpers
 // -----------------------------------------------------------
 
-function stripMarkdownCodeBlock(text: string): string {
-  const trimmed = text.trim()
-  if (trimmed.startsWith("```")) {
-    return trimmed
-      .replace(/^```(?:json)?\s*\n?/, "")
-      .replace(/\n?```\s*$/, "")
-      .trim()
+// Tolerant JSON extraction: finds the outermost JSON object in the response,
+// even when the model wraps it in markdown code blocks or surrounding prose.
+// Reason: Claude Sonnet 4.6 sometimes adds explanatory text despite system-prompt
+// instructions. See salvage-vision/CLAUDE.md for the same learning.
+function extractJsonObject(text: string): string {
+  const start = text.indexOf("{")
+  const end = text.lastIndexOf("}")
+  if (start === -1 || end === -1 || end <= start) {
+    return text.trim()
   }
-  return trimmed
+  return text.slice(start, end + 1)
 }
 
 // -----------------------------------------------------------
@@ -184,7 +186,7 @@ export class CustomerInsightService {
         })
       }
 
-      const cleanedText = stripMarkdownCodeBlock(content.text)
+      const cleanedText = extractJsonObject(content.text)
       const rawParsed = JSON.parse(cleanedText)
       const validated = customerInsightSchema.safeParse(rawParsed)
 
