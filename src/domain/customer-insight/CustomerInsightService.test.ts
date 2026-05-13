@@ -264,6 +264,52 @@ describe("CustomerInsightService", () => {
     expect(result.value.vipScore).toBe("low")
   })
 
+  // Regression tests for Sonnet 4.6 returning prose around JSON
+  // (matches salvage-vision learning: tolerant JSON extraction needed)
+  it("handles prose before JSON object", async () => {
+    const json = JSON.stringify(VALID_LLM_RESPONSE)
+
+    mockCreate.mockResolvedValue({
+      content: [{ type: "text", text: "Här är analysen:\n" + json }],
+    })
+
+    const result = await service.generateInsight(SAMPLE_DATA, SAMPLE_METRICS)
+    expect(result.isSuccess).toBe(true)
+    expect(result.value.frequency).toBe("Regelbunden (var 8:e vecka)")
+  })
+
+  it("handles prose after JSON object", async () => {
+    const json = JSON.stringify(VALID_LLM_RESPONSE)
+
+    mockCreate.mockResolvedValue({
+      content: [{ type: "text", text: json + "\n\nHoppas detta hjälper!" }],
+    })
+
+    const result = await service.generateInsight(SAMPLE_DATA, SAMPLE_METRICS)
+    expect(result.isSuccess).toBe(true)
+    expect(result.value.frequency).toBe("Regelbunden (var 8:e vecka)")
+  })
+
+  it("handles markdown code block wrapped in prose", async () => {
+    const json = JSON.stringify(VALID_LLM_RESPONSE)
+
+    mockCreate.mockResolvedValue({
+      content: [
+        {
+          type: "text",
+          text:
+            "Visst, här kommer analysen:\n```json\n" +
+            json +
+            "\n```\nHör av dig om något.",
+        },
+      ],
+    })
+
+    const result = await service.generateInsight(SAMPLE_DATA, SAMPLE_METRICS)
+    expect(result.isSuccess).toBe(true)
+    expect(result.value.frequency).toBe("Regelbunden (var 8:e vecka)")
+  })
+
   describe("mapInsightErrorToStatus", () => {
     it("maps NO_DATA to 400", () => {
       expect(mapInsightErrorToStatus({ type: "NO_DATA", message: "" })).toBe(400)
