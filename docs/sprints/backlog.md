@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Alla kända stories och uppgifter, speglar roadmap.md. Plockas in i sprintar vid behov."
 category: sprint
 status: active
-last_updated: 2026-05-08
+last_updated: 2026-05-13
 tags: [backlog, roadmap, planning]
 sections:
   - Blockerare
@@ -62,6 +62,7 @@ sections:
 | **Supabase Auth callback-route saknas** | 0.5 dag | Magic link och OAuth-callback från Supabase Auth landar bara på root-page utan att session etableras. Vi har egen email/password-flow så det är inte affärskritiskt idag, men blockerar framtida features (social login, magic link login, Supabase egna reset-mail). Bygg `/auth/callback`-route som anropar `supabase.auth.exchangeCodeForSession(code)` och redirectar till `/dashboard`. Hittad 2026-04-30 vid felsökning av password reset. |
 | **URL-konfigurationsmatris** | 30 min | Skapa `docs/operations/url-configuration.md` som listar alla URL-config-platser och vad varje styr: Vercel `APP_URL`, Supabase Site URL + Redirect URLs, Stripe webhook endpoint, Resend domän-verifiering, ev. iOS prod-URL i `AppConfig.swift`. Vi har precis brunnit oss på trippel-miss (APP_URL + Site URL + Redirect URLs alla satta fel) — dokumentationen ska göra det tydligt vad som måste uppdateras vid byte av domän. Inkluderar checklista och länkar till dashboard-vägar. |
 | **Städa Vercel env-variabler med literal `\\n` på slutet** | 15 min | `NEXT_PUBLIC_SUPABASE_URL` och `NEXT_PUBLIC_SUPABASE_ANON_KEY` i Vercel prod har literal backslash-n (`\\n`) på slutet av värdena. Next.js runtime kan strippa det, men `vercel env pull` skriver det som literal i .env-filen vilket bryter direktanrop mot Supabase API från lokala scripts. Hittad 2026-04-30. Fix: Vercel UI → respektive variabel → ta bort `\\n`-suffixet → spara → redeploy. |
+| **Help-data drift protection** | 15-30 min | CI-validation som regenererar `articles-data.ts` och diffar mot committed version — failar PR om out-of-sync. Plus README-rad om `npm run generate:help`-workflow. Bevisat behov efter PR #333 (2026-05-13): staging hade tom hjälpsektion eftersom build-time-generator + `.vercelignore` (`*.md`) filtrerade bort markdown-källor. Detaljerad story med A/B/C/D-alternativ: [help-data-drift-protection.md](../stories/help-data-drift-protection.md). |
 
 ## Kodeffektivitet (tech debt)
 
