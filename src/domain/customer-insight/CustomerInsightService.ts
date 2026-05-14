@@ -15,6 +15,7 @@
 import Anthropic from "@anthropic-ai/sdk"
 import { z } from "zod"
 import { Result } from "@/domain/shared/types/Result"
+import { extractJsonObject } from "@/lib/ai/extract-json-object"
 
 // -----------------------------------------------------------
 // Types
@@ -90,23 +91,6 @@ const customerInsightSchema = z.object({
     .default(0)
     .transform((v) => Math.max(0, Math.min(1, v))),
 })
-
-// -----------------------------------------------------------
-// Helpers
-// -----------------------------------------------------------
-
-// Tolerant JSON extraction: finds the outermost JSON object in the response,
-// even when the model wraps it in markdown code blocks or surrounding prose.
-// Reason: Claude Sonnet 4.6 sometimes adds explanatory text despite system-prompt
-// instructions. See salvage-vision/CLAUDE.md for the same learning.
-function extractJsonObject(text: string): string {
-  const start = text.indexOf("{")
-  const end = text.lastIndexOf("}")
-  if (start === -1 || end === -1 || end <= start) {
-    return text.trim()
-  }
-  return text.slice(start, end + 1)
-}
 
 // -----------------------------------------------------------
 // System prompt
