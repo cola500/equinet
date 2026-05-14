@@ -110,10 +110,16 @@ function makeRequest(body: object): NextRequest {
   })
 }
 
+// Use a dynamic future date (30 days ahead) so the test does not
+// time-bomb when the hard-coded date drifts into the past. The route
+// schema's `firstBookingDate.refine(val => new Date(val) >= today)`
+// is correct production behavior — the test must move forward with us.
 const validBody = {
   providerId: "a0000000-0000-4000-a000-000000000001",
   serviceId: "a0000000-0000-4000-a000-000000000003",
-  firstBookingDate: "2026-05-01",
+  firstBookingDate: new Date(Date.now() + 30 * 86400000)
+    .toISOString()
+    .split("T")[0],
   startTime: "10:00",
   intervalWeeks: 2,
   totalOccurrences: 4,
