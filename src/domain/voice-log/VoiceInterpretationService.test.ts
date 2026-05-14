@@ -182,6 +182,83 @@ describe("VoiceInterpretationService", () => {
       expect(result.value.customerName).toBe("Anna")
     })
 
+    // Regression: Sonnet 4.6 sometimes adds prose around JSON. See salvage-vision/CLAUDE.md.
+    it("handles prose before JSON object", async () => {
+      const jsonContent = JSON.stringify({
+        bookingId: "booking-1",
+        customerName: "Anna Johansson",
+        horseName: "Stella",
+        markAsCompleted: true,
+        workPerformed: "Klart",
+        horseObservation: null,
+        horseNoteCategory: "farrier",
+        nextVisitWeeks: 8,
+        confidence: 0.9,
+      })
+
+      mockCreate.mockResolvedValue({
+        content: [{ type: "text", text: "Här är tolkningen:\n" + jsonContent }],
+      })
+
+      const result = await service.interpret("klar med Anna", SAMPLE_BOOKINGS)
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.bookingId).toBe("booking-1")
+    })
+
+    it("handles prose after JSON object", async () => {
+      const jsonContent = JSON.stringify({
+        bookingId: "booking-1",
+        customerName: "Anna",
+        horseName: "Stella",
+        markAsCompleted: true,
+        workPerformed: "Klart",
+        horseObservation: null,
+        horseNoteCategory: "farrier",
+        nextVisitWeeks: 8,
+        confidence: 0.9,
+      })
+
+      mockCreate.mockResolvedValue({
+        content: [
+          { type: "text", text: jsonContent + "\n\nHoppas detta hjälper!" },
+        ],
+      })
+
+      const result = await service.interpret("klar med Anna", SAMPLE_BOOKINGS)
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.bookingId).toBe("booking-1")
+    })
+
+    it("handles markdown code block wrapped in prose", async () => {
+      const jsonContent = JSON.stringify({
+        bookingId: "booking-1",
+        customerName: "Anna",
+        horseName: "Stella",
+        markAsCompleted: true,
+        workPerformed: "Klart",
+        horseObservation: null,
+        horseNoteCategory: "farrier",
+        nextVisitWeeks: 8,
+        confidence: 0.9,
+      })
+
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text:
+              "Visst, här kommer tolkningen:\n```json\n" +
+              jsonContent +
+              "\n```\nHör av dig om något.",
+          },
+        ],
+      })
+
+      const result = await service.interpret("klar med Anna", SAMPLE_BOOKINGS)
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.bookingId).toBe("booking-1")
+    })
+
     it("handles invalid JSON from LLM", async () => {
       mockCreate.mockResolvedValue({
         content: [{ type: "text", text: "This is not JSON" }],
@@ -593,6 +670,85 @@ describe("VoiceInterpretationService", () => {
 
       mockCreate.mockResolvedValue({
         content: [{ type: "text", text: "```json\n" + json + "\n```" }],
+      })
+
+      const result = await service.interpretQuickNote("allt bra", {
+        customerName: "Erik",
+        horseName: "Blansen",
+        serviceType: "Hovvård",
+      })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.cleanedText).toBe("Allt bra.")
+    })
+
+    // Regression: LLMs sometimes add prose around JSON. See salvage-vision/CLAUDE.md.
+    it("handles prose before JSON object", async () => {
+      const json = JSON.stringify({
+        cleanedText: "Allt bra.",
+        isHealthRelated: false,
+        horseNoteCategory: null,
+        suggestedNextWeeks: null,
+      })
+
+      mockCreate.mockResolvedValue({
+        content: [
+          { type: "text", text: "Här är den uppstädade texten:\n" + json },
+        ],
+      })
+
+      const result = await service.interpretQuickNote("allt bra", {
+        customerName: "Erik",
+        horseName: "Blansen",
+        serviceType: "Hovvård",
+      })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.cleanedText).toBe("Allt bra.")
+    })
+
+    it("handles prose after JSON object", async () => {
+      const json = JSON.stringify({
+        cleanedText: "Allt bra.",
+        isHealthRelated: false,
+        horseNoteCategory: null,
+        suggestedNextWeeks: null,
+      })
+
+      mockCreate.mockResolvedValue({
+        content: [
+          { type: "text", text: json + "\n\nHör av dig om du behöver något." },
+        ],
+      })
+
+      const result = await service.interpretQuickNote("allt bra", {
+        customerName: "Erik",
+        horseName: "Blansen",
+        serviceType: "Hovvård",
+      })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.cleanedText).toBe("Allt bra.")
+    })
+
+    it("handles markdown code block wrapped in prose", async () => {
+      const json = JSON.stringify({
+        cleanedText: "Allt bra.",
+        isHealthRelated: false,
+        horseNoteCategory: null,
+        suggestedNextWeeks: null,
+      })
+
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text:
+              "Visst, här kommer resultatet:\n```json\n" +
+              json +
+              "\n```\nHör av dig om något.",
+          },
+        ],
       })
 
       const result = await service.interpretQuickNote("allt bra", {
