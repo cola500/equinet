@@ -29,9 +29,38 @@ sections:
   - Roadmap
 ---
 
-# Equinet - Bokningsplattform för Hästtjänster
+# Equinet — Bokningsplattform för hästtjänster
 
-Equinet är en modern bokningsplattform som kopplar samman hästägare med tjänsteleverantörer som hovslagare, veterinärer och andra hästspecialister.
+> En komplett MVP i produktion — och en levande demonstration av hur man bygger seriös mjukvara med AI som arbetspartner.
+
+🌐 **Live:** [equinet-staging.johanlindengard.com](https://equinet-staging.johanlindengard.com) (klicka på knappen "se demo som leverantör")
+
+<!-- TODO: 1-2 screenshots här. Förslagen: 
+     - docs/ux-review/01-stables-public.png (publika stallsidan)
+     - docs/ux-review/08-dashboard-still-onboarding.png (provider-dashboard) -->
+
+Equinet kopplar hästägare med tjänsteleverantörer (hovslagare, veterinärer, hästspecialister). Den är redo att användas av riktiga användare och är i händerna på våra testpersoner idag.
+
+Men för dig som tittar in från GitHub är repot framförallt något annat: **en kompromisslös referensimplementation av hur jag jobbar med AI**.
+
+## Vad detta repo visar
+
+- **TDD och BDD dual-loop som dagligt arbete** — `RED → GREEN → REFACTOR`, integration → unit → integration. `npm run check:all` är fyra gates som måste vara gröna före PR.
+- **Refactor under disciplin** — `docs/architecture/refactor-triggers.md` listar T1–T12. Refactor som inte mappar till en konkret trigger händer inte.
+- **Story splitting i sju dimensioner** — Richard Lawrence's metod operationaliserad i `docs/ideas/epic-*.md` och `.claude/rules/story-refinement.md`.
+- **Review-matris styrd av filändringar** — `.claude/rules/review-matrix.md` mappar `src/app/api/**/route.ts` → security-reviewer + code-reviewer automatiskt.
+- **Worktree-parallellt arbete** — flera Claude-sessioner kan jobba i olika git-worktrees mot olika domäner samtidigt utan att krocka.
+- **Säkerhet i bredd** — Supabase RLS (28 policies, 24 bevistester), Custom Access Token Hook (PL/pgSQL), HTTP-only cookies, rate limiting (Upstash), admin audit log, Sentry.
+- **Kontextspecifika regler för AI** — `.claude/rules/api-routes.md`, `ios-learnings.md`, `rls-learnings.md` laddas automatiskt beroende på vilka filer som rörs.
+- **Retrospektiver är obligatoriska** — `docs/retrospectives/`, inklusive process-kost-retros om reviewer-token-användning.
+
+För full kontext: läs `CLAUDE.md` (utvecklingsguide) och `.claude/rules/` (kontextspecifika regler).
+
+## Vad detta repo *inte* är
+
+Inte ett portfolio-projekt byggt för att se snyggt ut. Det är produktivkod i drift, och varje praktik finns för att den löste ett konkret problem — flertalet dokumenterade i [docs/retrospectives/](docs/retrospectives/).
+
+---
 
 ## Getting Started
 
