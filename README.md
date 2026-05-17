@@ -34,13 +34,10 @@ sections:
 > En komplett MVP i produktion — och en levande demonstration av hur man bygger seriös mjukvara med AI som arbetspartner.
 
 🌐 **Live:** [equinet-staging.johanlindengard.com](https://equinet-staging.johanlindengard.com) (klicka på knappen "se demo som leverantör")
+
 <img width="1007" height="673" alt="Screenshot 2026-05-17 at 20 50 16" src="https://github.com/user-attachments/assets/c0d7010c-f8a2-4570-aef4-c8a6ac98efed" />
 
 <img width="1033" height="693" alt="Screenshot 2026-05-17 at 20 49 44" src="https://github.com/user-attachments/assets/9ea610ba-f535-49ec-9fee-1f90ee85a602" />
-
-<!-- TODO: 1-2 screenshots här. Förslagen: 
-     - docs/ux-review/01-stables-public.png (publika stallsidan)
-     - docs/ux-review/08-dashboard-still-onboarding.png (provider-dashboard) -->
 
 Equinet kopplar hästägare med tjänsteleverantörer (hovslagare, veterinärer, hästspecialister). Den är redo att användas av riktiga användare och är i händerna på våra testpersoner idag.
 
