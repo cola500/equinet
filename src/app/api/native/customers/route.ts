@@ -11,7 +11,7 @@ import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
 import { sanitizeString, sanitizePhone, sanitizeEmail, stripXss } from "@/lib/sanitize"
-import { createGhostUser } from "@/lib/ghost-user"
+import { createGhostUser, GhostUserError } from "@/lib/ghost-user"
 
 const addCustomerSchema = z.object({
   firstName: z.string().min(1).max(100),
@@ -297,8 +297,20 @@ export async function POST(request: NextRequest) {
     const phone = parsed.data.phone ? sanitizePhone(parsed.data.phone) : undefined
     const email = parsed.data.email ? sanitizeEmail(parsed.data.email) : undefined
 
-    // 7. Create ghost user
-    const customerId = await createGhostUser({ firstName, lastName, phone, email })
+    // 7. Create ghost user (or reuse existing manual customer by email).
+    // Registered users are rejected by createGhostUser — see fixes.txt C1.
+    let customerId: string
+    try {
+      customerId = await createGhostUser({ firstName, lastName, phone, email })
+    } catch (e) {
+      if (e instanceof GhostUserError) {
+        return NextResponse.json(
+          { error: "E-postadressen tillhör en registrerad användare. Skicka en inbjudan istället." },
+          { status: 409 }
+        )
+      }
+      throw e
+    }
 
     // 8. Check for duplicate
     const existing = await prisma.providerCustomer.findUnique({

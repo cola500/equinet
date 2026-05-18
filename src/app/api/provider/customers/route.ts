@@ -3,7 +3,7 @@ import { withApiHandler } from "@/lib/api-handler"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { sanitizeString, sanitizePhone, sanitizeEmail, stripXss } from "@/lib/sanitize"
-import { createGhostUser } from "@/lib/ghost-user"
+import { createGhostUser, GhostUserError } from "@/lib/ghost-user"
 
 const addCustomerSchema = z.object({
   firstName: z.string().min(1).max(100),
@@ -257,8 +257,21 @@ export const POST = withApiHandler(
     const phone = body.phone ? sanitizePhone(body.phone) : undefined
     const email = body.email ? sanitizeEmail(body.email) : undefined
 
-    // Create ghost user (or reuse existing by email)
-    const customerId = await createGhostUser({ firstName, lastName, phone, email })
+    // Create ghost user (or reuse existing manual customer by email).
+    // Registered users are rejected by createGhostUser to prevent the
+    // account-takeover vector described in fixes.txt C1.
+    let customerId: string
+    try {
+      customerId = await createGhostUser({ firstName, lastName, phone, email })
+    } catch (e) {
+      if (e instanceof GhostUserError) {
+        return NextResponse.json(
+          { error: "E-postadressen tillhör en registrerad användare. Skicka en inbjudan istället." },
+          { status: 409 }
+        )
+      }
+      throw e
+    }
 
     // Check for duplicate
     const existing = await prisma.providerCustomer.findUnique({

@@ -47,9 +47,18 @@ vi.mock('@/lib/prisma', () => ({
   },
 }))
 
-vi.mock('@/lib/ghost-user', () => ({
-  createGhostUser: vi.fn().mockResolvedValue('new-ghost-id'),
-}))
+vi.mock('@/lib/ghost-user', () => {
+  class GhostUserError extends Error {
+    constructor(public readonly code: 'EMAIL_BELONGS_TO_REGISTERED_USER') {
+      super('E-postadressen tillhör en registrerad användare')
+      this.name = 'GhostUserError'
+    }
+  }
+  return {
+    createGhostUser: vi.fn().mockResolvedValue('new-ghost-id'),
+    GhostUserError,
+  }
+})
 
 const makeRequest = (params = '') =>
   new NextRequest(`http://localhost:3000/api/provider/customers${params}`)
@@ -663,6 +672,26 @@ describe('POST /api/provider/customers', () => {
         firstName: expect.not.stringContaining('<script>'),
       })
     )
+  })
+
+  // C1 invariant: when createGhostUser refuses to reuse a registered
+  // account (fixes.txt C1) the route must surface that as a 409 to the
+  // caller rather than leaking a 500.
+  it('should return 409 when email belongs to a registered user', async () => {
+    const { createGhostUser, GhostUserError } = await import('@/lib/ghost-user')
+    vi.mocked(createGhostUser).mockRejectedValueOnce(
+      new GhostUserError('EMAIL_BELONGS_TO_REGISTERED_USER')
+    )
+
+    const response = await POST(makePostRequest({
+      firstName: 'Anna',
+      email: 'registered@user.com',
+    }))
+    const data = await response.json()
+
+    expect(response.status).toBe(409)
+    expect(data.error).toMatch(/registrerad/i)
+    expect(prisma.providerCustomer.create).not.toHaveBeenCalled()
   })
 
 })
