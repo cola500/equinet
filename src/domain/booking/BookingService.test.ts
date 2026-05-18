@@ -1027,6 +1027,40 @@ describe('BookingService', () => {
       expect(result.error.type).toBe('GHOST_USER_CREATION_FAILED')
     })
 
+    // C1.4 invariant: createGhostUser throws GhostUserError when the email
+    // belongs to a registered user (fixes.txt C1). createManualBooking's
+    // existing try/catch already converts this to GHOST_USER_CREATION_FAILED,
+    // so the booking flow fails closed without leaking a 500.
+    it('should fail closed when createGhostUser rejects registered-user email', async () => {
+      class GhostUserError extends Error {
+        constructor(public readonly code: 'EMAIL_BELONGS_TO_REGISTERED_USER') {
+          super('E-postadressen tillhör en registrerad användare')
+          this.name = 'GhostUserError'
+        }
+      }
+      const depsWithGhost: BookingServiceDeps = {
+        ...deps,
+        createGhostUser: vi.fn().mockRejectedValue(
+          new GhostUserError('EMAIL_BELONGS_TO_REGISTERED_USER')
+        ),
+      }
+      const svc = new BookingService(depsWithGhost)
+
+      const dto: CreateManualBookingDTO = {
+        providerId: 'provider-1',
+        serviceId: 'service-1',
+        bookingDate: new Date('2025-02-01'),
+        startTime: '10:00',
+        customerName: 'Victim',
+        customerEmail: 'registered@user.com',
+      }
+
+      const result = await svc.createManualBooking(dto)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('GHOST_USER_CREATION_FAILED')
+    })
+
     it('should include horse info', async () => {
       const depsWithGhost: BookingServiceDeps = {
         ...deps,
