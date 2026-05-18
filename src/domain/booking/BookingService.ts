@@ -193,6 +193,14 @@ export interface BookingServiceDeps {
    * Returns minimal user data or null if the user does not exist.
    */
   findUserForLink?: (id: string) => Promise<{ isManualCustomer: boolean } | null>
+  /**
+   * C2.3: check whether the customer has an existing booking relationship
+   * with this provider (status completed or no_show — matches the semantics
+   * of /api/provider/customers GET). Used as a third accept-criterion in
+   * isCustomerReachable so providers can manual-book for returning customers
+   * that lack an explicit providerCustomer row.
+   */
+  hasBookingRelationshipWith?: (providerId: string, customerId: string) => Promise<boolean>
   /** Check if customer has at least one completed booking with provider */
   hasCompletedBookingWith?: (providerId: string, customerId: string) => Promise<boolean>
   /** Get provider reschedule settings */
@@ -418,10 +426,13 @@ export class BookingService {
    * - Sets isManualBooking and createdByProviderId
    */
   /**
-   * C2 helper: customer is "reachable" by a provider if either:
+   * C2 helper: customer is "reachable" by a provider if any of:
    *   (a) a providerCustomer link exists, OR
-   *   (b) the user row is an unlinked isManualCustomer ghost (just created
-   *       by the same provider via POST /customers but not yet linked here).
+   *   (b) the user row is an unlinked isManualCustomer ghost, OR
+   *   (c) the customer has an existing booking relationship with the
+   *       provider (completed or no_show — matches /api/provider/customers
+   *       GET semantics so the manual-booking flow keeps working for
+   *       returning customers without an explicit providerCustomer row).
    * Fails closed when validation deps are missing — see fixes.txt C2.
    */
   private async isCustomerReachable(providerId: string, customerId: string): Promise<boolean> {
@@ -431,7 +442,12 @@ export class BookingService {
     const link = await this.deps.findProviderCustomerLink(providerId, customerId)
     if (link) return true
     const user = await this.deps.findUserForLink(customerId)
-    return user?.isManualCustomer === true
+    if (user?.isManualCustomer === true) return true
+    if (this.deps.hasBookingRelationshipWith) {
+      const hasRelationship = await this.deps.hasBookingRelationshipWith(providerId, customerId)
+      if (hasRelationship) return true
+    }
+    return false
   }
 
   async createManualBooking(

@@ -121,5 +121,18 @@ export function createBookingService(): BookingService {
         select: { isManualCustomer: true },
       })
     },
+    // C2.3: existing booking relationship (completed or no_show) — same
+    // status filter as /api/provider/customers GET so manual-booking matches
+    // what the provider sees as "my customers".
+    hasBookingRelationshipWith: async (providerId, customerId) => {
+      const count = await prisma.booking.count({
+        where: {
+          providerId,
+          customerId,
+          status: { in: ['completed', 'no_show'] },
+        },
+      })
+      return count > 0
+    },
   })
 }

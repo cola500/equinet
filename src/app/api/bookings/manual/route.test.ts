@@ -35,6 +35,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     booking: {
       findMany: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
     },
     service: {
       findUnique: vi.fn(),

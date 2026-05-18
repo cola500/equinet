@@ -58,6 +58,7 @@ describe('BookingService', () => {
       // exercise the CUSTOMER_NOT_LINKED branch.
       findProviderCustomerLink: vi.fn().mockResolvedValue({ id: 'link-1' }),
       findUserForLink: vi.fn().mockResolvedValue({ isManualCustomer: false }),
+      hasBookingRelationshipWith: vi.fn().mockResolvedValue(false),
     }
 
     service = new BookingService(deps)
@@ -1062,11 +1063,12 @@ describe('BookingService', () => {
         expect(result.isSuccess).toBe(true)
       })
 
-      it('B3: unknown customerId (not linked, not manual) is rejected (CUSTOMER_NOT_LINKED)', async () => {
+      it('B3: unknown customerId (not linked, not manual, no booking) is rejected (CUSTOMER_NOT_LINKED)', async () => {
         const depsUnknown: BookingServiceDeps = {
           ...deps,
           findProviderCustomerLink: vi.fn().mockResolvedValue(null),
           findUserForLink: vi.fn().mockResolvedValue({ isManualCustomer: false }),
+          hasBookingRelationshipWith: vi.fn().mockResolvedValue(false),
         }
         const svc = new BookingService(depsUnknown)
 
@@ -1074,6 +1076,24 @@ describe('BookingService', () => {
 
         expect(result.isFailure).toBe(true)
         expect(result.error.type).toBe('CUSTOMER_NOT_LINKED')
+      })
+
+      // C2.3: regression hotfix. Provider must be able to manual-book for a
+      // returning customer whose only relationship is past bookings — they
+      // appear in /api/provider/customers GET via groupBy and are legitimate
+      // existing customers even without an explicit providerCustomer row.
+      it('B6: customer with existing completed/no_show booking is accepted (no explicit link required)', async () => {
+        const depsBooking: BookingServiceDeps = {
+          ...deps,
+          findProviderCustomerLink: vi.fn().mockResolvedValue(null),
+          findUserForLink: vi.fn().mockResolvedValue({ isManualCustomer: false }),
+          hasBookingRelationshipWith: vi.fn().mockResolvedValue(true),
+        }
+        const svc = new BookingService(depsBooking)
+
+        const result = await svc.createManualBooking(manualDTO)
+
+        expect(result.isSuccess).toBe(true)
       })
 
       it('B4: customerName ghost-user path is not subject to link validation', async () => {
