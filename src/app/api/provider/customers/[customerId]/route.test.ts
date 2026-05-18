@@ -177,6 +177,11 @@ describe('PUT /api/provider/customers/[customerId]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(getAuthUser).mockResolvedValue(providerAuthUser)
+    vi.mocked(prisma.providerCustomer.findUnique).mockResolvedValue({
+      id: 'pc-1',
+      providerId: 'provider-1',
+      customerId: 'customer-1',
+    } as never)
   })
 
   it('should return 401 when session is null', async () => {
@@ -184,5 +189,40 @@ describe('PUT /api/provider/customers/[customerId]', () => {
 
     const response = await PUT(makePutRequest('customer-1', { firstName: 'Anna' }))
     expect(response.status).toBe(401)
+  })
+
+  // C1 defense-in-depth: even if a registered user is somehow linked to a
+  // provider (legacy data from before C1.1, or a future regression), the
+  // PUT must refuse to mutate non-manual rows. See fixes.txt C1.
+  it('should return 403 when target is a registered (non-manual) user', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: 'customer-1',
+      isManualCustomer: false,
+    } as never)
+
+    const response = await PUT(makePutRequest('customer-1', { firstName: 'Hijack' }))
+    const data = await response.json()
+
+    expect(response.status).toBe(403)
+    expect(data.error).toMatch(/registrerad/i)
+    expect(prisma.user.update).not.toHaveBeenCalled()
+  })
+
+  it('should allow update when target is a manual customer (200)', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: 'customer-1',
+      isManualCustomer: true,
+    } as never)
+    vi.mocked(prisma.user.update).mockResolvedValue({
+      id: 'customer-1',
+      firstName: 'Anna',
+      lastName: '',
+      email: 'a@m.com',
+      phone: null,
+    } as never)
+
+    const response = await PUT(makePutRequest('customer-1', { firstName: 'Anna' }))
+    expect(response.status).toBe(200)
+    expect(prisma.user.update).toHaveBeenCalled()
   })
 })

@@ -69,6 +69,8 @@ describe("PUT /api/native/customers/[customerId]", () => {
     mockFindProvider.mockResolvedValue(mockProvider as never)
     mockRateLimit.mockResolvedValue(true)
     mockFindLink.mockResolvedValue({ id: "link-1" } as never)
+    // Default: target is a manual customer so existing happy-path tests pass.
+    mockFindUser.mockResolvedValue({ id: "cust-1", isManualCustomer: true } as never)
     mockUpdateUser.mockResolvedValue({
       id: "cust-1", firstName: "Updated", lastName: "Name", email: "up@test.se", phone: null,
     } as never)
@@ -138,6 +140,29 @@ describe("PUT /api/native/customers/[customerId]", () => {
     mockUpdateUser.mockRejectedValue(new Error("DB error"))
     const res = await PUT(createPutRequest({ firstName: "Test" }), routeContext)
     expect(res.status).toBe(500)
+  })
+
+  // C1 defense-in-depth: PUT must refuse to mutate a registered user even
+  // if a stale ProviderCustomer link exists from pre-C1.1 data. See
+  // fixes.txt C1.
+  describe("C1 isManualCustomer-gate", () => {
+    it("returns 403 when target is a registered (non-manual) user", async () => {
+      mockFindUser.mockResolvedValue({ id: "cust-1", isManualCustomer: false } as never)
+
+      const res = await PUT(createPutRequest({ firstName: "Hijack" }), routeContext)
+      const body = await res.json()
+
+      expect(res.status).toBe(403)
+      expect(body.error).toMatch(/registrerad/i)
+      expect(mockUpdateUser).not.toHaveBeenCalled()
+    })
+
+    it("allows update when target is a manual customer (200)", async () => {
+      // beforeEach already mocks isManualCustomer: true — this asserts no regression.
+      const res = await PUT(createPutRequest({ firstName: "Anna" }), routeContext)
+      expect(res.status).toBe(200)
+      expect(mockUpdateUser).toHaveBeenCalled()
+    })
   })
 })
 

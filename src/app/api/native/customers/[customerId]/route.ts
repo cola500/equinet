@@ -92,7 +92,20 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       )
     }
 
-    // 7. Update
+    // 7. C1 defense-in-depth: refuse to mutate registered users even if a
+    // stale ProviderCustomer link was created before C1.1. See fixes.txt C1.
+    const target = await prisma.user.findUnique({
+      where: { id: customerId },
+      select: { isManualCustomer: true },
+    })
+    if (!target?.isManualCustomer) {
+      return NextResponse.json(
+        { error: "Registrerade användare kan inte ändras härifrån" },
+        { status: 403 }
+      )
+    }
+
+    // 8. Update
     const validated = parseResult.data
     const updated = await prisma.user.update({
       where: { id: customerId },
