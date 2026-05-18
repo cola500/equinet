@@ -7,7 +7,7 @@ vi.mock('file-type', () => ({
   fileTypeFromBuffer: vi.fn(),
 }))
 
-import { validateMessageAttachment } from './supabase-storage'
+import { validateMessageAttachment, assertSafeStorageFileName } from './supabase-storage'
 import { fileTypeFromBuffer } from 'file-type'
 
 function makeHeicBuffer(): Buffer {
@@ -81,5 +81,38 @@ describe('validateMessageAttachment', () => {
     vi.mocked(fileTypeFromBuffer).mockRejectedValue(new Error('import failed'))
     const result = await validateMessageAttachment(makeJpegBuffer(), 'image/jpeg')
     expect(result?.code).toBe('MAGIC_BYTES_MISMATCH')
+  })
+})
+
+describe('assertSafeStorageFileName', () => {
+  it('H1: rejects fileName containing forward slash', () => {
+    expect(() => assertSafeStorageFileName('foo/bar.jpg')).toThrow('INVALID_FILENAME')
+  })
+
+  it('H2: rejects fileName containing backslash', () => {
+    expect(() => assertSafeStorageFileName('foo\\bar.jpg')).toThrow('INVALID_FILENAME')
+  })
+
+  it('H3: rejects fileName containing parent directory traversal', () => {
+    expect(() => assertSafeStorageFileName('..jpg')).toThrow('INVALID_FILENAME')
+    expect(() => assertSafeStorageFileName('uuid..jpg')).toThrow('INVALID_FILENAME')
+    expect(() => assertSafeStorageFileName('uuid-123./../etc/passwd')).toThrow('INVALID_FILENAME')
+  })
+
+  it('H4: rejects fileName containing null byte', () => {
+    expect(() => assertSafeStorageFileName('evil\x00.jpg')).toThrow('INVALID_FILENAME')
+  })
+
+  it('H5: rejects empty, leading-dot, and too-long fileName', () => {
+    expect(() => assertSafeStorageFileName('')).toThrow('INVALID_FILENAME')
+    expect(() => assertSafeStorageFileName('.hidden.jpg')).toThrow('INVALID_FILENAME')
+    expect(() => assertSafeStorageFileName('a'.repeat(256) + '.jpg')).toThrow('INVALID_FILENAME')
+  })
+
+  it('H6: accepts a safe fileName', () => {
+    expect(() => assertSafeStorageFileName('uuid-1234.jpg')).not.toThrow()
+    expect(() =>
+      assertSafeStorageFileName('a0000000-0000-4000-a000-000000000001-1700000000000.png')
+    ).not.toThrow()
   })
 })
