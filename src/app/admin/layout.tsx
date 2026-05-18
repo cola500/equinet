@@ -14,9 +14,13 @@ export default async function AdminLayoutGuard({
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  const isAdmin = (user?.app_metadata?.isAdmin as boolean) ?? false
 
-  if (!user || !isAdmin) {
+  if (!user) {
+    redirect("/login")
+  }
+
+  const isAdmin = (user.app_metadata?.isAdmin as boolean) ?? false
+  if (!isAdmin) {
     redirect("/")
   }
 
