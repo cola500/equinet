@@ -1,6 +1,6 @@
 ---
 title: Security Sprint Continuity 2026-05
-description: Konsoliderad re-entry-doc för Security Hardening-arbetet. När sprinten återupptas — börja här. Sammanfattar status, öppna beslut, nästa-steg och hur ny chatt/session ska initieras utan att förlora kontext.
+description: Konsoliderad re-entry-doc för Security Hardening-arbetet. När sprinten återupptas — börja här. Uppdaterad 2026-05-18 efter fixes.txt-djupaudit.
 category: security
 status: active
 last_updated: 2026-05-18
@@ -10,6 +10,8 @@ tags:
   - continuity
   - re-entry
 related:
+  - fixes.txt
+  - remediation-backlog-fixes-txt-2026-05.md
   - staging-security-audit-2026-05.md
   - slice-1-2-retro.md
   - sprint-closure-2026-05.md
@@ -268,16 +270,20 @@ Detta dokumenteras explicit för att framtida sessioner inte ska föreslå dessa
 
 ## 8. Re-entry Instructions
 
-### Steg 1 — Orientering (5 min)
+> **2026-05-18 OMVÄRDERING:** `fixes.txt`-auditen har identifierat 4 CRITICAL-fynd (C1-C4). Sprint 3-A (C1-C4 hotfixes) är nu nästa rekommenderade sprint, **före** original Slice 3 (AI cost-control). Re-entry-instruktionerna nedan är uppdaterade.
+
+### Steg 1 — Orientering (10 min, utökad efter fixes.txt)
 
 Läs dessa filer i exakt denna ordning:
 
-1. **Denna fil** (`docs/security/security-sprint-continuity-2026-05.md`) — får dig till nuvarande status.
-2. `docs/security/sprint-closure-2026-05.md` — definierar Demo Maturity och triggers för nästa sprint.
-3. `docs/security/security-hardening-sprint-backlog.md` — fullständig sub-slice-lista med status.
+1. **`docs/security/fixes.txt`** — auktoritativ för core application security (C1-C4 + H1-H10 + M1-M14 + L1-L11). **Läs först** eftersom den åsidosätter tidigare maturity-bedömning.
+2. **`docs/security/remediation-backlog-fixes-txt-2026-05.md`** — sprintplan Sprint 3-A till 3-E baserat på fixes.txt.
+3. **Denna fil** (`security-sprint-continuity-2026-05.md`) — får dig till nuvarande status och re-entry-process.
+4. `docs/security/sprint-closure-2026-05.md` — uppdaterad maturity (INTERNAL TESTERS ONLY) och triggers.
+5. `docs/security/security-hardening-sprint-backlog.md` — korsreferens-tabell mellan S-numrering och fixes.txt C/H/M/L.
 
 **Skippa** vid första re-entry:
-- `staging-security-audit-2026-05.md` (480 rader, mest historiskt fynd-arkiv)
+- `staging-security-audit-2026-05.md` (480 rader, mest historiskt fynd-arkiv över demo-yta — Addendum 2026-05-18 förklarar scope-skillnad)
 - `slice-1-2-retro.md` (140 rader, retro av redan-gjort arbete)
 
 Läs dem bara om något fynd är oklart.
@@ -310,28 +316,39 @@ Om något inte matchar: NÅGOT HAR HÄNT. Stoppa, undersök git log, kanske reve
 
 ### Steg 4 — Bestäm scope för session
 
+**DEFAULT efter fixes.txt-audit (2026-05-18):** Nästa sprint bör vara **Sprint 3-A (C1-C4 hotfixes)** om någon av dessa triggers gäller:
+
+- Externa testare ska få tillgång till staging
+- Staging → main merge planeras
+- Påvisad eller misstänkt exploitation av C1-C4
+
 **Frågor att ställa Johan vid återupptagande:**
 
-1. Är publik demo planerad? (utlöser Slice 3)
-2. Är prod-merge planerad? (utlöser pre-prod-hardening sprint)
-3. Är Stripe live-flow planerat? (utlöser Manuell-3 + ev. extra hardening)
-4. Är någon trigger från `sprint-closure-2026-05.md` § "Rekommendation framåt" utlöst?
+1. Är extern testare-tillgång eller publik demo planerad? → **Sprint 3-A först**
+2. Är prod-merge planerad? → **Sprint 3-A + 3-B först**, sedan pre-prod-hardening
+3. Är Stripe live-flow planerat? → **H10 i Sprint 3-B**
+4. Är någon AI-kostnadsspik observerad? → Sprint 3-D (S-1, S-3)
+5. Bara underhåll? → OWASP ZAP regression mot staging
 
 Beroende på svar:
-- **Slice 3** → läs `sprint-closure-2026-05.md` § 6 "Rekommendation framåt" och denna fil § 6.
-- **Pre-prod-hardening** → läs § 6 "Alternativ sprint" + § 7 "Pre-prod-merge checklista" i denna fil.
-- **Bara underhåll** → kör OWASP ZAP regression, uppdatera audit-doc.
+- **Sprint 3-A** (default) → läs `remediation-backlog-fixes-txt-2026-05.md` § Sprint 3-A.
+- **Sprint 3-B/C** → samma doc, följande sektioner.
+- **Sprint 3-D (AI cost)** → ursprunglig plan i `sprint-closure-2026-05.md` § 6.
+- **Pre-prod-hardening** → kräver Sprint 3-A + 3-B klara först.
 
 ### Steg 5 — Risker att förstå INNAN ny implementation
 
 | Risk | Detalj |
 |---|---|
-| **Slice 1+2 är endast på `staging`-branch** | Före prod-launch krävs `staging` → `main` merge. Skapa inte ny security-feature på `main`-branch utan att förstå denna gap. |
-| **Erik Järnfot demo-persona finns i båda staging-Supabase** | Om en future fix antar att Erik existerar i prod — den gör inte det. |
+| **C1-C4 från fixes.txt är OPEN och exploitable av authenticated provider** | Innan extern tillgång eller prod-merge: Sprint 3-A krävs. Se `fixes.txt` rader 12-54. |
+| **Slice 1+2 är endast på `staging`-branch** | Före prod-launch krävs `staging` → `main` merge. Men inte före Sprint 3-A. |
+| **Erik Järnfot demo-persona finns bara i staging-Supabase** | Om en future fix antar att Erik existerar i prod — den gör inte det. |
 | **`NEXT_PUBLIC_DEMO_MODE` är permanent `true` i staging** | Demo-guards är inte regression-testade i staging — testa alltid båda env-värden lokalt. |
-| **AI-kostnader är inte rate-limitat per user** | Om Slice 3 inte är gjord och du ska implementera nytt AI-feature: lägg cost-cap från början, vänta inte. |
-| **`requireAdminRole` har 6 befintliga tester** | Innan du föreslår fler MFA-tester, kolla `src/lib/roles.test.ts:170-218`. |
-| **Payment ownership är låst i SQL-WHERE** | Innan du föreslår "lägg till explicit IDOR-check i route", förstå att invarianten är på SQL-nivå med invariant-test. |
+| **AI-kostnader är inte rate-limitat per user** | Om Sprint 3-D inte är gjord och du ska implementera nytt AI-feature: lägg cost-cap från början, vänta inte. |
+| **`requireAdminRole` har 6 befintliga tester men M11 fail-open-fall är OPEN** | Innan du föreslår fler MFA-tester, kolla `src/lib/roles.test.ts:170-218`. M11-fixen är trivial (tre rader) — se Sprint 3-C. |
+| **Payment ownership är låst i SQL-WHERE för booking-payment** | Men H10, M3, M4 visar att andra payment-ytor saknar samma härdning. |
+| **Booking-series accepterar godtycklig customerId (C2)** | Innan du föreslår nytt manual-booking-flöde: läs C2 i fixes.txt först. |
+| **`/api/upload` accepterar path-traversal entityId (C3)** | Innan du föreslår nytt upload-flöde: läs C3 i fixes.txt först. |
 
 ### Steg 6 — När du startar ny implementation
 

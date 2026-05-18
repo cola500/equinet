@@ -1,9 +1,9 @@
 ---
 title: Staging Security Audit 2026-05
-description: Read-only säkerhetsgenomlysning av staging-miljön (equinet-staging-app) som underlag för Security Hardening Sprint. Bygger vidare på pentest-2026-04-post-migration.md och demo-audit-2026-05-14.md.
+description: Read-only säkerhetsgenomlysning av staging-miljön (equinet-staging-app) som underlag för Security Hardening Sprint. SUPPLEMENT av fixes.txt 2026-05-18 — se Addendum överst.
 category: security
 status: active
-last_updated: 2026-05-15
+last_updated: 2026-05-18
 tags:
   - security
   - audit
@@ -11,6 +11,8 @@ tags:
   - demo
   - pentest
 related:
+  - fixes.txt
+  - remediation-backlog-fixes-txt-2026-05.md
   - pentest-2026-04-post-migration.md
   - rls-findings.md
   - messaging.md
@@ -18,6 +20,7 @@ related:
   - ../operations/demo-audit-2026-05-14.md
   - security-hardening-sprint-backlog.md
 sections:
+  - Addendum 2026-05-18 fixes.txt
   - Executive Summary
   - Methodology
   - Scope
@@ -31,10 +34,70 @@ sections:
 
 # Staging Security Audit 2026-05
 
-**Miljö:** `equinet-staging-app` — `https://equinet-staging.johanlindengard.com`
-**Datum:** 2026-05-15
-**Auditör:** Claude (read-only, ingen exploit körd)
-**Tidigare audits:** `pentest-2026-04-post-migration.md`, `pentest-2026-02-15.md`, `demo-audit-2026-05-14.md`
+## Addendum 2026-05-18 — fixes.txt supplement
+
+**Viktigt: Denna audit är KOMPLETTERAD, inte ersatt, av `docs/security/fixes.txt` (2026-05-18).**
+
+| Aspekt | Denna audit (2026-05-15) | fixes.txt (2026-05-18) |
+|---|---|---|
+| **Scope** | Demo-yta + UI-flöden + observerade direkt-URL-läckor i staging | Djup kod-walkthrough av auth/IDOR/injection/SSRF/uploads/Stripe/headers på `a3b19830` |
+| **Approach** | Browser-verifiering + parallella Explore-agenter mot kategorier | Sju parallella sweeps verifierade direkt mot källkoden |
+| **Antal fynd** | 16 (0 CRITICAL / 3 HIGH / 5 MEDIUM / 5 LOW / 3 INFO) | **39 (4 CRITICAL / 10 HIGH / 14 MEDIUM / 11 LOW)** |
+| **Maturity-bedömning** | "TRUSTED EXTERNAL TESTER READY" efter Slice 1+2 | **OMVÄRDERAD → INTERNAL TESTERS ONLY tills C1-C4 är fixade** |
+
+### Varför maturity nedgraderas
+
+`fixes.txt` identifierade fyra CRITICAL-fynd som **är exploitable av varje authenticated provider** (inklusive externa testare som registrerar eget konto):
+
+- **C1** Ghost-user email collision → account takeover via PUT customer
+- **C2** Booking-series accepterar godtyckligt `customerId` → fake bookings i offrets namn
+- **C3** Path traversal i `/api/upload` services-bucket → overskriver andras filer
+- **C4** Device-token hijack via blind upsert → push-notiser till attackerare
+
+Min audit hittade dessa inte eftersom jag fokuserade på demo-bypass-ytan, inte djupgranskning av provider-write-paths. **Det betyder att Slice 1+2-fixarna är giltiga och nödvändiga, men inte tillräckliga för "external tester ready"-mognad.**
+
+### Komplementärt scope
+
+Min audit och fixes.txt är **inte motsägande utan komplementära**:
+
+- Min audit stängde demo-mode-läckor som fixes.txt inte täckte (S-2, S-7, S-10, S-13 — alla DONE).
+- fixes.txt identifierade kärnsäkerhetshål som min audit missade (C1-C4 + 10 HIGH).
+
+Båda är fortsatt giltiga referenser. Använd `fixes.txt` för core security, denna audit för demo-yta.
+
+### Re-prioritering av remediation
+
+**Före fixes.txt:**
+- Slice 3 = S-1 (AI cost) + S-3 (rate-limit), HIGH severity
+
+**Efter fixes.txt:**
+- **Sprint 3-A** (NY): C1-C4 hotfixes — HIGHEST priority
+- Sprint 3-B: H1, H4, H7, H10
+- Sprint 3-C: H2, H3, H5, H6, H8, H9, M11
+- Sprint 3-D: original S-1 + S-3 (AI cost) skjuts efter Sprint 3-A/B/C
+- Sprint 3-E: M/L hygien
+
+Se `docs/security/remediation-backlog-fixes-txt-2026-05.md` för detaljerad sprintplan.
+
+### Slice 1+2-fixarnas status mot fixes.txt
+
+| Vår sub-slice | fixes.txt-relation | Status |
+|---|---|---|
+| S-2 hidden routes | Inte i fixes.txt (demo-specifikt) | DONE — fortsatt giltig |
+| S-7 push demo-blocker | C4 är separat allvarlig vektor | DONE för demo, **C4 öppen för core** |
+| S-10 robots noindex | L8 (lägre prio) | DONE — fortsatt giltig |
+| S-13 delete-customer demo-guard | C1 visar PUT-flödet är värre | DONE för demo, **C1 öppen för core** |
+| S-4 admin RSC layout-guard | H7 stale JWT är separat | DONE för UI, **H7 öppen** |
+| S-6 MFA iat | M11 visar fail-open-fall i samma kod | "Already covered" — **M11 visar att fail-closed saknas** |
+| S-8 payment ownership-invariant | M3, M4, H10 är andra payment-ytor | DONE för IDOR, **andra payment-fynd öppna** |
+
+**Tolkning:** Slice 1+2-fixarna är giltiga och behöver inte revertas. Men de täcker en mindre del av attack-ytan än ursprungligen bedömt.
+
+---
+
+**Allt nedanför detta addendum är min ursprungliga audit från 2026-05-15. Se fixes.txt och remediation-backlog för aktuell prioritering.**
+
+---
 
 ## Executive Summary
 

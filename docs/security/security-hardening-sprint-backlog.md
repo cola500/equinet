@@ -13,6 +13,7 @@ related:
   - staging-security-audit-2026-05.md
   - ../operations/demo-audit-2026-05-14.md
 sections:
+  - Findings från fixes.txt 2026-05-18
   - Sammanfattning
   - Slice 1 Status och verifiering
   - Slice 2 Status och verifiering
@@ -26,9 +27,82 @@ sections:
 
 # Security Hardening Sprint — Backlog
 
-**Datum:** 2026-05-15 (uppdaterad 2026-05-18 efter S-4 + hotfix)
-**Källa:** `staging-security-audit-2026-05.md`
-**Föreslagen sprint-längd:** 5 arbetsdagar (~25-30h)
+**Datum:** 2026-05-15 (uppdaterad 2026-05-18 efter S-4 + hotfix + fixes.txt-audit)
+**Källor:** `staging-security-audit-2026-05.md` (demo-yta), **`fixes.txt` (core security)**
+**Föreslagen sprint-längd:** 5 arbetsdagar (~25-30h) — **utökad efter fixes.txt, se remediation-backlog**
+
+## Findings från fixes.txt 2026-05-18
+
+`docs/security/fixes.txt` är en djupaudit på `a3b19830` (main HEAD vid den tidpunkten) med 39 fynd. Här är en korsreferens-tabell mot min audit + Slice 1+2-status.
+
+### CRITICAL (alla OPEN — Sprint 3-A)
+
+| # | Vad | Filer | Vår status |
+|---|---|---|---|
+| **C1** | Ghost-user email collision → account takeover | `src/lib/ghost-user.ts:29-35`, customer-routes | **HELT NYTT.** S-13 fixade demo-DELETE men inte PUT-hijack-vektorn. |
+| **C2** | Booking-series accepterar godtyckligt customerId | `src/app/api/booking-series/route.ts:111-114`, `BookingService.ts:408-470` | **HELT NYTT.** Vår audit täckte inte manual-booking-pathen. |
+| **C3** | Path traversal i `/api/upload` services-bucket | `src/app/api/upload/route.ts:60-132`, `supabase-storage.ts:86-95` | **HELT NYTT.** Vi noterade magic-bytes men missade `entityId`-validering och bucket-ownership. |
+| **C4** | Device-token hijack via blind upsert | `src/app/api/device-tokens/route.ts:73-84`, `push-subscriptions/route.ts:54-72` | **HELT NYTT.** S-7 demo-blocker stänger inte denna. |
+
+### HIGH (Sprint 3-B + 3-C)
+
+| # | Vad | Korsreferens mot min audit | Sprint |
+|---|---|---|---|
+| **H1** | GET /api/route-orders/[id] saknar ownership-filter | **Nytt** | 3-B |
+| **H2** | MIME-validering via client-header på public buckets | Relaterat till S-13-omr (uploads) | 3-C |
+| **H3** | Verification documents i public bucket | **Nytt** | 3-C |
+| **H4** | Ingen CSRF Origin/Referer-check | **Nytt** — täckte inte CSRF | 3-B |
+| **H5** | CSP `unsafe-inline` i prod | Noterades i min audit (S-12 INFO) men inte säkerhetsimplikationen | 3-C |
+| **H6** | Cron Bearer-only på GET, saknar x-vercel-cron | **Samma som S-9** — vår LOW är fixes.txt HIGH | 3-C |
+| **H7** | Stale JWT admin window vid demotion | S-4 fixar UI-info-disclosure, inte H7 | 3-B |
+| **H8** | `import "server-only"` saknas i 10 filer | **Nytt** | 3-C |
+| **H9** | Sentry saknar PII scrubbing | **Nytt** | 3-C |
+| **H10** | PaymentIntent saknar customer:-binding | S-8 invariant-test täcker IDOR men inte H10 | 3-B |
+
+### MEDIUM (Sprint 3-C + 3-E)
+
+| # | Vad | Korsreferens |
+|---|---|---|
+| M1 | POST /api/bookings godtycklig horseId | Nytt |
+| M2 | Group-booking participant horseId | Nytt |
+| M3 | Stripe checkout successUrl client-supplied | Nytt |
+| M4 | Subscription webhook trustar metadata.providerId | Nytt |
+| M5 | env.ts validerar inte server-secrets | Nytt |
+| M6 | SW cachar /api/auth/session utan user-scope | Nytt |
+| M7 | /auth/callback saknar rate-limit | Nytt |
+| M8 | accept-invite + native-session-exchange loose limiter | Nytt |
+| M9 | Encryption tag-length + IV hardening | Nytt |
+| M10 | Admin audit log fire-and-forget | Nytt |
+| **M11** | **Admin session-timeout fail-open vid iat unreadable** | **Gap i vår S-6 "already covered"-bedömning** — Sprint 3-C |
+| M12 | getClientIP X-Forwarded-For spoofing | Nytt |
+| M13 | Routing proxy interpolerar ovaliderade koords | Nytt |
+| M14 | APNs payload PII (GDPR) | Nytt |
+
+### LOW (Sprint 3-E hygien)
+
+L1-L11 från fixes.txt — se `remediation-backlog-fixes-txt-2026-05.md`. L8 (admin URL disclosure i robots) överlappar delvis med vår S-10.
+
+### Korsreferens-sammanfattning
+
+| Vår S-numrering | fixes.txt | Status |
+|---|---|---|
+| S-1 AI cost | — (inte täckt) | Sprint 3-D |
+| S-2 hidden routes | — (demo-specifikt) | DONE |
+| S-3 per-user rate-limit | — (inte täckt) | Sprint 3-D |
+| S-4 admin role-guard | (H7 är separat) | DONE för UI, H7 öppen |
+| S-5 withApiHandler-migrering | (kompletterar H4 CSRF) | Hygien |
+| S-6 MFA iat | M11 visar fail-open | "Already covered" omvärderas → M11 i Sprint 3-C |
+| S-7 push demo-blocker | (C4 är separat) | DONE för demo, C4 öppen |
+| S-8 payment ownership | (H10, M3, M4 separata) | DONE för IDOR, övriga öppna |
+| S-9 cron header | = H6 | Konvergerad till Sprint 3-C |
+| S-10 robots | (L8 lägre prio) | DONE |
+| S-11 prompt-injection delimiters | — | Hygien |
+| S-12 CORS wildcard | — | Hygien |
+| S-13 delete-customer demo-guard | (C1 är hijack-vektor) | DONE för demo, C1 öppen |
+
+**Tolkning:** Inga Slice 1+2-fixar är ogiltiga eller behöver revertas. fixes.txt utökar attack-yta-bedömningen utan att invalidera tidigare arbete. Se `remediation-backlog-fixes-txt-2026-05.md` för Sprint 3-A till 3-E.
+
+---
 
 ## Slice 1 — Status och verifiering
 

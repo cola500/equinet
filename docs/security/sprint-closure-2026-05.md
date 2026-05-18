@@ -26,41 +26,69 @@ sections:
 
 # Security Hardening Sprint — Closure och Roadmap 2026-05
 
-**Datum:** 2026-05-18
-**Sprint-status:** PAUSAD efter Slice 1+2. Slice 3 (AI cost-control) pendar beslut.
+**Datum:** 2026-05-18 (uppdaterad efter fixes.txt-audit)
+**Sprint-status:** PAUSAD efter Slice 1+2. **Sprint 3-A (C1-C4 hotfixes) är nu nästa rekommenderade sprint, ej längre Slice 3 (AI cost-control).**
 **Branch:** `staging` (synkad). Inga merges till main/prod.
 
 ## Current Maturity
 
+> **2026-05-18 OMVÄRDERING — se `fixes.txt` och `remediation-backlog-fixes-txt-2026-05.md`.**
+> Ny djupaudit `fixes.txt` identifierade 4 CRITICAL-fynd (C1-C4) som är exploitable av varje authenticated provider, inklusive externa testare. Tidigare bedömning "TRUSTED EXTERNAL TESTER READY" var baserad på min demo-yta-audit som inte täckte core provider-write-paths. Maturity nedgraderas till **INTERNAL TESTERS ONLY** tills C1-C4 är fixade.
+
 ### Demo Maturity Level
 
-**Staging är nu:** **TRUSTED EXTERNAL TESTER READY**
+**Staging är nu:** **INTERNAL TESTERS ONLY**
 
 | Vad detta betyder | Vad detta INTE betyder |
 |---|---|
-| ✅ Kontrollerade testare (kollegor, designpartners, väl-identifierade demo-användare) kan använda staging utan att utlösa kostnadsabuse eller dataläckage. | ❌ Public internet hardened — staging är **inte** rustad för anonym, opolicad webbtrafik. |
-| ✅ Demo-bypass-ytor stängda (email/push/delete/hidden routes). | ❌ Production-grade secure — staging saknar AI-cost-controls och per-user rate-limits som krävs vid bredare exponering. |
-| ✅ Admin UI-information-disclosure stängd. | ❌ Skalbar mot DOS/abuse — IP-baserad rate-limit räcker inte vid koordinerade attacker eller delade IP. |
-| ✅ Demo-data isolerad och kan inte modifieras destruktivt av demo-user. | ❌ Compliance-redo — inga externa audits, GDPR-DPA, eller penetrationstest av extern leverantör. |
+| ✅ Anställda + designpartners under NDA kan använda staging för funktionell verifiering. | ❌ External tester ready — `fixes.txt` C1-C4 är exploitable av varje authenticated provider. |
+| ✅ Demo-mode-bypass-ytor stängda (S-2/S-7/S-10/S-13). | ❌ Public internet hardened — saknar CSRF, CSP-nonces, full upload-validering. |
+| ✅ Admin UI-information-disclosure stängd (S-4). | ❌ Production-grade secure — kräver hela Sprint 3-A/B/C före main-merge. |
+| ✅ Payment ownership-invariant låst (S-8). | ❌ Account-takeover-säkert — C1 ghost-user collision tillåter hijack. |
 
-### Var vi inte är
+### Var vi inte är (uppdaterad 2026-05-18)
 
-- **Public demo** — kräver minst S-1 + S-3 implementerade och ev. CAPTCHA på demo-login.
-- **Production-launch-redo** — kräver Slice 3 + observability + abuse-monitoring + manuell verifiering av admin/Stripe-flöden.
-- **Multi-tenant skalbart** — per-tenant rate-limit och kvotering finns inte i denna kodbas.
+- **External tester** — kräver **Sprint 3-A** (C1-C4 hotfixes) först. Externa testare med eget provider-konto kan idag exploitera C1 (account takeover), C2 (fake bookings för annan user), C3 (path traversal upload), C4 (push hijack).
+- **Public demo** — kräver Sprint 3-A + 3-B + 3-D (AI cost-control).
+- **Production-launch-redo** — kräver Sprint 3-A + 3-B + 3-C + manuell verification + OWASP ZAP regression.
+- **Multi-tenant skalbart** — per-tenant rate-limit och kvotering finns inte.
 
 ## Vad som fortfarande återstår
 
-### Säkerhetsarbete (med Slice-relation)
+### Säkerhetsarbete — uppdaterad 2026-05-18
 
-| # | Tema | Severity | Effort | Slice-tilldelning |
-|---|---|---|---|---|
-| **S-1** | AI cost-control — per-user daily token budget + alarm | HIGH | 4-6h | Slice 3 (rekommenderat) |
-| **S-3** | Per-user AI rate-limit (kompletterar IP-limit) | HIGH | 3-4h | Slice 3 (rekommenderat) |
-| S-5 | `withApiHandler`-migrering av 139 routes | MEDIUM | Spår över sprintar | Kontinuerligt arbete, inte ny slice |
-| S-9 | Cron Vercel-header-validering | LOW | 30 min | Slice 4 / Quick wins |
-| S-11 | CustomerInsight prompt-injection delimiters | LOW | 1h | Slice 4 |
-| S-12 | Root-HTML wildcard CORS undersökning | LOW (INFO) | 30 min | Slice 4 |
+**BLOCKER (Sprint 3-A — före allt annat):**
+
+| # | Tema | Källa | Effort |
+|---|---|---|---|
+| **C1** | Ghost-user email collision → account takeover | fixes.txt | 1-2h |
+| **C2** | Booking-series godtyckligt customerId | fixes.txt | 1-2h |
+| **C3** | Upload path traversal | fixes.txt | 2-3h |
+| **C4** | Device-token hijack via blind upsert | fixes.txt | 1h |
+
+**HIGH (Sprint 3-B):**
+
+| # | Tema | Källa | Effort |
+|---|---|---|---|
+| **H1** | route-orders GET utan ownership-filter | fixes.txt | 30 min |
+| **H4** | CSRF Origin-check i `withApiHandler` | fixes.txt | 1h |
+| **H7** | Stale JWT admin window vid demotion | fixes.txt | 2h |
+| **H10** | PaymentIntent saknar customer:-binding | fixes.txt | 1-2h |
+
+**Defense-in-depth (Sprint 3-C):**
+
+H2, H3, H5, H6, H8, H9, M11 — se `remediation-backlog-fixes-txt-2026-05.md`.
+
+**Tidigare prioriterad (Sprint 3-D — skjutet efter 3-A/B/C):**
+
+| # | Tema | Severity | Effort |
+|---|---|---|---|
+| S-1 | AI cost-control — per-user daily token budget + alarm | HIGH | 4-6h |
+| S-3 | Per-user AI rate-limit (kompletterar IP-limit) | HIGH | 3-4h |
+
+**Hygien (Sprint 3-E):**
+
+S-5, S-9 (=H6), S-11, S-12 från min audit + M1-M14, L1-L11 från fixes.txt.
 
 ### Operationell verifiering (manuell)
 
