@@ -145,8 +145,17 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
+    } else if (bucket === "services") {
+      // 3B.3: providerId namespace — entityId MUST equal session's own providerId.
+      // Customers (no providerId) and other providers (different providerId) → 403.
+      const sessionProviderId = session.user.providerId
+      if (!sessionProviderId || entityId !== sessionProviderId) {
+        return NextResponse.json(
+          { error: "Åtkomst nekad" },
+          { status: 403 }
+        )
+      }
     }
-    // "services" bucket - provider ownership checked via providerId
 
     // Generate unique filename — extension is derived from validated MIME
     // type, NOT from file.name, to prevent path traversal.

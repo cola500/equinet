@@ -365,4 +365,53 @@ describe("POST /api/upload", () => {
       expect(response.status).toBe(400)
     })
   })
+
+  // 3B.3: services bucket ownership (entityId must match session.providerId)
+  describe("3B.3 services bucket ownership", () => {
+    it("T6: services upload with another provider's UUID is rejected with 403", async () => {
+      vi.mocked(auth).mockResolvedValue(mockProviderSession)
+      vi.mocked(prisma.upload.create).mockResolvedValue({ id: "upload-x" } as never)
+
+      const otherProviderId = "a0000000-0000-4000-a000-000000000099"
+      const request = createMockUploadRequest(
+        { bucket: "services", entityId: otherProviderId },
+        { name: "photo.jpg", type: "image/jpeg", size: 1024 }
+      )
+
+      const response = await POST(request)
+      expect(response.status).toBe(403)
+      const data = await response.json()
+      expect(data.error).toBe("Åtkomst nekad")
+    })
+
+    it("T7: services upload with provider's own providerId returns 201", async () => {
+      vi.mocked(auth).mockResolvedValue(mockProviderSession)
+      vi.mocked(prisma.upload.create).mockResolvedValue({
+        id: "upload-services-1",
+        url: "https://storage.example.com/services/test.jpg",
+        path: "services/test.jpg",
+      } as never)
+
+      const request = createMockUploadRequest(
+        { bucket: "services", entityId: "a0000000-0000-4000-a000-000000000002" },
+        { name: "photo.jpg", type: "image/jpeg", size: 1024 }
+      )
+
+      const response = await POST(request)
+      expect(response.status).toBe(201)
+    })
+
+    it("T8: services upload from customer session (no providerId) is rejected with 403", async () => {
+      vi.mocked(auth).mockResolvedValue(mockSession)
+
+      const someProviderId = "a0000000-0000-4000-a000-000000000002"
+      const request = createMockUploadRequest(
+        { bucket: "services", entityId: someProviderId },
+        { name: "photo.jpg", type: "image/jpeg", size: 1024 }
+      )
+
+      const response = await POST(request)
+      expect(response.status).toBe(403)
+    })
+  })
 })
