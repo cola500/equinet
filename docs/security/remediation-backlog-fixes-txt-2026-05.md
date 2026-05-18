@@ -1,6 +1,6 @@
 ---
 title: Remediation Backlog — fixes.txt findings 2026-05
-description: Sprintplan för 39 fynd från fixes.txt-djupauditen (2026-05-18). Sprint 3-A (C1-C4 hotfixes) som första prioritet, följt av Sprint 3-B/C/D/E. Korsrefererad med vår tidigare S-numrering från staging-security-audit-2026-05.md.
+description: Sprintplan för 39 fynd från fixes.txt-djupauditen (2026-05-18). Sprint 3-A KLAR + Sprint 3-A follow-up HIGH KLART. Sprint 3-B/C/D/E pending. Korsrefererad med vår tidigare S-numrering från staging-security-audit-2026-05.md.
 category: security
 status: active
 last_updated: 2026-05-18
@@ -31,25 +31,35 @@ sections:
 
 **Källa:** `docs/security/fixes.txt` (djupaudit 2026-05-18 på `a3b19830`).
 **Total scope:** 39 fynd (4 CRITICAL / 10 HIGH / 14 MEDIUM / 11 LOW).
-**Status:** Inga fynd från fixes.txt åtgärdade ännu.
+**Status:** Sprint 3-A KLAR (C1-C4 live på staging). Sprint 3-A follow-up HIGH KLART (3 watch-items från retron). Sprint 3-B (H1-H10) ännu inte påbörjat.
 
 ## Översikt
 
-| Sprint | Scope | Effort | Trigger |
-|---|---|---|---|
-| **3-A** | C1-C4 CRITICAL hotfixes | 5-8h | Innan extern testare-tillgång eller staging→main merge |
-| **3-B** | H1, H4, H7, H10 — focused HIGH-fixes | 5h | Innan prod-merge |
-| **3-C** | H2, H3, H5, H6, H8, H9, M11 — defense-in-depth | 9h | Innan publik demo eller prod-launch |
-| **3-D** | S-1, S-3 — AI cost-control (original Slice 3) | 10-13h | Vid AI-cost-spike eller publik demo |
-| **3-E** | M1-M14 + L1-L11 hygien | 6-8h | Innan prod-launch eller löpande |
+| Sprint | Scope | Effort | Trigger | Status |
+|---|---|---|---|---|
+| **3-A** | C1-C4 CRITICAL hotfixes | 5-8h | Innan extern testare-tillgång eller staging→main merge | ✅ **KLAR** (live på staging) |
+| **3-A follow-up** | Watch-items från Sprint 3-A retro: V4, services-bucket ownership, message-attachments-bucket-verifiering, originalName-sanering, prod-bucket-parity, dev-fallback-härdning | ~2h klart + ~1h pending | Efter Sprint 3-A | ✅ **HIGH KLART** (3 av 6 slices: 3A.fu.1-3). MEDIUM/LOW pending: 3A.fu.4-6 |
+| **3-B** | H1, H4, H7, H10 — focused HIGH-fixes | 5h | Innan prod-merge | ⏸ pending |
+| **3-C** | H2, H3, H5, H6, H8, H9, M11 — defense-in-depth | 9h | Innan publik demo eller prod-launch | ⏸ pending |
+| **3-D** | S-1, S-3 — AI cost-control (original Slice 3) | 10-13h | Vid AI-cost-spike eller publik demo | ⏸ pending |
+| **3-E** | M1-M14 + L1-L11 hygien | 6-8h | Innan prod-launch eller löpande | ⏸ pending |
 
-**Totalt:** ~35-43h över fem sprintar.
+**Totalt:** ~35-43h över sex sprintar (inkl. follow-up).
 
-**Avgörande policy:** Inga fynd från Sprint 3-A merges till `main` förrän alla fyra är fixade, verifierade i staging, och OWASP ZAP regression körd.
+**Avgörande policy:** Inga fynd från Sprint 3-A eller follow-up mergade till `main` ännu. `staging` är säkrad testbädd; ingen prod-deploy utfärdad. OWASP ZAP regression krävs före `staging → main` merge.
 
 ---
 
-## Sprint 3-A — CRITICAL hotfixes
+## Sprint 3-A — CRITICAL hotfixes ✅ KLAR
+
+**Status:** Alla fyra CRITICAL live på `staging`. Merge-commit `30052a37` (C3 sista). Retro publicerad i `docs/retrospectives/2026-05-18-sprint-3a-security-remediation.md`.
+
+| Slice | Commit(s) | PR | Status |
+|---|---|---|---|
+| 3-A.1 (C1) | C1.1-C1.4 sub-slices, `1e65298f` test-verifiering | — (direkt på staging) | ✅ |
+| 3-A.2 (C2) | `584a4d68` (C2.2), `3b0f0b01` (C2.3 hotfix) | — | ✅ |
+| 3-A.3 (C3) | Merge `30052a37` | #337 | ✅ |
+| 3-A.4 (C4) | `8c9ee9fa` | — | ✅ |
 
 **Mål:** Stäng fyra exploit-vägar som är reachable av authenticated provider. Detta är "fix before next deploy" enligt fixes.txt.
 
@@ -155,7 +165,69 @@ Varje fynd är en isolerad fil-ändring. `git revert <commit>` per fynd. Kombine
 
 ---
 
-## Sprint 3-B — HIGH (focused fixes)
+## Sprint 3-A follow-up — Post-3A watch-items
+
+**Bakgrund:** Sprint 3-A:s retro (`docs/retrospectives/2026-05-18-sprint-3a-security-remediation.md`) identifierade 6 watch-items som inte var del av CRITICAL-scopet men som logiskt bör adresseras nära 3-A. HIGH-prio slices (3A.fu.1-3) genomfördes 2026-05-18 i en separat sprint kallad "Sprint 3-A follow-up". MEDIUM/LOW kvarstår.
+
+### 3A.fu.1 — Verifiera `message-attachments`-bucket i staging-Supabase ✅
+
+**Severity:** Operational (blocking smoke).
+**Effort:** 15-30 min.
+**Resultat:** Bucket bekräftad existera (smoke 201 via `/api/bookings/[id]/messages/attachments`). Ingen kodändring krävdes. Tidigare publik probe-respons "Bucket not found" var Supabase's standardrespons för privata buckets — inte saknad bucket.
+**Lärdom:** Publik storage-probe är inte definitivt test för privata buckets. Autentiserad upload är.
+
+### 3A.fu.2 — UUID-validera `bookingId` i messages-routes ✅
+
+**Severity:** HIGH (defense-in-depth-parity med C3 entityId-validering).
+**Effort:** 30-45 min.
+**PR/Commit:** PR #338 → merge `9e6cb2a7`.
+**Filer ändrade (6):**
+- `src/app/api/bookings/[id]/messages/route.ts` (+`bookingIdSchema`-konstant, UUID-check i POST + GET)
+- `src/app/api/bookings/[id]/messages/read/route.ts` (+zod-import, UUID-check i PATCH)
+- `src/app/api/bookings/[id]/messages/attachments/route.ts` (+zod-import, UUID-check i POST)
+- Tester för alla tre (+7 regression-tester, befintliga `'booking-abc-123'` / `'booking-1'` fixturer → UUID v4)
+
+**Smoke (8 scenarier mot staging):** Alla PASS — happy paths bevarade, ogiltig UUID rejected med 400 "Ogiltigt bookingId" i alla 4 handlers.
+
+### 3A.fu.3 — Services-bucket ownership i `/api/upload` ✅
+
+**Severity:** HIGH (öppen storage-abuse-vektor).
+**Effort:** 30 min.
+**PR/Commit:** PR #339 → merge `a2ba326b`.
+**Filer ändrade (2):**
+- `src/app/api/upload/route.ts` (+`else if (bucket === "services")` block: `entityId === session.user.providerId` exact match, annars 403)
+- `src/app/api/upload/route.test.ts` (+3 regression-tester: främmande UUID, egen providerId, customer session)
+
+**Security invariant:** För `bucket: services` — `entityId` MÅSTE matcha `session.user.providerId` exakt. Customer-sessions och andra providers rejected med 403 "Åtkomst nekad".
+
+**Out of scope (Option B/C):** Ingen DB-cross-reference, ingen automatisk `Service.imageUrl`-koppling. Provider-beslut 2026-05-18: namespace-prefix-tolkning (Option A) bekräftad.
+
+### 3A.fu.4 — Sanera `Upload.originalName` ⏸ pending
+
+**Severity:** MEDIUM (defense-in-depth, ingen känd exploit).
+**Effort:** ~30 min.
+**Surface:** `src/app/api/upload/route.ts:181`, `src/app/api/native/provider/upload/route.ts:104`.
+**Approach:** Truncate till ≤255 chars + strippa kontrolltecken (`\x00-\x1f`) innan `prisma.upload.create`. Befintliga consumers (`/provider/verification/page.tsx`) är React-eskaperade → ingen aktuell XSS-väg, men framtida `dangerouslySetInnerHTML`-renderers skulle exponera vektor.
+
+### 3A.fu.5 — Bucket-parity prod ↔ staging för `equinet-uploads` ⏸ pending
+
+**Severity:** MEDIUM (kosmetisk hardening, ingen exploit).
+**Effort:** 10 min ändring + verifiering.
+**⚠ TOUCHES PRODUCTION:** Prod's `equinet-uploads`-bucket saknar bucket-nivå `file_size_limit` och `allowed_mime_types`. Staging fick dessa konfigurerade efter buckets skapades 2026-05-18. Server-side `validateFile()` enforcear samma limits så praktisk impact är låg, men staging är strikare än prod — divergens.
+**Kräver:** Explicit godkännande + tidpunkt för prod Dashboard-ändring.
+
+### 3A.fu.6 — Dev-fallback fail-loud i NODE_ENV=production ⏸ pending
+
+**Severity:** LOW (hygien, ingen aktuell brist).
+**Effort:** ~20 min.
+**Surface:** `src/lib/supabase-storage.ts:32-44` (`getSupabase()`).
+**Approach:** Kasta `Error('Supabase not configured in production')` om env-vars saknas och `NODE_ENV === 'production'`, istället för tyst fallback till `public/uploads/` (vilket är fel i serverless).
+
+---
+
+## Sprint 3-B — HIGH (focused fixes) ⏸ pending
+
+**Status:** Ej påbörjad. Trigger: prod-merge planeras. **OBS:** Inte att förväxla med vår interna planering som tillfälligt kallades "Sprint 3-B (3B.1-6)" och nu omdöpt till "Sprint 3-A follow-up" (se sektion ovan). Backlog-doc:s Sprint 3-B är fortfarande de fyra HIGH-fynd från fixes.txt nedan.
 
 **Mål:** Stäng fyra HIGH-fynd som är "focused fix in one or two files".
 

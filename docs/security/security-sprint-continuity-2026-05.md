@@ -1,6 +1,6 @@
 ---
 title: Security Sprint Continuity 2026-05
-description: Konsoliderad re-entry-doc för Security Hardening-arbetet. När sprinten återupptas — börja här. Uppdaterad 2026-05-18 efter fixes.txt-djupaudit.
+description: Konsoliderad re-entry-doc för Security Hardening-arbetet. Sprint 3-A klar + 3-A follow-up HIGH klart 2026-05-18. När sprinten återupptas — börja här.
 category: security
 status: active
 last_updated: 2026-05-18
@@ -9,6 +9,8 @@ tags:
   - sprint
   - continuity
   - re-entry
+  - sprint-3a
+  - sprint-3a-followup
 related:
   - fixes.txt
   - remediation-backlog-fixes-txt-2026-05.md
@@ -34,19 +36,34 @@ sections:
 
 ## 1. Current State Summary
 
-**Sprint-status:** PAUSAD efter Slice 1+2 (2026-05-18).
-**Branch:** `staging` synkad med `origin/staging` (senaste commit `ee039de5`).
-**Main/prod:** Oberörd — inga säkerhetsfixar mergade till `main` ännu.
-**Demo Maturity:** TRUSTED EXTERNAL TESTER READY.
+**Sprint-status:** PAUSAD efter Sprint 3-A + Sprint 3-A follow-up (HIGH-prio slices) (2026-05-18).
+**Branch:** `staging` synkad med `origin/staging` (senaste commit `a2ba326b`).
+**Main/prod:** **Oberörd** — inga säkerhetsfixar mergade till `main` ännu, ingen prod-deploy utfärdad.
+**Demo Maturity:** TRUSTED EXTERNAL TESTER READY (alla 4 CRITICAL stängda).
 
 ### Vad som uppnåtts (kort)
 
-- 7 av 12 audit-fynd stängda (S-2, S-4, S-6, S-7, S-8, S-10, S-13).
-- 6 produktionsändringar + 2 invariant-tester + 4 dokumentationsfiler.
+**Slice 1+2 (2026-05-17):**
+- 7 av 12 staging-audit-fynd stängda (S-2, S-4, S-6, S-7, S-8, S-10, S-13).
 - Demo-bypass-ytor stängda (email/push/delete/5 hidden routes).
 - Admin UI-information-disclosure stängd (RSC layout-guard).
 - Payment IDOR-invariant låst med tester.
 - Staging avindexerad från sökmotorer.
+
+**Sprint 3-A (CRITICAL hotfixes, 2026-05-17 → 2026-05-18):**
+- C4 push-token hijack — pre-upsert ownership-check, 409 vid kollision (commit `8c9ee9fa`).
+- C1 ghost-user collision — `GhostUserError EMAIL_BELONGS_TO_REGISTERED_USER` + `isManualCustomer`-gate (4 sub-slices).
+- C2 manual-booking customerId IDOR — `isCustomerReachable` med link OR isManualCustomer OR booking-relation (C2.1, C2.2, C2.3-hotfix).
+- C3 upload path-traversal — Fix A (MIME→ext) + Fix B (`assertSafeStorageFileName`) + Fix C (Zod UUID på entityId), PR #337 mergat som `30052a37`.
+
+**Sprint 3-A follow-up (HIGH, 2026-05-18):**
+- 3A.fu.1 — Verifierad `message-attachments`-bucket existerar i staging-Supabase (smoke 201, ingen kodändring).
+- 3A.fu.2 — UUID-validera `bookingId` i 3 messages-routes (POST/GET messages, PATCH read, POST attachments), PR #338 mergat som `9e6cb2a7`.
+- 3A.fu.3 — Services-bucket ownership: `entityId === session.user.providerId` exact match, PR #339 mergat som `a2ba326b`.
+
+### Naming-clarification
+
+Vår tidigare interna planering kallade follow-up-slices "Sprint 3-B (3B.1, 3B.2, 3B.3 ...)" — men `remediation-backlog-fixes-txt-2026-05.md` reserverar namnet "Sprint 3-B" för **H1, H4, H7, H10 HIGH-fynd** från fixes.txt (som ännu inte är påbörjade). För att undvika namnkonflikt benämns våra genomförda slices nu **"Sprint 3-A follow-up"** (3A.fu.1, 3A.fu.2 osv) i dokumentationen. Backlog-doc:s Sprint 3-B (H1-H10) är fortfarande pending och separat.
 
 ### Nuvarande risknivå
 
@@ -60,9 +77,10 @@ sections:
 
 ### Varför sprinten pausades
 
-- Slice 1+2 nått "trusted external tester"-mognad utan att kräva Slice 3.
-- Slice 3 (AI cost-control, ~10-13h) bedöms inte akut innan beslut om publik demo eller prod-launch.
-- Naturlig stopp-punkt med samlat dokumentationspaket — möjliggör fokus på andra produkt-prioriteringar.
+- Sprint 3-A komplett: alla 4 CRITICAL stängda och verifierade live.
+- Sprint 3-A follow-up HIGH-segment komplett: 3 av 6 follow-up-slices klara (alla HIGH-prio).
+- Återstående follow-up-slices (3A.fu.4 originalName-sanering, 3A.fu.5 prod-bucket-parity, 3A.fu.6 dev-fallback fail-loud) klassade MEDIUM/LOW — kan göras senare eller i samband med 3-B.
+- Naturlig pause-point med samlat dokumentationspaket. `staging` är säkrat för fortsatt extern testning och iOS native-rebuild kan fortsätta utan blockerare.
 
 ## 2. Completed Work
 
@@ -91,7 +109,16 @@ sections:
 
 | Commit | Beskrivning | Slice |
 |---|---|---|
-| `ee039de5` | docs(security): close hardening sprint with audit and roadmap | Closure |
+| `a2ba326b` | Merge PR #339: fix(security): restrict service uploads to provider namespace | 3A.fu.3 |
+| `9e6cb2a7` | Merge PR #338: fix: validate bookingId UUID in message routes | 3A.fu.2 |
+| `46483ac5` | docs: add Sprint 3-A security remediation retrospective | 3-A closure |
+| `30052a37` | Merge PR #337: fix: prevent upload path traversal (C3) | 3-A C3 |
+| `3b0f0b01` | fix: allow booking for customers with existing relationship | 3-A C2.3 hotfix |
+| `584a4d68` | fix(security): C2.2 surface CUSTOMER_NOT_LINKED as 403 in series and manual routes | 3-A C2.2 |
+| `1e65298f` | test(security): C1.4 verify booking-service fails closed on GhostUserError | 3-A C1.4 |
+| `8c9ee9fa` | fix(security): reject push token ownership conflicts | 3-A C4 |
+| `d3467e83` | docs(security): add sprint continuity and re-entry guide | Continuity |
+| `ee039de5` | docs(security): close hardening sprint with audit and roadmap | Slice 1+2 closure |
 | `a42a81c6` | test(payment): lock in ownership invariant | S-8 |
 | `ccce1df5` | fix(admin): redirect anonymous admin access to login | S-4 hotfix |
 | `7639a4d2` | fix(admin): guard admin UI server-side | S-4 |
@@ -99,12 +126,24 @@ sections:
 | `d9dc2063` | fix(demo): block outbound emails in demo mode | Slice 0 (förberedande) |
 | `a47ef40b` | docs(demo): add provider demo capability audit | Slice 0 (audit) |
 
-**Alla commits på `staging`-branch. Inga på `main`.**
+**Alla commits på `staging`-branch. Inga på `main`.** Inga prod-deploys utfärdade.
 
 ## 3. Open Security Backlog
 
+### Sprint 3-A follow-up — kvarvarande slices
+
 | # | Tema | Severity | Effort | Priority |
 |---|---|---|---|---|
+| **3A.fu.4** | Sanera `Upload.originalName` (truncate + strip control chars + null bytes) | MEDIUM | 30 min | Defense-in-depth, ingen känd exploit |
+| **3A.fu.5** | Bucket-parity prod ↔ staging för `equinet-uploads` (5 MB limit + MIME-restrict) | MEDIUM | 10 min ändring + verifiering | **TOUCHES PRODUCTION** — kräver godkännande + fönster |
+| **3A.fu.6** | Dev-fallback fail-loud i NODE_ENV=production | LOW | 20 min | Hygien |
+
+### Övriga öppna fynd (från fixes.txt och tidigare audits)
+
+| # | Tema | Severity | Effort | Priority |
+|---|---|---|---|---|
+| **Sprint 3-B (H1, H4, H7, H10)** | HIGH-fynd från fixes.txt — separat sprint enligt remediation-backlog | HIGH | 5h | **BLOCKER** för prod-merge |
+| **Sprint 3-C (H2, H3, H5, H6, H8, H9, M11)** | Defense-in-depth pass | HIGH/MED | 9h | Innan publik demo eller prod-launch |
 | **S-1** | AI cost-control — per-user daily token budget med Redis-counter | HIGH | 4-6h | **BLOCKER** för publik demo eller prod |
 | **S-3** | Per-user AI rate-limit alongside IP-limit | HIGH | 3-4h | **BLOCKER** för publik demo eller prod |
 | **Manuell-1** | Riktig admin → `/admin` flow live-test | — | 5 min | **BLOCKER** för prod-merge |
@@ -202,7 +241,17 @@ sections:
 
 ## 6. Recommended Next Sprint
 
-### Sprint 3 — AI cost-control och observability (om triggas)
+### Tre möjliga val (uppdaterad 2026-05-18 efter Sprint 3-A + 3-A follow-up HIGH)
+
+| Val | Vad | Effort | När det är rätt |
+|---|---|---|---|
+| **A** | Fortsätt Sprint 3-A follow-up: 3A.fu.4 originalName-sanering | ~30 min | Om du vill stänga MEDIUM-watch-items innan kontextbyte. Lågrisk slice, minimal-diff |
+| **B** | Pausa remediation, kör retro för Sprint 3-A follow-up | ~30-60 min | Om du vill konsolidera lärdomar från 3 follow-up-slices innan nästa fas. Naturlig pause-point |
+| **C** | Gå vidare till Sprint 3-B (H1, H4, H7, H10 HIGH-fynd från fixes.txt) | 5h | Om prod-merge planeras nästa. Detta är BLOCKER för prod enligt remediation-backlog |
+
+**Default-rekommendation:** **Val B (retro)** — vi har genomfört 3 slices över olika domäner (bucket-infra, message-routes, upload-ownership) och en retro fångar process-lärdomar (post-3A scope-naming, MCP-target-säkerhet, smoke-via-Playwright-mönster) som annars förfaller. 3A.fu.4-6 har låg risk att förfalla; H1-H10 har sin egen sprint-plan i remediation-backlog.
+
+### Sprint 3-D (AI cost-control och observability, original Slice 3, om triggas)
 
 **Mål:** Stänga AI cost-abuse-yta + grundläggande observability för att möjliggöra publik demo eller prod-launch.
 
