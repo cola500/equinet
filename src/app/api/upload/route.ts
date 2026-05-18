@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { validateFile, uploadFile } from "@/lib/supabase-storage"
+import { sanitizeOriginalName } from "@/lib/sanitize"
 
 const VALID_BUCKETS = ["avatars", "horses", "services", "verifications"] as const
 type UploadBucket = (typeof VALID_BUCKETS)[number]
@@ -187,7 +188,7 @@ export async function POST(request: NextRequest) {
         path,
         url,
         mimeType: file.type,
-        originalName: file.name || null,
+        originalName: sanitizeOriginalName(file.name),
         sizeBytes: file.size,
         ...(bucket === "verifications" ? { verificationId: entityId } : {}),
       },

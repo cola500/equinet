@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { validateFile, uploadFile } from "@/lib/supabase-storage"
+import { sanitizeOriginalName } from "@/lib/sanitize"
 
 export async function POST(request: NextRequest) {
   const clientIp = getClientIP(request)
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
         path,
         url,
         mimeType: file.type,
-        originalName: file.name || null,
+        originalName: sanitizeOriginalName(file.name),
         sizeBytes: file.size,
       },
     })
