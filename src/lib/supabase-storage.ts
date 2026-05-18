@@ -29,6 +29,27 @@ interface UploadError {
 
 let supabaseClient: SupabaseClient | null = null
 
+/**
+ * Defense-in-depth guard against path traversal in storage paths.
+ * Callers should always derive `fileName` from server-controlled data
+ * (entity IDs, timestamps, MIME-mapped extensions), but this helper
+ * provides a fail-loud check in case a user-controlled value slips through.
+ */
+export function assertSafeStorageFileName(fileName: string): void {
+  if (
+    typeof fileName !== "string" ||
+    fileName.length === 0 ||
+    fileName.length > 255 ||
+    fileName.startsWith(".") ||
+    fileName.includes("/") ||
+    fileName.includes("\\") ||
+    fileName.includes("..") ||
+    fileName.includes("\x00")
+  ) {
+    throw new Error("INVALID_FILENAME")
+  }
+}
+
 function getSupabase(): SupabaseClient | null {
   if (supabaseClient) return supabaseClient
 
@@ -77,6 +98,7 @@ export async function uploadFile(
   fileName: string,
   mimeType: string
 ): Promise<{ data?: UploadResult; error?: UploadError }> {
+  assertSafeStorageFileName(fileName)
   const supabase = getSupabase()
 
   if (!supabase) {
@@ -260,7 +282,9 @@ export async function uploadMessageAttachment(
   mimeType: string
 ): Promise<string> {
   const ext = MIME_TO_EXT[mimeType] ?? 'jpg'
-  const path = `${bookingId}/${messageId}.${ext}`
+  const leaf = `${messageId}.${ext}`
+  assertSafeStorageFileName(leaf)
+  const path = `${bookingId}/${leaf}`
   const supabase = getSupabase()
 
   if (!supabase) {
