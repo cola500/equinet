@@ -119,3 +119,5 @@ supabase/.linked/
 # Playwright HTML reports + traces (regenererbara, stora, lint-trigger)
 docs/metrics/e2e-visual/**/report/
 docs/metrics/e2e-visual/**/traces/
+
+.mcp.json
