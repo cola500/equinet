@@ -43,6 +43,9 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
       create: vi.fn(),
     },
+    providerCustomer: {
+      findUnique: vi.fn().mockResolvedValue({ id: 'link-1' }),
+    },
     notification: {
       create: vi.fn(),
     },

@@ -19,6 +19,7 @@ export function mapBookingErrorToStatus(error: BookingError): number {
       return 500
     case 'NEW_CUSTOMER_NOT_ACCEPTED':
     case 'RESCHEDULE_DISABLED':
+    case 'CUSTOMER_NOT_LINKED':
       return 403
     case 'BOOKING_NOT_FOUND':
       return 404
@@ -69,6 +70,8 @@ export function mapBookingErrorToMessage(error: BookingError): string {
       return 'Denna leverantör tar för närvarande inte emot nya kunder'
     case 'RESCHEDULE_DISABLED':
       return 'Ombokning är inte tillåten för denna leverantör'
+    case 'CUSTOMER_NOT_LINKED':
+      return 'Kunden är inte registrerad hos dig. Lägg till kunden först.'
     case 'RESCHEDULE_WINDOW_PASSED':
       return `Ombokning måste ske minst ${error.hoursRequired} timmar före bokningen`
     case 'MAX_RESCHEDULES_REACHED':

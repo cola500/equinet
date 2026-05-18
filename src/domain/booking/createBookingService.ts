@@ -108,5 +108,18 @@ export function createBookingService(): BookingService {
         email: data.email,
       })
     },
+    // C2: dependencies for customer-ownership validation in createManualBooking
+    findProviderCustomerLink: async (providerId, customerId) => {
+      return prisma.providerCustomer.findUnique({
+        where: { providerId_customerId: { providerId, customerId } },
+        select: { id: true },
+      })
+    },
+    findUserForLink: async (id) => {
+      return prisma.user.findUnique({
+        where: { id },
+        select: { isManualCustomer: true },
+      })
+    },
   })
 }

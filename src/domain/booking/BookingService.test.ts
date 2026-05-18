@@ -53,6 +53,11 @@ describe('BookingService', () => {
       getService: mockGetService,
       getProvider: mockGetProvider,
       getRouteOrder: mockGetRouteOrder,
+      // C2 default: customer is linked to provider so existing manual-booking
+      // happy-path tests keep passing. Individual tests override these to
+      // exercise the CUSTOMER_NOT_LINKED branch.
+      findProviderCustomerLink: vi.fn().mockResolvedValue({ id: 'link-1' }),
+      findUserForLink: vi.fn().mockResolvedValue({ isManualCustomer: false }),
     }
 
     service = new BookingService(deps)
@@ -1025,6 +1030,96 @@ describe('BookingService', () => {
 
       expect(result.isFailure).toBe(true)
       expect(result.error.type).toBe('GHOST_USER_CREATION_FAILED')
+    })
+
+    // C2 invariant: customerId passed from the caller (booking-series or
+    // bookings/manual route) must belong to either a providerCustomer link
+    // OR an isManualCustomer ghost user. Anything else is a takeover vector
+    // (fixes.txt C2) and must fail closed with CUSTOMER_NOT_LINKED.
+    describe('C2 customerId ownership invariant', () => {
+      it('B1: linked customer is accepted (200)', async () => {
+        const depsWithLink: BookingServiceDeps = {
+          ...deps,
+          findProviderCustomerLink: vi.fn().mockResolvedValue({ id: 'link-1' }),
+        }
+        const svc = new BookingService(depsWithLink)
+
+        const result = await svc.createManualBooking(manualDTO)
+
+        expect(result.isSuccess).toBe(true)
+      })
+
+      it('B2: unlinked isManualCustomer user is accepted (200)', async () => {
+        const depsWithManual: BookingServiceDeps = {
+          ...deps,
+          findProviderCustomerLink: vi.fn().mockResolvedValue(null),
+          findUserForLink: vi.fn().mockResolvedValue({ isManualCustomer: true }),
+        }
+        const svc = new BookingService(depsWithManual)
+
+        const result = await svc.createManualBooking(manualDTO)
+
+        expect(result.isSuccess).toBe(true)
+      })
+
+      it('B3: unknown customerId (not linked, not manual) is rejected (CUSTOMER_NOT_LINKED)', async () => {
+        const depsUnknown: BookingServiceDeps = {
+          ...deps,
+          findProviderCustomerLink: vi.fn().mockResolvedValue(null),
+          findUserForLink: vi.fn().mockResolvedValue({ isManualCustomer: false }),
+        }
+        const svc = new BookingService(depsUnknown)
+
+        const result = await svc.createManualBooking(manualDTO)
+
+        expect(result.isFailure).toBe(true)
+        expect(result.error.type).toBe('CUSTOMER_NOT_LINKED')
+      })
+
+      it('B4: customerName ghost-user path is not subject to link validation', async () => {
+        // Ghost-user path is already protected by C1.1 (GhostUserError on
+        // registered emails). Link validation must NOT run for this path
+        // because no customerId is known until createGhostUser succeeds.
+        const findLink = vi.fn().mockResolvedValue(null)
+        const findUserForLink = vi.fn().mockResolvedValue({ isManualCustomer: false })
+        const depsGhost: BookingServiceDeps = {
+          ...deps,
+          createGhostUser: mockCreateGhostUser,
+          findProviderCustomerLink: findLink,
+          findUserForLink,
+        }
+        const svc = new BookingService(depsGhost)
+
+        const dto: CreateManualBookingDTO = {
+          providerId: 'provider-1',
+          serviceId: 'service-1',
+          bookingDate: new Date('2025-02-01'),
+          startTime: '10:00',
+          customerName: 'New Customer',
+        }
+
+        const result = await svc.createManualBooking(dto)
+
+        expect(result.isSuccess).toBe(true)
+        expect(findLink).not.toHaveBeenCalled()
+      })
+
+      it('B5 (defense-in-depth): missing deps fail closed', async () => {
+        // If a future factory forgets to inject link-validation deps, the
+        // service must reject customerId-based manual bookings rather than
+        // silently allowing them.
+        const depsNoValidation: BookingServiceDeps = {
+          ...deps,
+          findProviderCustomerLink: undefined,
+          findUserForLink: undefined,
+        }
+        const svc = new BookingService(depsNoValidation)
+
+        const result = await svc.createManualBooking(manualDTO)
+
+        expect(result.isFailure).toBe(true)
+        expect(result.error.type).toBe('CUSTOMER_NOT_LINKED')
+      })
     })
 
     // C1.4 invariant: createGhostUser throws GhostUserError when the email
