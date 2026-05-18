@@ -59,6 +59,24 @@ export async function POST(request: NextRequest) {
 
     const data = deviceTokenSchema.parse(body)
 
+    // C4 invariant: token uniqueness is per-token globally, but ownership
+    // must not transfer silently between users. If the token already belongs
+    // to a different user, fail closed (409) instead of re-pointing the row.
+    const existingToken = await prisma.deviceToken.findUnique({
+      where: { token: data.token },
+      select: { userId: true },
+    })
+    if (existingToken && existingToken.userId !== authUser.id) {
+      logger.security("Device token ownership conflict rejected", "medium", {
+        callerUserId: authUser.id,
+        existingOwnerUserId: existingToken.userId,
+      })
+      return NextResponse.json(
+        { error: "Token tillhör en annan användare" },
+        { status: 409 }
+      )
+    }
+
     // Limit device tokens per user (prevent resource exhaustion)
     const existingCount = await prisma.deviceToken.count({
       where: { userId: authUser.id },

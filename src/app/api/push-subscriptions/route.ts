@@ -40,6 +40,24 @@ export async function POST(request: NextRequest) {
 
     const validated = subscriptionSchema.parse(body)
 
+    // C4 invariant: endpoint uniqueness is per-endpoint globally, but ownership
+    // must not transfer silently between users. If the endpoint already belongs
+    // to a different user, fail closed (409) instead of re-pointing the row.
+    const existingSubscription = await prisma.pushSubscription.findUnique({
+      where: { endpoint: validated.endpoint },
+      select: { userId: true },
+    })
+    if (existingSubscription && existingSubscription.userId !== session.user.id) {
+      logger.security("Push-subscription ownership conflict rejected", "medium", {
+        callerUserId: session.user.id,
+        existingOwnerUserId: existingSubscription.userId,
+      })
+      return NextResponse.json(
+        { error: "Endpoint tillhör en annan användare" },
+        { status: 409 }
+      )
+    }
+
     // Limit subscriptions per user (prevent resource exhaustion)
     const existingCount = await prisma.pushSubscription.count({
       where: { userId: session.user.id },
