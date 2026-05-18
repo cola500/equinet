@@ -194,4 +194,32 @@ describe("DELETE /api/native/customers/[customerId]", () => {
     const res = await DELETE(createDeleteRequest(), routeContext)
     expect(res.status).toBe(500)
   })
+
+  describe("demo-mode guard", () => {
+    beforeEach(() => {
+      vi.unstubAllEnvs()
+    })
+
+    it("returns 403 in demo mode without touching the database", async () => {
+      vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true")
+
+      const res = await DELETE(createDeleteRequest(), routeContext)
+
+      expect(res.status).toBe(403)
+      const body = await res.json()
+      expect(body.error).toBe("Borttagning är inaktiverad i demoläge")
+      expect(mockFindLink).not.toHaveBeenCalled()
+      expect(mockDeleteLink).not.toHaveBeenCalled()
+      expect(mockDeleteUser).not.toHaveBeenCalled()
+    })
+
+    it("still requires auth in demo mode (401 wins over 403)", async () => {
+      vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true")
+      mockAuth.mockResolvedValue(null)
+
+      const res = await DELETE(createDeleteRequest(), routeContext)
+
+      expect(res.status).toBe(401)
+    })
+  })
 })

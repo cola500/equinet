@@ -10,7 +10,7 @@ vi.mock("@/hooks/useOnlineStatus", () => ({
 }))
 
 vi.mock("@/components/providers/FeatureFlagProvider", () => ({
-  useFeatureFlag: vi.fn(() => true),
+  useFeatureFlag: vi.fn((flag: string) => flag !== "demo_mode"),
 }))
 
 vi.mock("@/components/layout/ProviderLayout", () => ({
@@ -22,7 +22,7 @@ vi.mock("@/hooks/useRouteOrders", () => ({
 }))
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }))
 
 vi.mock("next/dynamic", () => ({
