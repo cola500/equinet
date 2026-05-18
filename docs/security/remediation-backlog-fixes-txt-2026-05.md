@@ -1,6 +1,6 @@
 ---
 title: Remediation Backlog — fixes.txt findings 2026-05
-description: Sprintplan för 39 fynd från fixes.txt-djupauditen (2026-05-18). Sprint 3-A KLAR + Sprint 3-A follow-up HIGH KLART. Sprint 3-B/C/D/E pending. Korsrefererad med vår tidigare S-numrering från staging-security-audit-2026-05.md.
+description: Sprintplan för 39 fynd från fixes.txt-djupauditen (2026-05-18). Sprint 3-A KLAR + Sprint 3-A follow-up HIGH + 3A.fu.4 (MEDIUM) KLART. Sprint 3-B/C/D/E pending. Korsrefererad med vår tidigare S-numrering från staging-security-audit-2026-05.md.
 category: security
 status: active
 last_updated: 2026-05-18
@@ -38,7 +38,7 @@ sections:
 | Sprint | Scope | Effort | Trigger | Status |
 |---|---|---|---|---|
 | **3-A** | C1-C4 CRITICAL hotfixes | 5-8h | Innan extern testare-tillgång eller staging→main merge | ✅ **KLAR** (live på staging) |
-| **3-A follow-up** | Watch-items från Sprint 3-A retro: V4, services-bucket ownership, message-attachments-bucket-verifiering, originalName-sanering, prod-bucket-parity, dev-fallback-härdning | ~2h klart + ~1h pending | Efter Sprint 3-A | ✅ **HIGH KLART** (3 av 6 slices: 3A.fu.1-3). MEDIUM/LOW pending: 3A.fu.4-6 |
+| **3-A follow-up** | Watch-items från Sprint 3-A retro: V4, services-bucket ownership, message-attachments-bucket-verifiering, originalName-sanering, prod-bucket-parity, dev-fallback-härdning | ~3h klart + ~30 min pending | Efter Sprint 3-A | ✅ **HIGH + MEDIUM-1 KLART** (4 av 6 slices: 3A.fu.1-4). Pending: 3A.fu.5 (prod-touch, separat approval), 3A.fu.6 (LOW hygien) |
 | **3-B** | H1, H4, H7, H10 — focused HIGH-fixes | 5h | Innan prod-merge | ⏸ pending |
 | **3-C** | H2, H3, H5, H6, H8, H9, M11 — defense-in-depth | 9h | Innan publik demo eller prod-launch | ⏸ pending |
 | **3-D** | S-1, S-3 — AI cost-control (original Slice 3) | 10-13h | Vid AI-cost-spike eller publik demo | ⏸ pending |
@@ -202,12 +202,20 @@ Varje fynd är en isolerad fil-ändring. `git revert <commit>` per fynd. Kombine
 
 **Out of scope (Option B/C):** Ingen DB-cross-reference, ingen automatisk `Service.imageUrl`-koppling. Provider-beslut 2026-05-18: namespace-prefix-tolkning (Option A) bekräftad.
 
-### 3A.fu.4 — Sanera `Upload.originalName` ⏸ pending
+### 3A.fu.4 — Sanera `Upload.originalName` ✅
 
 **Severity:** MEDIUM (defense-in-depth, ingen känd exploit).
-**Effort:** ~30 min.
-**Surface:** `src/app/api/upload/route.ts:181`, `src/app/api/native/provider/upload/route.ts:104`.
-**Approach:** Truncate till ≤255 chars + strippa kontrolltecken (`\x00-\x1f`) innan `prisma.upload.create`. Befintliga consumers (`/provider/verification/page.tsx`) är React-eskaperade → ingen aktuell XSS-väg, men framtida `dangerouslySetInnerHTML`-renderers skulle exponera vektor.
+**Effort:** ~30 min (faktiskt).
+**Commit:** `3cb3b226` (direkt på staging, deploy READY 2026-05-18).
+**Filer (4):**
+- `src/lib/sanitize.ts` (+`sanitizeOriginalName`-wrapper som återanvänder befintlig `sanitizeFileName` + null-hantering)
+- `src/lib/sanitize.test.ts` (+7 regression-tester: normal, traversal, control chars/newlines, 255-clamp, unicode/svenska, null-cases, header-injection-mönster)
+- `src/app/api/upload/route.ts` (1 ersättning `file.name || null` → `sanitizeOriginalName(file.name)`)
+- `src/app/api/native/provider/upload/route.ts` (samma ersättning)
+
+**Resultat:** Path-segment, kontrolltecken, newlines, null-bytes och extrem längd (>255) saniteras vid lagring. Unicode (svenska å/ä/ö, CJK) bevaras. Befintliga konsumenter (`provider/verification/page.tsx`) oförändrade — React fortsätter att auto-eskapera vid rendering.
+
+**Out of scope:** Migration av befintliga DB-rader. Nya uploads får saniterat metadata; gamla rader kvarstår oförändrat.
 
 ### 3A.fu.5 — Bucket-parity prod ↔ staging för `equinet-uploads` ⏸ pending
 

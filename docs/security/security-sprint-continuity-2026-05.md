@@ -1,6 +1,6 @@
 ---
 title: Security Sprint Continuity 2026-05
-description: Konsoliderad re-entry-doc för Security Hardening-arbetet. Sprint 3-A klar + 3-A follow-up HIGH klart 2026-05-18. När sprinten återupptas — börja här.
+description: Konsoliderad re-entry-doc för Security Hardening-arbetet. Sprint 3-A klar + 3-A follow-up HIGH klart + 3A.fu.4 (MEDIUM) klart 2026-05-18. När sprinten återupptas — börja här.
 category: security
 status: active
 last_updated: 2026-05-18
@@ -36,8 +36,8 @@ sections:
 
 ## 1. Current State Summary
 
-**Sprint-status:** PAUSAD efter Sprint 3-A + Sprint 3-A follow-up (HIGH-prio slices) (2026-05-18).
-**Branch:** `staging` synkad med `origin/staging` (senaste commit `a2ba326b`).
+**Sprint-status:** PAUSAD efter Sprint 3-A + Sprint 3-A follow-up (HIGH + 3A.fu.4 MEDIUM) (2026-05-18).
+**Branch:** `staging` synkad med `origin/staging` (senaste commit `3cb3b226`, deploy READY).
 **Main/prod:** **Oberörd** — inga säkerhetsfixar mergade till `main` ännu, ingen prod-deploy utfärdad.
 **Demo Maturity:** TRUSTED EXTERNAL TESTER READY (alla 4 CRITICAL stängda).
 
@@ -60,6 +60,9 @@ sections:
 - 3A.fu.1 — Verifierad `message-attachments`-bucket existerar i staging-Supabase (smoke 201, ingen kodändring).
 - 3A.fu.2 — UUID-validera `bookingId` i 3 messages-routes (POST/GET messages, PATCH read, POST attachments), PR #338 mergat som `9e6cb2a7`.
 - 3A.fu.3 — Services-bucket ownership: `entityId === session.user.providerId` exact match, PR #339 mergat som `a2ba326b`.
+
+**Sprint 3-A follow-up (MEDIUM, 2026-05-18):**
+- 3A.fu.4 — Sanera `Upload.originalName` via `sanitizeOriginalName`-wrapper (trim, kontrolltecken, path-separator, 255-clamp), 2 upload-routes integrerade, 7 nya tester. Direkt commit `3cb3b226` på staging, deploy READY.
 
 ### Naming-clarification
 
@@ -109,6 +112,8 @@ Vår tidigare interna planering kallade follow-up-slices "Sprint 3-B (3B.1, 3B.2
 
 | Commit | Beskrivning | Slice |
 |---|---|---|
+| `3cb3b226` | fix(security): sanitize upload original names | 3A.fu.4 |
+| `67567699` | docs(security): add 3a follow-up retro and continuity updates | Continuity |
 | `a2ba326b` | Merge PR #339: fix(security): restrict service uploads to provider namespace | 3A.fu.3 |
 | `9e6cb2a7` | Merge PR #338: fix: validate bookingId UUID in message routes | 3A.fu.2 |
 | `46483ac5` | docs: add Sprint 3-A security remediation retrospective | 3-A closure |
@@ -134,9 +139,9 @@ Vår tidigare interna planering kallade follow-up-slices "Sprint 3-B (3B.1, 3B.2
 
 | # | Tema | Severity | Effort | Priority |
 |---|---|---|---|---|
-| **3A.fu.4** | Sanera `Upload.originalName` (truncate + strip control chars + null bytes) | MEDIUM | 30 min | Defense-in-depth, ingen känd exploit |
-| **3A.fu.5** | Bucket-parity prod ↔ staging för `equinet-uploads` (5 MB limit + MIME-restrict) | MEDIUM | 10 min ändring + verifiering | **TOUCHES PRODUCTION** — kräver godkännande + fönster |
-| **3A.fu.6** | Dev-fallback fail-loud i NODE_ENV=production | LOW | 20 min | Hygien |
+| ~~3A.fu.4~~ | ~~Sanera `Upload.originalName`~~ | — | — | ✅ KLAR — commit `3cb3b226`, staging deploy READY |
+| **3A.fu.5** | Bucket-parity prod ↔ staging för `equinet-uploads` (5 MB limit + MIME-restrict) | MEDIUM | 10 min ändring + verifiering | **TOUCHES PRODUCTION** — kräver separat godkännande + fönster |
+| **3A.fu.6** | Dev-fallback fail-loud i NODE_ENV=production | LOW | 20 min | Hygien — kan vänta |
 
 ### Övriga öppna fynd (från fixes.txt och tidigare audits)
 
