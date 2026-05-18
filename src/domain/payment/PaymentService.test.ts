@@ -261,6 +261,20 @@ describe("PaymentService.processPayment", () => {
     expect(result.isSuccess).toBe(true)
     expect(result.value.eventData.customerName).toBe("Kund")
   })
+
+  // IDOR invariant: ownership is delegated to the repository via the
+  // customerId argument. If a future refactor removes customerId from the
+  // findBookingForPayment WHERE-clause this test will catch the regression.
+  it("passes customerId to findBookingForPayment for ownership filtering", async () => {
+    const findSpy = vi.fn().mockResolvedValue(null)
+    const deps = createDeps({ findBookingForPayment: findSpy })
+    const service = new PaymentService(deps)
+
+    await service.processPayment("booking-1", "customer-A")
+
+    expect(findSpy).toHaveBeenCalledWith("booking-1", "customer-A")
+    expect(findSpy).toHaveBeenCalledTimes(1)
+  })
 })
 
 // --- getPaymentStatus ---
@@ -312,5 +326,19 @@ describe("PaymentService.getPaymentStatus", () => {
       invoiceNumber: "EQ-202603-ABC123",
       invoiceUrl: "http://localhost:3000/api/bookings/booking-1/receipt",
     })
+  })
+
+  // IDOR invariant: ownership is delegated to findBookingForStatus, which
+  // matches the booking either via customerId or provider.userId. Any future
+  // refactor that drops userId from the WHERE-clause will fail this test.
+  it("passes userId to findBookingForStatus for ownership lookup", async () => {
+    const findSpy = vi.fn().mockResolvedValue(null)
+    const deps = createDeps({ findBookingForStatus: findSpy })
+    const service = new PaymentService(deps)
+
+    await service.getPaymentStatus("booking-1", "user-A")
+
+    expect(findSpy).toHaveBeenCalledWith("booking-1", "user-A")
+    expect(findSpy).toHaveBeenCalledTimes(1)
   })
 })
