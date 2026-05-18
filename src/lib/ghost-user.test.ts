@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { createGhostUser } from './ghost-user'
+import { createGhostUser, GhostUserError } from './ghost-user'
 import { prisma } from '@/lib/prisma'
 
 vi.mock('@/lib/prisma', () => ({
@@ -64,9 +64,10 @@ describe('createGhostUser', () => {
     })
   })
 
-  it('should reuse existing user when email matches', async () => {
+  it('should reuse existing user when email matches and target is a manual customer', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: 'existing-user-id',
+      isManualCustomer: true,
     } as never)
 
     const userId = await createGhostUser({
@@ -75,6 +76,27 @@ describe('createGhostUser', () => {
     })
 
     expect(userId).toBe('existing-user-id')
+    expect(prisma.user.create).not.toHaveBeenCalled()
+  })
+
+  // C1 invariant: ghost-user reuse must NOT silently link a registered user
+  // to a provider. Only manual-customer rows may be reused; everything else
+  // must fail closed (EMAIL_BELONGS_TO_REGISTERED_USER) to prevent the
+  // account-takeover vector described in fixes.txt C1.
+  it('should throw EMAIL_BELONGS_TO_REGISTERED_USER when email matches a registered user', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: 'registered-user-id',
+      isManualCustomer: false,
+    } as never)
+
+    await expect(
+      createGhostUser({ firstName: 'Anna', email: 'real@user.com' })
+    ).rejects.toBeInstanceOf(GhostUserError)
+
+    await expect(
+      createGhostUser({ firstName: 'Anna', email: 'real@user.com' })
+    ).rejects.toMatchObject({ code: 'EMAIL_BELONGS_TO_REGISTERED_USER' })
+
     expect(prisma.user.create).not.toHaveBeenCalled()
   })
 
