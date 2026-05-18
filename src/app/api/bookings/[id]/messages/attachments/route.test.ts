@@ -96,7 +96,7 @@ function makeAuthUser(overrides = {}) {
 
 function makeBooking(overrides = {}) {
   return {
-    id: 'booking-1',
+    id: 'b0000000-0000-4000-b000-000000000001',
     customerId: 'customer-user-1',
     providerId: 'provider-1',
     providerUserId: 'provider-user-1',
@@ -164,32 +164,32 @@ describe('POST /api/bookings/[id]/messages/attachments', () => {
 
   it('returns 401 when not authenticated', async () => {
     vi.mocked(getAuthUser).mockResolvedValue(null)
-    const req = makeFormDataRequest('booking-1')
-    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    const req = makeFormDataRequest('b0000000-0000-4000-b000-000000000001')
+    const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
     expect(res.status).toBe(401)
   })
 
   it('returns 404 when messaging feature is disabled', async () => {
     vi.mocked(getAuthUser).mockResolvedValue(makeAuthUser() as never)
     vi.mocked(isFeatureEnabled).mockResolvedValue(false)
-    const req = makeFormDataRequest('booking-1')
-    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    const req = makeFormDataRequest('b0000000-0000-4000-b000-000000000001')
+    const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
     expect(res.status).toBe(404)
   })
 
   it('returns 429 when rate limited', async () => {
     vi.mocked(getAuthUser).mockResolvedValue(makeAuthUser() as never)
     vi.mocked(rateLimiters.messageUpload).mockResolvedValue(false)
-    const req = makeFormDataRequest('booking-1')
-    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    const req = makeFormDataRequest('b0000000-0000-4000-b000-000000000001')
+    const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
     expect(res.status).toBe(429)
   })
 
   it('returns 404 when booking not found or not owned by user', async () => {
     vi.mocked(getAuthUser).mockResolvedValue(makeAuthUser() as never)
     vi.mocked(loadBookingForMessaging).mockResolvedValue(null)
-    const req = makeFormDataRequest('booking-1')
-    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    const req = makeFormDataRequest('b0000000-0000-4000-b000-000000000001')
+    const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
     expect(res.status).toBe(404)
   })
 
@@ -201,7 +201,7 @@ describe('POST /api/bookings/[id]/messages/attachments', () => {
       method: 'POST',
       body: formData,
     })
-    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
     expect(res.status).toBe(400)
   })
 
@@ -212,8 +212,8 @@ describe('POST /api/bookings/[id]/messages/attachments', () => {
       code: 'INVALID_TYPE',
       message: 'Filtypen stöds inte.',
     })
-    const req = makeFormDataRequest('booking-1', 'data', 'application/pdf')
-    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    const req = makeFormDataRequest('b0000000-0000-4000-b000-000000000001', 'data', 'application/pdf')
+    const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
     expect(res.status).toBe(400)
     const data = await res.json()
     expect(data.error).toContain('Filtypen')
@@ -222,8 +222,8 @@ describe('POST /api/bookings/[id]/messages/attachments', () => {
   it('returns 201 with message data on success', async () => {
     vi.mocked(getAuthUser).mockResolvedValue(makeAuthUser() as never)
     vi.mocked(loadBookingForMessaging).mockResolvedValue(makeBooking() as never)
-    const req = makeFormDataRequest('booking-1')
-    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    const req = makeFormDataRequest('b0000000-0000-4000-b000-000000000001')
+    const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
     expect(res.status).toBe(201)
     const data = await res.json()
     expect(data.attachmentUrl).toBe('booking-1/msg-abc.jpg')
@@ -234,8 +234,8 @@ describe('POST /api/bookings/[id]/messages/attachments', () => {
     vi.mocked(getAuthUser).mockResolvedValue(makeAuthUser() as never)
     vi.mocked(loadBookingForMessaging).mockResolvedValue(makeBooking() as never)
     vi.mocked(uploadMessageAttachment).mockRejectedValue(new Error('Upload failed'))
-    const req = makeFormDataRequest('booking-1')
-    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    const req = makeFormDataRequest('b0000000-0000-4000-b000-000000000001')
+    const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
     expect(res.status).toBe(500)
     expect(mockRepo.deleteMessage).toHaveBeenCalledWith('msg-abc')
   })
@@ -244,8 +244,8 @@ describe('POST /api/bookings/[id]/messages/attachments', () => {
     vi.mocked(getAuthUser).mockResolvedValue(makeAuthUser({ userType: 'provider' }) as never)
     vi.mocked(loadBookingForMessaging).mockResolvedValue(makeBooking() as never)
     mockRepo.createMessage.mockResolvedValue(makeMessage({ senderType: 'PROVIDER' }))
-    const req = makeFormDataRequest('booking-1')
-    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    const req = makeFormDataRequest('b0000000-0000-4000-b000-000000000001')
+    const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
     expect(res.status).toBe(201)
   })
 
@@ -253,8 +253,8 @@ describe('POST /api/bookings/[id]/messages/attachments', () => {
     vi.mocked(getAuthUser).mockResolvedValue(makeAuthUser() as never)
     vi.mocked(loadBookingForMessaging).mockResolvedValue(makeBooking() as never)
     const overLimit = 10 * 1024 * 1024 + 1
-    const req = makeRequestWithContentLength('booking-1', overLimit)
-    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    const req = makeRequestWithContentLength('b0000000-0000-4000-b000-000000000001', overLimit)
+    const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
     expect(res.status).toBe(413)
   })
 
@@ -265,8 +265,8 @@ describe('POST /api/bookings/[id]/messages/attachments', () => {
       code: 'TOO_LARGE',
       message: 'Filen är för stor. Max 10 MB.',
     })
-    const req = makeFormDataRequest('booking-1')
-    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    const req = makeFormDataRequest('b0000000-0000-4000-b000-000000000001')
+    const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
     expect(res.status).toBe(413)
   })
 
@@ -277,8 +277,8 @@ describe('POST /api/bookings/[id]/messages/attachments', () => {
       code: 'MAGIC_BYTES_MISMATCH',
       message: 'Filinnehållet matchar inte det deklarerade formatet.',
     })
-    const req = makeFormDataRequest('booking-1')
-    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    const req = makeFormDataRequest('b0000000-0000-4000-b000-000000000001')
+    const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
     expect(res.status).toBe(400)
     const data = await res.json()
     expect(data.error).toContain('matchar inte')
@@ -289,8 +289,8 @@ describe('POST /api/bookings/[id]/messages/attachments', () => {
     vi.mocked(rateLimiters.messageUpload).mockRejectedValue(
       new RateLimitServiceError('Redis unavailable')
     )
-    const req = makeFormDataRequest('booking-1')
-    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    const req = makeFormDataRequest('b0000000-0000-4000-b000-000000000001')
+    const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
     expect(res.status).toBe(503)
   })
 
@@ -299,9 +299,26 @@ describe('POST /api/bookings/[id]/messages/attachments', () => {
     vi.mocked(loadBookingForMessaging).mockResolvedValue(makeBooking() as never)
     vi.mocked(uploadMessageAttachment).mockRejectedValue(new Error('Upload failed'))
     mockRepo.deleteMessage.mockRejectedValue(new Error('DB gone'))
-    const req = makeFormDataRequest('booking-1')
-    const res = await POST(req, { params: Promise.resolve({ id: 'booking-1' }) })
+    const req = makeFormDataRequest('b0000000-0000-4000-b000-000000000001')
+    const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
     // Should still return 500, not crash
     expect(res.status).toBe(500)
+  })
+
+  // 3B.2: bookingId UUID validation
+  it('returns 400 when bookingId is not a UUID', async () => {
+    vi.mocked(getAuthUser).mockResolvedValue(makeAuthUser() as never)
+    const req = makeFormDataRequest('not-a-uuid')
+    const res = await POST(req, { params: Promise.resolve({ id: 'not-a-uuid' }) })
+    expect(res.status).toBe(400)
+    const data = await res.json()
+    expect(data.error).toBe('Ogiltigt bookingId')
+  })
+
+  it('returns 400 when bookingId contains traversal', async () => {
+    vi.mocked(getAuthUser).mockResolvedValue(makeAuthUser() as never)
+    const req = makeFormDataRequest('../../etc/passwd')
+    const res = await POST(req, { params: Promise.resolve({ id: '../../etc/passwd' }) })
+    expect(res.status).toBe(400)
   })
 })

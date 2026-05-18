@@ -66,7 +66,7 @@ const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 // Fixtures
 // -----------------------------------------------------------
 
-const BOOKING_ID = 'booking-abc-123'
+const BOOKING_ID = 'b0000000-0000-4000-b000-000000000001'
 const CUSTOMER_USER_ID = 'customer-user-111'
 const PROVIDER_USER_ID = 'provider-user-222'
 const PROVIDER_ID = 'provider-333'
@@ -179,6 +179,21 @@ describe('POST /api/bookings/[id]/messages', () => {
     const res = await POST(makeRequest({ content: 'Hej' }), { params })
     expect(res.status).toBe(429)
   })
+
+  // 3B.2: bookingId UUID validation
+  it('returns 400 when bookingId is not a UUID', async () => {
+    const badParams = Promise.resolve({ id: 'not-a-uuid' })
+    const res = await POST(makeRequest({ content: 'Hej' }), { params: badParams })
+    expect(res.status).toBe(400)
+    const data = await res.json()
+    expect(data.error).toBe('Ogiltigt bookingId')
+  })
+
+  it('returns 400 when bookingId contains traversal', async () => {
+    const badParams = Promise.resolve({ id: '../../etc/passwd' })
+    const res = await POST(makeRequest({ content: 'Hej' }), { params: badParams })
+    expect(res.status).toBe(400)
+  })
 })
 
 // -----------------------------------------------------------
@@ -255,5 +270,15 @@ describe('GET /api/bookings/[id]/messages', () => {
     expect(res.status).toBe(200)
     const data = await res.json()
     expect(data.serviceName).toBe('Bokning')
+  })
+
+  // 3B.2: bookingId UUID validation
+  it('returns 400 when bookingId is not a UUID', async () => {
+    const badParams = Promise.resolve({ id: 'not-a-uuid' })
+    const req = new NextRequest('http://localhost/api/bookings/not-a-uuid/messages', { method: 'GET' })
+    const res = await GET(req, { params: badParams })
+    expect(res.status).toBe(400)
+    const data = await res.json()
+    expect(data.error).toBe('Ogiltigt bookingId')
   })
 })
