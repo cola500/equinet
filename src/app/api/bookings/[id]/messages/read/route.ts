@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { getAuthUser } from '@/lib/auth-dual'
 import { rateLimiters } from '@/lib/rate-limit'
 import { isFeatureEnabled } from '@/lib/feature-flags'
@@ -6,6 +7,8 @@ import { logger } from '@/lib/logger'
 import { ConversationService } from '@/domain/conversation/ConversationService'
 import { loadBookingForMessaging } from '@/domain/conversation/loadBookingForMessaging'
 import { PrismaConversationRepository } from '@/infrastructure/persistence/conversation/PrismaConversationRepository'
+
+const bookingIdSchema = z.string().uuid()
 
 // -----------------------------------------------------------
 // PATCH /api/bookings/[id]/messages/read -- mark as read
@@ -27,6 +30,11 @@ export async function PATCH(
     // 2. Feature flag
     if (!(await isFeatureEnabled('messaging'))) {
       return NextResponse.json({ error: 'Ej tillgänglig' }, { status: 404 })
+    }
+
+    // 3B.2: reject non-UUID bookingId before DB/storage/service work
+    if (!bookingIdSchema.safeParse(bookingId).success) {
+      return NextResponse.json({ error: 'Ogiltigt bookingId' }, { status: 400 })
     }
 
     // 3. Rate limiting per user

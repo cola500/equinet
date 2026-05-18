@@ -61,7 +61,7 @@ const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 // Fixtures
 // -----------------------------------------------------------
 
-const BOOKING_ID = 'booking-abc-123'
+const BOOKING_ID = 'b0000000-0000-4000-b000-000000000001'
 const CUSTOMER_USER_ID = 'customer-user-111'
 const PROVIDER_USER_ID = 'provider-user-222'
 const PROVIDER_ID = 'provider-333'
@@ -145,5 +145,22 @@ describe('PATCH /api/bookings/[id]/messages/read', () => {
     const data = await res.json()
     expect(data.marked).toBeGreaterThanOrEqual(0)
     expect(mockMarkMessagesAsRead).toHaveBeenCalledWith('conv-1', 'CUSTOMER')
+  })
+
+  // 3B.2: bookingId UUID validation
+  it('returns 400 when bookingId is not a UUID', async () => {
+    const badParams = Promise.resolve({ id: 'not-a-uuid' })
+    const req = new NextRequest('http://localhost/api/bookings/not-a-uuid/messages/read', { method: 'PATCH' })
+    const res = await PATCH(req, { params: badParams })
+    expect(res.status).toBe(400)
+    const data = await res.json()
+    expect(data.error).toBe('Ogiltigt bookingId')
+  })
+
+  it('returns 400 when bookingId contains traversal', async () => {
+    const badParams = Promise.resolve({ id: '../../something' })
+    const req = new NextRequest('http://localhost/api/bookings/whatever/messages/read', { method: 'PATCH' })
+    const res = await PATCH(req, { params: badParams })
+    expect(res.status).toBe(400)
   })
 })
