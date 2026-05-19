@@ -29,6 +29,13 @@ interface UploadError {
 
 let supabaseClient: SupabaseClient | null = null
 
+// Test-only: reset the module-level Supabase client cache so unit tests
+// can exercise getSupabase() with different env configurations.
+// Production code never calls this.
+export function _resetSupabaseClientForTesting(): void {
+  supabaseClient = null
+}
+
 /**
  * Defense-in-depth guard against path traversal in storage paths.
  * Callers should always derive `fileName` from server-controlled data
@@ -57,6 +64,18 @@ function getSupabase(): SupabaseClient | null {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!url || !key) {
+    // 3A.fu.6: serverless filesystem is ephemeral and the dev fallback silently
+    // loses data. Fail loud in production-like environments so deploy misconfig
+    // surfaces immediately instead of as silent 200 with broken URLs.
+    const isProdLike =
+      process.env.NODE_ENV === "production" ||
+      process.env.VERCEL_ENV === "production" ||
+      process.env.VERCEL_ENV === "preview"
+    if (isProdLike) {
+      throw new Error(
+        "Supabase storage not configured. Required env vars: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY."
+      )
+    }
     return null
   }
 
