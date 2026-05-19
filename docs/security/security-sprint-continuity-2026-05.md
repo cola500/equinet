@@ -1,9 +1,9 @@
 ---
 title: Security Sprint Continuity 2026-05
-description: Konsoliderad re-entry-doc för Security Hardening-arbetet. Sprint 3-A klar + 3-A follow-up HIGH klart + 3A.fu.4 (MEDIUM) klart 2026-05-18. När sprinten återupptas — börja här.
+description: Konsoliderad re-entry-doc för Security Hardening-arbetet. Sprint 3-A klar + 3-A follow-up HIGH + 3A.fu.4 (MEDIUM) klart 2026-05-18. Operational seed-guard + pre-commit secret-scan klart 2026-05-19. När sprinten återupptas — börja här.
 category: security
 status: active
-last_updated: 2026-05-18
+last_updated: 2026-05-19
 tags:
   - security
   - sprint
@@ -11,8 +11,11 @@ tags:
   - re-entry
   - sprint-3a
   - sprint-3a-followup
+  - secret-scan
+  - seed-guard
 related:
   - fixes.txt
+  - pre-commit-secret-scan.md
   - remediation-backlog-fixes-txt-2026-05.md
   - staging-security-audit-2026-05.md
   - slice-1-2-retro.md
@@ -36,8 +39,8 @@ sections:
 
 ## 1. Current State Summary
 
-**Sprint-status:** PAUSAD efter Sprint 3-A + Sprint 3-A follow-up (HIGH + 3A.fu.4 MEDIUM) (2026-05-18).
-**Branch:** `staging` synkad med `origin/staging` (senaste commit `3cb3b226`, deploy READY).
+**Sprint-status:** PAUSAD efter Sprint 3-A + Sprint 3-A follow-up (HIGH + 3A.fu.4 MEDIUM) + operational seed-guard + secret-scan (2026-05-19).
+**Branch:** `staging` synkad med `origin/staging` (senaste commit `58379d3f`, deploy READY).
 **Main/prod:** **Oberörd** — inga säkerhetsfixar mergade till `main` ännu, ingen prod-deploy utfärdad.
 **Demo Maturity:** TRUSTED EXTERNAL TESTER READY (alla 4 CRITICAL stängda).
 
@@ -64,6 +67,12 @@ sections:
 **Sprint 3-A follow-up (MEDIUM, 2026-05-18):**
 - 3A.fu.4 — Sanera `Upload.originalName` via `sanitizeOriginalName`-wrapper (trim, kontrolltecken, path-separator, 255-clamp), 2 upload-routes integrerade, 7 nya tester. Direkt commit `3cb3b226` på staging, deploy READY.
 
+**Operational hardening — separat spår (2026-05-19, PR #340, merge `58379d3f`):**
+- **`assertSeedSafe()`** — `prisma/seed.ts` blockerar mot hosted Supabase utan `ALLOW_SEED_PROD=true`. Skyddar mot data-overwrite av riktiga konton om DATABASE_URL felaktigt pekar på prod.
+- **Pre-commit secret-scan** (`scripts/check-no-secrets.sh` + `.husky/pre-commit`) — scannar staged content för provider keys (sk-ant-, sk-proj-, sk_live_, AIza..., AKIA..., gh[pousr]_, xox[baprs]-, whsec_), private keys (RSA/OpenSSH/EC/PGP), Supabase service_role JWTs (med base64-decode), DB-connection strings med credentials. Allow-mekanism via `secret-scan:allow` på samma rad. Skip-list för `.example`/`.template`/scriptet själv/docs/.claude.
+- **Verifiering:** False-positive smoke mot 19 Sprint 3-A-filer → 0 träffar. Canary-test med tre format-korrekta secrets → blockerade alla tre med exit 1.
+- **GitHub push-protection-incident:** Test-fixturer i `check-no-secrets.test.ts` triggade GitHub:s egen secret-scanner. Löst via runtime string assembly (`'sk_' + 'live_AAAA...'`) — funktionellt identisk, men källfilen innehåller aldrig intakt prefix-format. Se `pre-commit-secret-scan.md` för lessons learned.
+
 ### Naming-clarification
 
 Vår tidigare interna planering kallade follow-up-slices "Sprint 3-B (3B.1, 3B.2, 3B.3 ...)" — men `remediation-backlog-fixes-txt-2026-05.md` reserverar namnet "Sprint 3-B" för **H1, H4, H7, H10 HIGH-fynd** från fixes.txt (som ännu inte är påbörjade). För att undvika namnkonflikt benämns våra genomförda slices nu **"Sprint 3-A follow-up"** (3A.fu.1, 3A.fu.2 osv) i dokumentationen. Backlog-doc:s Sprint 3-B (H1-H10) är fortfarande pending och separat.
@@ -77,6 +86,8 @@ Vår tidigare interna planering kallade follow-up-slices "Sprint 3-B (3B.1, 3B.2
 | AI cost-abuse | **HÖG** — ingen per-user budget, IP-pool delas (S-1, S-3 öppna) |
 | Admin-yta | LÅG — RSC-guard + MFA + audit-log |
 | Observability | MEDIUM — loggar finns men ingen aggregering/larm |
+| Seed data-overwrite | LÅG — `assertSeedSafe()` fail-closed |
+| Secret-läckage vid commit | LÅG — pre-commit scan + GitHub push-protection |
 
 ### Varför sprinten pausades
 
@@ -112,6 +123,9 @@ Vår tidigare interna planering kallade follow-up-slices "Sprint 3-B (3B.1, 3B.2
 
 | Commit | Beskrivning | Slice |
 |---|---|---|
+| `58379d3f` | Merge PR #340: seed-guard + pre-commit secret-scan | Operational hardening |
+| `48c42728` | chore(security): add seed prod-guard and pre-commit secret-scan | Operational hardening |
+| `628c787d` | docs(security): update 3a follow-up status | Continuity |
 | `3cb3b226` | fix(security): sanitize upload original names | 3A.fu.4 |
 | `67567699` | docs(security): add 3a follow-up retro and continuity updates | Continuity |
 | `a2ba326b` | Merge PR #339: fix(security): restrict service uploads to provider namespace | 3A.fu.3 |

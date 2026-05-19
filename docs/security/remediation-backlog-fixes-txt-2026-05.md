@@ -1,9 +1,9 @@
 ---
 title: Remediation Backlog — fixes.txt findings 2026-05
-description: Sprintplan för 39 fynd från fixes.txt-djupauditen (2026-05-18). Sprint 3-A KLAR + Sprint 3-A follow-up HIGH + 3A.fu.4 (MEDIUM) KLART. Sprint 3-B/C/D/E pending. Korsrefererad med vår tidigare S-numrering från staging-security-audit-2026-05.md.
+description: Sprintplan för 39 fynd från fixes.txt-djupauditen (2026-05-18). Sprint 3-A KLAR + Sprint 3-A follow-up HIGH + 3A.fu.4 (MEDIUM) KLART. Operational hardening (seed-guard + secret-scan) KLART 2026-05-19. Sprint 3-B/C/D/E pending.
 category: security
 status: active
-last_updated: 2026-05-18
+last_updated: 2026-05-19
 tags:
   - security
   - remediation
@@ -31,7 +31,7 @@ sections:
 
 **Källa:** `docs/security/fixes.txt` (djupaudit 2026-05-18 på `a3b19830`).
 **Total scope:** 39 fynd (4 CRITICAL / 10 HIGH / 14 MEDIUM / 11 LOW).
-**Status:** Sprint 3-A KLAR (C1-C4 live på staging). Sprint 3-A follow-up HIGH KLART (3 watch-items från retron). Sprint 3-B (H1-H10) ännu inte påbörjat.
+**Status:** Sprint 3-A KLAR (C1-C4 live på staging). Sprint 3-A follow-up HIGH + 3A.fu.4 (MEDIUM) KLART. Operational hardening (seed-guard + secret-scan) KLART 2026-05-19. Sprint 3-B (H1-H10) ännu inte påbörjat.
 
 ## Översikt
 
@@ -39,6 +39,7 @@ sections:
 |---|---|---|---|---|
 | **3-A** | C1-C4 CRITICAL hotfixes | 5-8h | Innan extern testare-tillgång eller staging→main merge | ✅ **KLAR** (live på staging) |
 | **3-A follow-up** | Watch-items från Sprint 3-A retro: V4, services-bucket ownership, message-attachments-bucket-verifiering, originalName-sanering, prod-bucket-parity, dev-fallback-härdning | ~3h klart + ~30 min pending | Efter Sprint 3-A | ✅ **HIGH + MEDIUM-1 KLART** (4 av 6 slices: 3A.fu.1-4). Pending: 3A.fu.5 (prod-touch, separat approval), 3A.fu.6 (LOW hygien) |
+| **Operational hardening** | `assertSeedSafe()` + pre-commit secret-scan (separat spår från fixes.txt) | ~2h | Pågående utvecklarhygien | ✅ **KLAR** (PR #340 mergat som `58379d3f`, se `pre-commit-secret-scan.md`) |
 | **3-B** | H1, H4, H7, H10 — focused HIGH-fixes | 5h | Innan prod-merge | ⏸ pending |
 | **3-C** | H2, H3, H5, H6, H8, H9, M11 — defense-in-depth | 9h | Innan publik demo eller prod-launch | ⏸ pending |
 | **3-D** | S-1, S-3 — AI cost-control (original Slice 3) | 10-13h | Vid AI-cost-spike eller publik demo | ⏸ pending |
