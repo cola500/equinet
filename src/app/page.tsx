@@ -144,11 +144,11 @@ export default function Home() {
         {/* A) Hero */}
         <section className="py-12 md:py-20 text-center max-w-4xl mx-auto">
           <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 md:mb-6">
-            Boka hästtjänster — utan krångel
+            Bokning som funkar — också för hovslagaren
           </h1>
           <p className="text-base md:text-xl text-gray-600 mb-6 md:mb-8 px-2 max-w-2xl mx-auto">
-            Hitta hovslagare, veterinärer och terapeuter.
-            Boka direkt. Få påminnelser. Allt på ett ställe — för dig och hästen.
+            Hitta hovslagare, veterinär eller terapeut.
+            Boka direkt. Få en påminnelse innan det är dags igen.
           </p>
           {demoMode ? (
             <div className="flex flex-col items-center gap-4 px-4 sm:px-0">
@@ -377,17 +377,17 @@ export default function Home() {
               Redo att testa?
             </h2>
             <p className="text-base md:text-lg mb-6 opacity-85 max-w-lg mx-auto">
-              Skapa konto gratis och se varför hästmänniskor byter från SMS till Equinet.
+              Hoppa in gratis och prova själv. Hästmänniskor har redan börjat byta från SMS.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/register">
                 <Button size="lg" variant="secondary" className="text-lg px-8">
-                  Kom igång gratis
+                  Skapa konto
                 </Button>
               </Link>
               <Link href="/register?role=provider">
                 <Button size="lg" variant="ghost" className="text-lg px-8 border border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
-                  Registrera som leverantör
+                  Jag är hovslagare / veterinär
                 </Button>
               </Link>
             </div>
