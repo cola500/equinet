@@ -97,17 +97,17 @@ const steps = [
   {
     step: "1",
     title: "Skapa konto",
-    description: "Registrera dig gratis som hästägare eller leverantör. Tar under en minut.",
+    description: "Hoppa in gratis. Som hästägare eller som hovslagare/veterinär. Tar en minut.",
   },
   {
     step: "2",
     title: "Hitta och boka",
-    description: "Sök på tjänst och område. Se tillgängliga tider och boka direkt.",
+    description: "Sök där du bor. Se vad som är ledigt och boka direkt — inga SMS.",
   },
   {
     step: "3",
     title: "Håll koll",
-    description: "Få bekräftelser, påminnelser och en samlad vårdhistorik för varje häst.",
+    description: "Bekräftelse direkt. Påminnelse i god tid. Allt om hästen samlat på ett ställe.",
   },
 ]
 
