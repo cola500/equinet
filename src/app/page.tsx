@@ -33,7 +33,7 @@ const features = [
   {
     icon: HorseIcon,
     title: "Hästprofil med vårdhistorik",
-    description: "Samla besök, anteckningar och vårdscheman per häst -- delbar med din veterinär.",
+    description: "Samla besök, anteckningar och vårdscheman per häst — delbar med din veterinär.",
   },
   {
     icon: Bell,
@@ -53,7 +53,7 @@ const features = [
   {
     icon: Users,
     title: "Kundregister med hästkoppling",
-    description: "Samla kunder, deras hästar och besökshistorik. Anteckningar och sökbart register -- byggt för leverantörer.",
+    description: "Samla kunder, deras hästar och besökshistorik. Anteckningar och sökbart register — byggt för leverantörer.",
   },
 ]
 
@@ -79,7 +79,7 @@ const providerBenefits = [
   {
     icon: MessageSquare,
     title: "Samla alla dina kunder",
-    description: "Kundregister med hästar, anteckningar och besökshistorik. Kunder bokar direkt i din kalender -- färre SMS, mer koll.",
+    description: "Kundregister med hästar, anteckningar och besökshistorik. Kunder bokar direkt i din kalender — färre SMS, mer koll.",
   },
   {
     icon: Route,
@@ -144,11 +144,11 @@ export default function Home() {
         {/* A) Hero */}
         <section className="py-12 md:py-20 text-center max-w-4xl mx-auto">
           <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 md:mb-6">
-            Boka hästtjänster -- utan krångel
+            Boka hästtjänster — utan krångel
           </h1>
           <p className="text-base md:text-xl text-gray-600 mb-6 md:mb-8 px-2 max-w-2xl mx-auto">
             Hitta hovslagare, veterinärer och terapeuter.
-            Boka direkt. Få påminnelser. Allt på ett ställe -- för dig och hästen.
+            Boka direkt. Få påminnelser. Allt på ett ställe — för dig och hästen.
           </p>
           {demoMode ? (
             <div className="flex flex-col items-center gap-4 px-4 sm:px-0">
@@ -244,7 +244,7 @@ export default function Home() {
         {/* C) Features */}
         <section className="py-12 md:py-16">
           <h2 className="font-heading text-2xl md:text-3xl font-bold text-center mb-4">
-            Allt du behöver -- samlat
+            Allt du behöver — samlat
           </h2>
           <p className="text-gray-600 text-center mb-10 max-w-xl mx-auto">
             Equinet är byggt specifikt för hästbranschen, inte anpassat från en generisk bokningsapp.
@@ -347,7 +347,7 @@ export default function Home() {
                 <HorseIcon className="w-6 h-6 text-primary" />
               </div>
               <h3 className="font-semibold mb-2">Equinet</h3>
-              <p className="text-sm text-gray-600">Bokning, ruttplanering, vårdhistorik, påminnelser och kundhantering -- allt på ett ställe.</p>
+              <p className="text-sm text-gray-600">Bokning, ruttplanering, vårdhistorik, påminnelser och kundhantering — allt på ett ställe.</p>
             </div>
           </div>
         </section>
@@ -358,8 +358,8 @@ export default function Home() {
             Vanliga frågor
           </h2>
           <div className="w-full">
-            {faqItems.map((item) => (
-              <details key={item.question} className="group border-b last:border-b-0">
+            {faqItems.map((item, idx) => (
+              <details key={item.question} open={idx === 0} className="group border-b last:border-b-0">
                 <summary className="flex cursor-pointer list-none items-start justify-between gap-4 py-4 text-left text-sm font-medium hover:underline [&::-webkit-details-marker]:hidden">
                   {item.question}
                   <ChevronDown className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
