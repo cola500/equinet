@@ -27,33 +27,33 @@ import { DemoLoginButton } from "@/components/landing/DemoLoginButton"
 const features = [
   {
     icon: Search,
-    title: "Sök och boka direkt",
-    description: "Hitta leverantörer i ditt område, se lediga tider och boka online.",
+    title: "Hitta nån som kan komma ut",
+    description: "Hovslagare, veterinärer, terapeuter — se vad som är ledigt och boka direkt.",
   },
   {
     icon: HorseIcon,
-    title: "Hästprofil med vårdhistorik",
-    description: "Samla besök, anteckningar och vårdscheman per häst — delbar med din veterinär.",
+    title: "Hästjournal — samlat på ett ställe",
+    description: "Besök, anteckningar och nästa-datum samlade per häst. Visa veterinären med en länk när det behövs.",
   },
   {
     icon: Bell,
-    title: "Besökspåminnelser",
-    description: "Equinet räknar ut när hästen behöver nästa besök och påminner dig.",
+    title: "Påminnelse i god tid",
+    description: "Vi säger till när det börjar närma sig — så du hinner boka i lugn och ro.",
   },
   {
     icon: Heart,
-    title: "Följ din leverantör",
-    description: "Få notis direkt när din hovslagare eller terapeut annonserar besök i ditt område.",
+    title: "Följ din hovslagare",
+    description: "Få veta när din hovslagare eller terapeut kör i ditt område.",
   },
   {
     icon: Route,
-    title: "Ruttplanering och annonser",
-    description: "Leverantörer planerar rutter på karta och annonserar besök till intresserade kunder.",
+    title: "Planera dagen, säg till i området",
+    description: "Hovslagare och veterinärer planerar dagens stopp på karta och låter folk i området veta att de kör.",
   },
   {
     icon: Users,
-    title: "Kundregister med hästkoppling",
-    description: "Samla kunder, deras hästar och besökshistorik. Anteckningar och sökbart register — byggt för leverantörer.",
+    title: "Dina kunder och deras hästar",
+    description: "Alla dina kunder, deras hästar och vad du gjort senast. Sökbart, med plats för anteckningar.",
   },
 ]
 
@@ -244,10 +244,10 @@ export default function Home() {
         {/* C) Features */}
         <section className="py-12 md:py-16">
           <h2 className="font-heading text-2xl md:text-3xl font-bold text-center mb-4">
-            Allt du behöver — samlat
+            Allt du behöver — på ett ställe
           </h2>
           <p className="text-gray-600 text-center mb-10 max-w-xl mx-auto">
-            Equinet är byggt specifikt för hästbranschen, inte anpassat från en generisk bokningsapp.
+            Equinet är byggt för hur hästvardagen funkar — inte en allmän bokningsapp som råkar passa.
           </p>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {features.map((feature) => {
