@@ -13,6 +13,7 @@
 import { createClient } from "@supabase/supabase-js"
 import { PrismaClient } from "@prisma/client"
 import { config } from "dotenv"
+import { assertStagingSeedSafe } from "../prisma/seed-guard"
 
 config({ path: ".env.local" })
 config({ path: ".env" })
@@ -145,6 +146,20 @@ async function resetDemoData(providerId: string) {
 
 async function main() {
   const isReset = process.argv.includes("--reset")
+  const isCheckOnly = process.argv.includes("--check-only")
+
+  // Guard FIRST — before any DB write or Supabase Admin call.
+  // Refuses prod / unknown hosted; refuses localhost when SEED_TARGET=staging.
+  assertStagingSeedSafe({
+    databaseUrl: process.env.DATABASE_URL ?? "",
+    supabaseUrl: SUPABASE_URL,
+    requireStaging: process.env.SEED_TARGET === "staging",
+  })
+
+  if (isCheckOnly) {
+    console.log("Guard OK — target verifierat. (--check-only: ingen seed körd.)")
+    return
+  }
 
   // -------------------------------------------------------------------------
   // 1. Provider via Supabase Auth

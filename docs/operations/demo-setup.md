@@ -90,6 +90,10 @@ npm run db:seed:demo-provider:reset
 skapade av demo-scriptet, och återskapar dem från grunden. **Leverantörskontot (Erik Järnfot)
 och dennes tjänster berörs inte av reset.**
 
+> **Mot staging:** kör ALDRIG kommandot ovan direkt mot staging. Använd det säkra
+> helper-scriptet med project-ref-guard — se [staging-demo-seed.md](./staging-demo-seed.md)
+> (`npm run db:seed:staging-demo:safe`).
+
 ### Identifiera demo-data
 
 Demo-data är märkt på följande sätt:
