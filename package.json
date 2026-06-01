@@ -18,6 +18,7 @@
     "db:seed:demo:reset": "npx tsx prisma/seed-demo.ts --reset",
     "db:seed:demo-provider": "npx tsx scripts/seed-demo-provider.ts",
     "db:seed:demo-provider:reset": "npx tsx scripts/seed-demo-provider.ts --reset",
+    "db:seed:staging-demo:safe": "bash scripts/seed-staging-demo.sh",
     "db:reset": "prisma migrate reset",
     "db:up": "supabase start",
     "db:down": "supabase stop",

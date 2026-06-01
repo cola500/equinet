@@ -234,6 +234,11 @@ Branch-genererade preview-URL:er (`equinet-en0jro9dh-...`) ändras vid varje pus
    ```
 2. Logga in på Supabase Dashboard för staging → Authentication → Users → verifiera att `provider@example.com` finns och `email_confirmed_at` är satt.
 
+> **För leverantördemon (Erik Järnfot):** använd det säkra helper-scriptet istället för manuell
+> `export DATABASE_URL=…` — det validerar staging-project-ref (`zzdamokfeenencuggjjp`), vägrar
+> prod, och skriver aldrig connection-stringen till disk. Se
+> [staging-demo-seed.md](./staging-demo-seed.md) (`npm run db:seed:staging-demo:safe`).
+
 ### Steg F: Sätt APP_URL för Preview
 
 1. (Valfritt men rekommenderat) Skapa stabil alias `equinet-staging.vercel.app` i Vercel UI → Settings → Domains.
