@@ -18,6 +18,10 @@ sections:
 Instruktioner för att sätta upp och köra leverantörsdemon som visar Equinet för en
 potentiell pilot-leverantör.
 
+> **Var verifieras demo-UX?** Endast på staging (`equinet-staging.johanlindengard.com`).
+> Se [deployment-verification-guide.md](./deployment-verification-guide.md) — demo-läget är
+> inte aktivt i prod eller i feature-branch-previews.
+
 ## Inloggning
 
 | Fält | Värde |
