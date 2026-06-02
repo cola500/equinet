@@ -45,14 +45,14 @@ describe("DemoLoginButton", () => {
     })
   })
 
-  it("redirects to provider dashboard on successful login", async () => {
+  it("redirects to provider calendar on successful login", async () => {
     mockSignInWithPassword.mockResolvedValue({ error: null })
     render(<DemoLoginButton />)
 
     fireEvent.click(screen.getByRole("button", { name: /se demo som leverantör/i }))
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/provider/dashboard")
+      expect(mockPush).toHaveBeenCalledWith("/provider/calendar")
     })
   })
 

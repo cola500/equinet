@@ -148,6 +148,45 @@ describe("Login Page", () => {
       })
     })
 
+    it("redirects to /provider/calendar in demo mode when no callbackUrl", async () => {
+      mockIsDemoMode.mockReturnValue(true)
+      mockSignInWithPassword.mockResolvedValue({
+        data: { user: { id: "u1" }, session: { access_token: "tok" } },
+        error: null,
+      })
+
+      renderLogin()
+      const user = userEvent.setup()
+
+      await user.type(screen.getByLabelText("Email"), "erik.jarnfot@demo.equinet.se")
+      await user.type(screen.getByLabelText("Lösenord"), "DemoProvider123!")
+      await user.click(screen.getByRole("button", { name: "Logga in" }))
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith("/provider/calendar")
+      })
+    })
+
+    it("demo mode still honors a valid callbackUrl over the calendar default", async () => {
+      mockIsDemoMode.mockReturnValue(true)
+      mockSearchParams = new URLSearchParams("callbackUrl=/provider/bookings")
+      mockSignInWithPassword.mockResolvedValue({
+        data: { user: { id: "u1" }, session: { access_token: "tok" } },
+        error: null,
+      })
+
+      renderLogin()
+      const user = userEvent.setup()
+
+      await user.type(screen.getByLabelText("Email"), "erik.jarnfot@demo.equinet.se")
+      await user.type(screen.getByLabelText("Lösenord"), "DemoProvider123!")
+      await user.click(screen.getByRole("button", { name: "Logga in" }))
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith("/provider/bookings")
+      })
+    })
+
     it("ignores callbackUrl that does not start with /", async () => {
       mockSearchParams = new URLSearchParams("callbackUrl=https://evil.com")
       mockSignInWithPassword.mockResolvedValue({

@@ -30,7 +30,8 @@ export function DemoLoginButton() {
         return
       }
 
-      router.push("/provider/dashboard")
+      // Slice 2: land the demo on the calendar (daily workspace), not the dashboard.
+      router.push("/provider/calendar")
       router.refresh()
     } finally {
       setIsLoading(false)
