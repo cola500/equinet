@@ -76,11 +76,10 @@ function CalendarContent() {
     }
   }, [])
 
-  // Sätt dagvy som default på mobil
+  // Mobil landar i en kompakt 3-dagarsvy (en 7-kolumners vecka är oläsbar < 768px);
+  // desktop återställs till veckovy. Användaren kan fortfarande växla via headern.
   useEffect(() => {
-    if (isMobile) {
-      setViewMode("day")
-    }
+    setViewMode(isMobile ? "3-day" : "week")
   }, [isMobile])
 
   // Auto-öppna ManualBookingDialog från query params (iOS native -> web)
