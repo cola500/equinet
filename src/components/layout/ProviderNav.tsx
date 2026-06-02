@@ -135,14 +135,23 @@ export function ProviderNav() {
   )
   const unreadCount = unreadData?.count ?? 0
 
+  // Slice 1: demo mobile nav mirrors normal provider mode — 4 primary tabs + Mer.
   const demoTabs: TabItem[] = [
-    { href: "/provider/dashboard", label: "Översikt", icon: LayoutDashboard },
     { href: "/provider/calendar", label: "Kalender", icon: CalendarDays },
     { href: "/provider/bookings", label: "Bokningar", icon: ClipboardList },
     { href: "/provider/customers", label: "Kunder", icon: Users, matchPrefix: "/provider/customers" },
     { href: "/provider/messages", label: "Meddelanden", icon: MessageSquare, matchPrefix: "/provider/messages" },
+  ]
+
+  // Items moved out of the demo primary row into the mobile "Mer" drawer.
+  // Defined locally so desktop "Mer" (providerMoreItems) stays untouched —
+  // Översikt is not in providerMoreItems, so it must live here.
+  const demoMoreItems: MoreMenuItem[] = [
+    { href: "/provider/dashboard", label: "Översikt", icon: LayoutDashboard },
     { href: "/provider/insights", label: "Insikter", icon: BarChart3, matchPrefix: "/provider/insights" },
-    { href: "/provider/services", label: "Tjänster", icon: Stethoscope },
+    { href: "/provider/services", label: "Mina tjänster", icon: Stethoscope },
+    { href: "/provider/profile", label: "Min profil", icon: User },
+    { href: "/provider/help", label: "Hjälp", icon: HelpCircle, matchPrefix: "/provider/help" },
   ]
 
   const baseTabs = demo ? demoTabs : providerTabs
@@ -297,7 +306,7 @@ export function ProviderNav() {
       </nav>
 
       {/* Mobile bottom tab bar */}
-      <BottomTabBar tabs={tabsWithBadge} moreItems={demo ? visibleMoreItems.filter((i) => i.href === "/provider/profile" || i.href === "/provider/help") : visibleMoreItems} />
+      <BottomTabBar tabs={tabsWithBadge} moreItems={demo ? demoMoreItems : visibleMoreItems} />
     </>
   )
 }
