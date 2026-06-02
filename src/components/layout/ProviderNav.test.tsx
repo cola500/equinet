@@ -24,9 +24,15 @@ vi.mock("@/components/providers/FeatureFlagProvider", () => ({
   useFeatureFlags: vi.fn(() => ({})),
 }))
 
-// Mock BottomTabBar since it's tested separately
+// Mock BottomTabBar since it's tested separately — capture props to assert mobile nav
+const { mockBottomTabBar } = vi.hoisted(() => ({
+  mockBottomTabBar: { props: null as { tabs: { href: string }[]; moreItems: { href: string }[] } | null },
+}))
 vi.mock("./BottomTabBar", () => ({
-  BottomTabBar: () => null,
+  BottomTabBar: (props: { tabs: { href: string }[]; moreItems: { href: string }[] }) => {
+    mockBottomTabBar.props = props
+    return null
+  },
 }))
 
 import { usePathname } from "next/navigation"
@@ -207,5 +213,47 @@ describe("ProviderNav", () => {
     // Give useEffect time to fire (it shouldn't fetch again)
     await new Promise((r) => setTimeout(r, 50))
     expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  describe("mobile bottom tab bar (Slice 1)", () => {
+    it("demo mode: shows exactly 4 primary tabs (Kalender, Bokningar, Kunder, Meddelanden)", () => {
+      vi.mocked(useFeatureFlags).mockReturnValue({ demo_mode: true, messaging: true })
+
+      render(<ProviderNav />)
+
+      expect(mockBottomTabBar.props?.tabs.map((t) => t.href)).toEqual([
+        "/provider/calendar",
+        "/provider/bookings",
+        "/provider/customers",
+        "/provider/messages",
+      ])
+    })
+
+    it("demo mode: Mer drawer holds the 5 moved items (Översikt, Insikter, Tjänster, Profil, Hjälp)", () => {
+      vi.mocked(useFeatureFlags).mockReturnValue({ demo_mode: true, messaging: true })
+
+      render(<ProviderNav />)
+
+      expect(mockBottomTabBar.props?.moreItems.map((i) => i.href)).toEqual([
+        "/provider/dashboard",
+        "/provider/insights",
+        "/provider/services",
+        "/provider/profile",
+        "/provider/help",
+      ])
+    })
+
+    it("non-demo mode: mobile tabs unchanged (providerTabs)", () => {
+      vi.mocked(useFeatureFlags).mockReturnValue({ messaging: true })
+
+      render(<ProviderNav />)
+
+      expect(mockBottomTabBar.props?.tabs.map((t) => t.href)).toEqual([
+        "/provider/dashboard",
+        "/provider/calendar",
+        "/provider/bookings",
+        "/provider/messages",
+      ])
+    })
   })
 })
