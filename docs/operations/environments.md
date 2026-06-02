@@ -36,6 +36,14 @@ sections:
 
 > **Custom domains skapade 2026-05-06.** Båda pekar på Vercel-projektet `equinet-app` via samma CNAME-target (`58f6e9422ba8b696.vercel-dns-017.com`) — Vercel routar via Host-header. Se [url-configuration.md](url-configuration.md) för matrisen.
 
+> **⚠ Drift (verifierat 2026-06-02):** Raden ovan beskriver den ursprungliga
+> single-project-uppsättningen. Staging-domänen serveras numera av ett **separat** Vercel-projekt
+> `equinet-staging-app` (bekräftat via `get_project` — det projektet äger
+> `equinet-staging.johanlindengard.com`). `equinet-staging-app` bygger endast `staging`-branchen;
+> feature-branch-previews avbryts med "Canceled by Ignored Build Step" (förväntat). Se
+> [deployment-verification-guide.md](./deployment-verification-guide.md). Denna rad bör
+> reconcilieras vid tillfälle.
+
 > **iOS-not:** iOS-appen använder `zzdamokfeenencuggjjp` för **både** staging och produktion tills Apple Developer Program är köpt (separat bundle ID + prod-projekt). Intentionellt — dokumenterat beslut från S48-1.
 
 ---

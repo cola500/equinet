@@ -22,6 +22,10 @@ sections:
 
 > **Status:** Block 2 implementerat och verifierat 2026-05-06. Staging är fullständigt isolerad från prod på alla lager (domain, Auth, DB). Plan-sektionerna nedan beskriver vägen dit.
 
+> **Var verifierar man vad?** Se [deployment-verification-guide.md](./deployment-verification-guide.md)
+> för beslutsguiden (demo-UX → staging; varför `equinet-staging-app` feature-branch-previews
+> blir "Canceled by Ignored Build Step" — förväntat).
+
 ## Resultat 2026-05-06 (Block 2 klart)
 
 | Lager | Production | Staging |

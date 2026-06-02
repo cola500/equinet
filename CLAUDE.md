@@ -52,6 +52,7 @@ sections:
 | Kodkarta (domän -> filer) | [.claude/rules/code-map.md](.claude/rules/code-map.md) |
 | Commit-strategi (PR vs direkt) | [.claude/rules/commit-strategy.md](.claude/rules/commit-strategy.md) |
 | Deploy | [docs/operations/deployment.md](docs/operations/deployment.md) |
+| **Var verifiera demo/staging?** | [docs/operations/deployment-verification-guide.md](docs/operations/deployment-verification-guide.md) (kolla FÖRE demo-UX-verifiering) |
 | Bokningsflöde | [docs/architecture/booking-flow.md](docs/architecture/booking-flow.md) |
 | **Refactor triggers** | [docs/architecture/refactor-triggers.md](docs/architecture/refactor-triggers.md) (kolla FÖRE varje refactor) |
 | Retros | [docs/retrospectives/](docs/retrospectives/) |
@@ -145,6 +146,20 @@ src/app/api/ (routes) -> src/domain/ (services) -> src/infrastructure/ (repos) |
 ## Gotchas
 
 > Se [docs/guides/gotchas.md](docs/guides/gotchas.md) för fullständig lista.
+
+---
+
+## Demo Verification Rules
+
+Innan du verifierar en demo-UX-ändring:
+
+1. **Läs:** [docs/operations/deployment-verification-guide.md](docs/operations/deployment-verification-guide.md)
+2. **Kom ihåg:**
+   - staging == demomiljön (`equinet-staging.johanlindengard.com`)
+   - `equinet-staging-app` bygger endast `staging`-branchen
+   - en CANCELED feature-branch-preview på staging-projektet är **förväntat** ("Ignored Build Step")
+   - demo-UX får **inte** valideras i `equinet-app`-previews (demo_mode är inte aktivt där)
+   - pre-merge: lokal `NEXT_PUBLIC_DEMO_MODE=true`, eller merge till `staging`
 
 ---
 
