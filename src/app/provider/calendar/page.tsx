@@ -558,8 +558,8 @@ function CalendarContent() {
         </div>
       )}
 
-      {/* Mobile FAB for voice log */}
-      {isVoiceLoggingEnabled && (
+      {/* Mobile FAB for voice log -- hidden in demo (voice-log is not part of the demo) */}
+      {isVoiceLoggingEnabled && !demo && (
         <div className="fixed bottom-20 right-4 md:hidden z-40 flex flex-col items-center gap-1">
           <button
             onClick={() => router.push("/provider/voice-log")}

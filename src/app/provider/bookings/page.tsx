@@ -28,7 +28,8 @@ import { BookingNotesSection } from "@/components/booking/BookingNotesSection"
 import { Calendar, Mic } from "lucide-react"
 import { EmptyState } from "@/components/ui/empty-state"
 import Link from "next/link"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { useFeatureFlag, useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
@@ -110,6 +111,7 @@ function ProviderBookingsContent() {
   const [isCancelling, setIsCancelling] = useState(false)
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
+  const demo = isDemoModeWithFlags(useFeatureFlags())
   const { guardMutation } = useOfflineGuard()
 
   // Sync filter to URL (guard with isOnline to avoid RSC request when offline)
@@ -581,8 +583,8 @@ function ProviderBookingsContent() {
         </ResponsiveAlertDialogContent>
       </ResponsiveAlertDialog>
 
-      {/* Mobile FAB for voice log */}
-      {isVoiceLoggingEnabled && (
+      {/* Mobile FAB for voice log -- hidden in demo (voice-log is not part of the demo) */}
+      {isVoiceLoggingEnabled && !demo && (
         <div className="fixed bottom-20 right-4 md:hidden z-40 flex flex-col items-center gap-1">
           <button
             onClick={() => router.push("/provider/voice-log")}

@@ -84,7 +84,15 @@ async function resetDemoData(providerId: string) {
   console.log("Removing demo data (keeping provider account)...")
 
   const demoCustomers = await prisma.user.findMany({
-    where: { email: { in: [...DEMO_CUSTOMER_EMAILS] } },
+    where: {
+      OR: [
+        { email: { in: [...DEMO_CUSTOMER_EMAILS] } },
+        // Legacy duplicates: an older seed created the same customers under a
+        // synthetic "@demo-provider.equinet.se" domain. Clean those up too so
+        // every demo customer appears exactly once.
+        { email: { endsWith: "@demo-provider.equinet.se" } },
+      ],
+    },
     select: { id: true },
   })
   const demoCustomerIds = demoCustomers.map((c) => c.id)
