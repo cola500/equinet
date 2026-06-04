@@ -6,7 +6,8 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { addWeeks, subWeeks, addDays, subDays, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"
 import { Mic, Info } from "lucide-react"
 import { toast } from "sonner"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { useFeatureFlag, useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { FirstUseTooltip } from "@/components/ui/first-use-tooltip"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
@@ -29,6 +30,18 @@ import { PendingBookingsBanner } from "@/components/calendar/PendingBookingsBann
 import { CalendarSkeleton } from "@/components/loading/CalendarSkeleton"
 import { CalendarBooking, AvailabilityDay } from "@/types"
 import { clientLogger } from "@/lib/client-logger"
+
+// Shared by the popover (full mode) and the inline panel (demo mode).
+const LEGEND_ITEMS: { swatch: string; label: string }[] = [
+  { swatch: "bg-yellow-50 border-l-2 border-yellow-500", label: "Väntar på svar" },
+  { swatch: "bg-green-50 border-l-2 border-green-600", label: "Bekräftad" },
+  { swatch: "bg-blue-50 border-l-2 border-blue-600", label: "Genomförd" },
+  { swatch: "bg-red-50 border-l-2 border-red-500", label: "Avbokad" },
+  { swatch: "bg-emerald-100 border-l-2 border-emerald-600", label: "Betald" },
+  { swatch: "bg-green-100 border border-green-200", label: "Öppet" },
+  { swatch: "bg-gray-200 border border-gray-300", label: "Stängt" },
+  { swatch: "bg-orange-200 border border-orange-300", label: "Ledig/undantag" },
+]
 
 export default function ProviderCalendarPage() {
   return (
@@ -64,6 +77,7 @@ function CalendarContent() {
   const [prefillDate, setPrefillDate] = useState<string | undefined>()
   const [prefillTime, setPrefillTime] = useState<string | undefined>()
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
+  const demo = isDemoModeWithFlags(useFeatureFlags())
   const { isOnline, guardMutation } = useOfflineGuard()
   const [legendOpen, setLegendOpen] = useState(false)
 
@@ -480,60 +494,69 @@ function CalendarContent() {
         />
       )}
 
-      {/* Färgförklaring - kompakt med popover */}
-      <div className="mt-4 flex items-center gap-2">
-        <p className="text-xs text-gray-500">
-          Klicka på en dag för att skapa bokning eller hantera tillgänglighet.
-        </p>
-        <Popover open={legendOpen} onOpenChange={setLegendOpen}>
-          <PopoverTrigger asChild>
+      {/* Färgförklaring */}
+      {demo ? (
+        /* Demo: inline collapsible panel in normal flow below the grid — never
+           overlaps a booking block (unlike the popover, which flips up at the
+           page bottom). */
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-gray-500">
+              Klicka på en dag för att skapa bokning eller hantera tillgänglighet.
+            </p>
             <button
+              onClick={() => setLegendOpen((open) => !open)}
               className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 shrink-0"
               aria-label="Visa färgförklaring"
+              aria-expanded={legendOpen}
             >
               <Info className="h-4 w-4" />
               <span className="hidden sm:inline">Färgkoder</span>
             </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-72" align="end">
-            <p className="text-sm font-medium mb-3">Färgförklaring</p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-yellow-50 border-l-2 border-yellow-500 shrink-0" />
-                <span>Väntar på svar</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-green-50 border-l-2 border-green-600 shrink-0" />
-                <span>Bekräftad</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-blue-50 border-l-2 border-blue-600 shrink-0" />
-                <span>Genomförd</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-red-50 border-l-2 border-red-500 shrink-0" />
-                <span>Avbokad</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-emerald-100 border-l-2 border-emerald-600 shrink-0" />
-                <span>Betald</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-green-100 border border-green-200 shrink-0" />
-                <span>Öppet</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-gray-200 border border-gray-300 shrink-0" />
-                <span>Stängt</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-orange-200 border border-orange-300 shrink-0" />
-                <span>Ledig/undantag</span>
+          </div>
+          {legendOpen && (
+            <div className="rounded-lg border bg-white p-3">
+              <p className="text-sm font-medium mb-3">Färgförklaring</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                {LEGEND_ITEMS.map((item) => (
+                  <div key={item.label} className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded shrink-0 ${item.swatch}`} />
+                    <span>{item.label}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          </PopoverContent>
-        </Popover>
-      </div>
+          )}
+        </div>
+      ) : (
+        <div className="mt-4 flex items-center gap-2">
+          <p className="text-xs text-gray-500">
+            Klicka på en dag för att skapa bokning eller hantera tillgänglighet.
+          </p>
+          <Popover open={legendOpen} onOpenChange={setLegendOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 shrink-0"
+                aria-label="Visa färgförklaring"
+              >
+                <Info className="h-4 w-4" />
+                <span className="hidden sm:inline">Färgkoder</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72" align="end">
+              <p className="text-sm font-medium mb-3">Färgförklaring</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {LEGEND_ITEMS.map((item) => (
+                  <div key={item.label} className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded shrink-0 ${item.swatch}`} />
+                    <span>{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
 
       {/* Mobile FAB for voice log */}
       {isVoiceLoggingEnabled && (
