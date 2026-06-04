@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
+import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 
 // --- Exporterade hjälpfunktioner (testbara utan React) ---
 
@@ -35,22 +37,26 @@ export function FirstUseTooltip({
   side = "bottom",
   children,
 }: FirstUseTooltipProps) {
+  const flags = useFeatureFlags()
+  // Demo mode: suppress all first-use coachmarks so they never cover stat cards,
+  // calendar blocks or the mobile tab bar during a pilot walkthrough.
+  const demo = isDemoModeWithFlags(flags)
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    if (!isTooltipDismissed(id)) {
+    if (!demo && !isTooltipDismissed(id)) {
       setOpen(true)
     }
-  }, [id])
+  }, [id, demo])
 
   const handleDismiss = () => {
     dismissTooltip(id)
     setOpen(false)
   }
 
-  if (!mounted || isTooltipDismissed(id)) {
+  if (!mounted || demo || isTooltipDismissed(id)) {
     return <>{children}</>
   }
 
