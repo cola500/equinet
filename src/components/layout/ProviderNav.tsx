@@ -26,7 +26,8 @@ import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { useBookings } from "@/hooks/useBookings"
 import useSWR from "swr"
-import { isDemoModeWithFlags, DEMO_ALLOWED_PATHS } from "@/lib/demo-mode"
+import { isDemoModeWithFlags, DEMO_ALLOWED_PATHS, DEMO_PRIMARY_PATHS, DEMO_MORE_PATHS } from "@/lib/demo-mode"
+import type { LucideIcon } from "lucide-react"
 import { toast } from "sonner"
 
 interface NavItem {
@@ -86,6 +87,32 @@ const secondaryNavItems: (NavItem & { section?: string })[] = [
   { href: "/provider/profile", label: "Min profil", section: "Mitt företag" },
 ]
 
+// Registry of nav metadata (label/icon/flags) keyed by href. The demo nav order
+// lives in src/lib/demo-mode.ts (DEMO_PRIMARY_PATHS / DEMO_MORE_PATHS); this maps
+// each demo path to its presentation so desktop and mobile render identically.
+const NAV_REGISTRY: Record<string, { label: string; icon: LucideIcon; matchPrefix?: string; featureFlag?: string }> = {
+  "/provider/dashboard": { label: "Översikt", icon: LayoutDashboard },
+  "/provider/calendar": { label: "Kalender", icon: CalendarDays },
+  "/provider/bookings": { label: "Bokningar", icon: ClipboardList },
+  "/provider/customers": { label: "Kunder", icon: Users, matchPrefix: "/provider/customers" },
+  "/provider/services": { label: "Mina tjänster", icon: Stethoscope },
+  "/provider/messages": { label: "Meddelanden", icon: MessageSquare, matchPrefix: "/provider/messages", featureFlag: "messaging" },
+  "/provider/insights": { label: "Insikter", icon: BarChart3, matchPrefix: "/provider/insights" },
+  "/provider/profile": { label: "Min profil", icon: User },
+  "/provider/help": { label: "Hjälp", icon: HelpCircle, matchPrefix: "/provider/help", featureFlag: "help_center" },
+}
+
+const toTabItem = (href: string): TabItem => ({ href, ...NAV_REGISTRY[href] })
+const toNavItem = (href: string): NavItem => {
+  const { label, matchPrefix, featureFlag } = NAV_REGISTRY[href]
+  return { href, label, matchPrefix, featureFlag }
+}
+
+// Demo nav, derived once from the shared ordered path lists.
+const demoPrimaryTabs: TabItem[] = DEMO_PRIMARY_PATHS.map(toTabItem)
+const demoPrimaryNavItems: NavItem[] = DEMO_PRIMARY_PATHS.map(toNavItem)
+const demoSecondaryNavItems: (NavItem & { section?: string })[] = DEMO_MORE_PATHS.map(toNavItem)
+
 const OFFLINE_SAFE_PATHS = providerTabs
   .filter((t) => t.offlineSafe)
   .map((t) => t.href)
@@ -135,26 +162,10 @@ export function ProviderNav() {
   )
   const unreadCount = unreadData?.count ?? 0
 
-  // Slice 1: demo mobile nav mirrors normal provider mode — 4 primary tabs + Mer.
-  const demoTabs: TabItem[] = [
-    { href: "/provider/calendar", label: "Kalender", icon: CalendarDays },
-    { href: "/provider/bookings", label: "Bokningar", icon: ClipboardList },
-    { href: "/provider/customers", label: "Kunder", icon: Users, matchPrefix: "/provider/customers" },
-    { href: "/provider/messages", label: "Meddelanden", icon: MessageSquare, matchPrefix: "/provider/messages" },
-  ]
-
-  // Items moved out of the demo primary row into the mobile "Mer" drawer.
-  // Defined locally so desktop "Mer" (providerMoreItems) stays untouched —
-  // Översikt is not in providerMoreItems, so it must live here.
-  const demoMoreItems: MoreMenuItem[] = [
-    { href: "/provider/dashboard", label: "Översikt", icon: LayoutDashboard },
-    { href: "/provider/insights", label: "Insikter", icon: BarChart3, matchPrefix: "/provider/insights" },
-    { href: "/provider/services", label: "Mina tjänster", icon: Stethoscope },
-    { href: "/provider/profile", label: "Min profil", icon: User },
-    { href: "/provider/help", label: "Hjälp", icon: HelpCircle, matchPrefix: "/provider/help" },
-  ]
-
-  const baseTabs = demo ? demoTabs : providerTabs
+  // Demo nav: desktop and mobile read the SAME shared primary/more lists
+  // (DEMO_PRIMARY_PATHS / DEMO_MORE_PATHS in demo-mode.ts), so both surfaces
+  // show the same primary set in the same order.
+  const baseTabs = demo ? demoPrimaryTabs : providerTabs
 
   const tabsWithBadge = useMemo(() =>
     baseTabs
@@ -200,10 +211,12 @@ export function ProviderNav() {
   const isVisible = (item: { href: string; featureFlag?: string }) =>
     demoAllowed(item) && (!item.featureFlag || flags[item.featureFlag])
 
-  const visiblePrimaryItems = primaryNavItems.filter(isVisible)
-  const visibleSecondaryItems = secondaryNavItems.filter(isVisible)
-  const visibleMoreItems = demo
-    ? providerMoreItems.filter(isVisible)
+  const visiblePrimaryItems = (demo ? demoPrimaryNavItems : primaryNavItems).filter(isVisible)
+  const visibleSecondaryItems = (demo ? demoSecondaryNavItems : secondaryNavItems).filter(isVisible)
+  // Mobile "Mer" drawer: in demo mirror the desktop "Mer" set (same order, flag-filtered);
+  // in full mode keep the existing provider drawer items.
+  const mobileMoreItems: MoreMenuItem[] = demo
+    ? demoSecondaryNavItems.filter(isVisible).map((item) => toTabItem(item.href))
     : providerMoreItems.filter(isVisible)
 
   const isActive = (item: NavItem) => {
@@ -306,7 +319,7 @@ export function ProviderNav() {
       </nav>
 
       {/* Mobile bottom tab bar */}
-      <BottomTabBar tabs={tabsWithBadge} moreItems={demo ? demoMoreItems : visibleMoreItems} />
+      <BottomTabBar tabs={tabsWithBadge} moreItems={mobileMoreItems} />
     </>
   )
 }

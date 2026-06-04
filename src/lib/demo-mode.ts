@@ -41,3 +41,26 @@ export const DEMO_ALLOWED_PATHS = [
   "/provider/profile",
   "/provider/help",
 ] as const
+
+/**
+ * Demo navigation — single source of truth shared by the desktop top-nav
+ * (ProviderNav) and the mobile bottom bar (BottomTabBar) so both surfaces show
+ * the SAME primary set in the SAME order. Order matters.
+ *
+ * Primary surfaces (the daily workspace); everything else lives under "Mer".
+ * Every path here must also be in DEMO_ALLOWED_PATHS (no dead links).
+ */
+export const DEMO_PRIMARY_PATHS = [
+  "/provider/calendar",
+  "/provider/customers",
+  "/provider/services",
+  "/provider/messages",
+] as const
+
+export const DEMO_MORE_PATHS = [
+  "/provider/dashboard",
+  "/provider/bookings",
+  "/provider/insights",
+  "/provider/profile",
+  "/provider/help",
+] as const
