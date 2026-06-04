@@ -38,6 +38,16 @@ import { FirstUseTooltip } from "@/components/ui/first-use-tooltip"
 import { sortBookings, filterBookings, countByStatus, type BookingFilter } from "./booking-utils"
 import { clientLogger } from "@/lib/client-logger"
 
+// Demo: contextual copy for an empty status filter, in the same helpful tone as
+// the Tjänster empty state (so no demo surface shows a bare "Inga ...").
+const DEMO_FILTER_EMPTY: Partial<Record<BookingFilter, string>> = {
+  pending: "Inga väntande förfrågningar just nu — nya bokningsförfrågningar dyker upp här.",
+  confirmed: "Inga bekräftade bokningar i denna vy — bekräftade besök visas här.",
+  completed: "Inga genomförda bokningar ännu — de hamnar här när du markerar ett besök som genomfört.",
+  no_show: "Inga ej infunna bokningar — de visas här om en kund uteblir från ett besök.",
+  cancelled: "Inga avbokade bokningar — avbokningar hamnar här.",
+}
+
 interface Payment {
   id: string
   status: string
@@ -326,7 +336,9 @@ function ProviderBookingsContent() {
               title="Inga bokningar"
               description={filter === "all"
                 ? "Du har inga bokningar ännu. Se till att du har tjänster och tillgänglighet inställt, så dyker bokningar upp här när kunder bokar."
-                : "Inga bokningar att visa för detta filter."}
+                : demo
+                  ? (DEMO_FILTER_EMPTY[filter] ?? "Inga bokningar med den statusen just nu — de dyker upp här när en bokning får den statusen.")
+                  : "Inga bokningar att visa för detta filter."}
               action={filter === "all" ? { label: "Gå till tjänster", href: "/provider/services" } : undefined}
             />
             {filter === "all" && (
