@@ -83,6 +83,7 @@ export const config = {
     // Frontend routes that require auth
     "/provider/:path*",
     "/customer/:path*",
+    "/hem",
     "/dashboard/:path*",
     "/admin/:path*",
   ],
