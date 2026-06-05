@@ -90,19 +90,24 @@ const secondaryNavItems: (NavItem & { section?: string })[] = [
 // Registry of nav metadata (label/icon/flags) keyed by href. The demo nav order
 // lives in src/lib/demo-mode.ts (DEMO_PRIMARY_PATHS / DEMO_MORE_PATHS); this maps
 // each demo path to its presentation so desktop and mobile render identically.
-const NAV_REGISTRY: Record<string, { label: string; icon: LucideIcon; matchPrefix?: string; featureFlag?: string }> = {
+const NAV_REGISTRY: Record<string, { label: string; mobileLabel?: string; icon: LucideIcon; matchPrefix?: string; featureFlag?: string }> = {
   "/provider/dashboard": { label: "Översikt", icon: LayoutDashboard },
   "/provider/calendar": { label: "Kalender", icon: CalendarDays },
   "/provider/bookings": { label: "Bokningar", icon: ClipboardList },
   "/provider/customers": { label: "Kunder", icon: Users, matchPrefix: "/provider/customers" },
-  "/provider/services": { label: "Mina tjänster", icon: Stethoscope },
+  // Shorter label on the mobile bottom bar so the tab/active-pill width stays even
+  // with the others; the desktop top-nav keeps the full "Mina tjänster".
+  "/provider/services": { label: "Mina tjänster", mobileLabel: "Tjänster", icon: Stethoscope },
   "/provider/messages": { label: "Meddelanden", icon: MessageSquare, matchPrefix: "/provider/messages", featureFlag: "messaging" },
   "/provider/insights": { label: "Insikter", icon: BarChart3, matchPrefix: "/provider/insights" },
   "/provider/profile": { label: "Min profil", icon: User },
   "/provider/help": { label: "Hjälp", icon: HelpCircle, matchPrefix: "/provider/help", featureFlag: "help_center" },
 }
 
-const toTabItem = (href: string): TabItem => ({ href, ...NAV_REGISTRY[href] })
+const toTabItem = (href: string): TabItem => {
+  const { mobileLabel, ...rest } = NAV_REGISTRY[href]
+  return { href, ...rest, label: mobileLabel ?? rest.label }
+}
 const toNavItem = (href: string): NavItem => {
   const { label, matchPrefix, featureFlag } = NAV_REGISTRY[href]
   return { href, label, matchPrefix, featureFlag }
