@@ -129,10 +129,11 @@ const _DAY_INDEX_MAP: Record<string, number> = { "Sön": 0, "Mån": 1, "Tis": 2,
 function getHeatColor(count: number, max: number): string {
   if (count === 0) return "bg-gray-100"
   const ratio = count / max
-  if (ratio > 0.75) return "bg-green-600 text-white"
-  if (ratio > 0.5) return "bg-green-400 text-white"
-  if (ratio > 0.25) return "bg-green-300"
-  return "bg-green-100"
+  // Dark text on all tiers: white-on-green-400/600 failed WCAG AA (~1.6:1 / ~2.8:1).
+  if (ratio > 0.75) return "bg-green-600 text-gray-900"
+  if (ratio > 0.5) return "bg-green-400 text-gray-900"
+  if (ratio > 0.25) return "bg-green-300 text-gray-900"
+  return "bg-green-100 text-gray-900"
 }
 
 function TimeHeatmapGrid({ data }: { data: TimeHeatmapItem[] }) {

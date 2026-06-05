@@ -48,6 +48,7 @@ vi.mock("@/hooks/useProviderProfile", () => ({
 // Mock feature flags
 vi.mock("@/components/providers/FeatureFlagProvider", () => ({
   useFeatureFlag: () => false,
+  useFeatureFlags: () => ({}),
 }))
 
 // Mock offline guard (mutable per test)

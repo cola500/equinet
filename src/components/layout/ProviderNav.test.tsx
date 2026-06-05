@@ -216,28 +216,30 @@ describe("ProviderNav", () => {
   })
 
   describe("mobile bottom tab bar (Slice 1)", () => {
-    it("demo mode: shows exactly 4 primary tabs (Kalender, Bokningar, Kunder, Meddelanden)", () => {
+    it("demo mode: shows exactly 4 primary tabs (Kalender, Kunder, Tjänster, Meddelanden)", () => {
       vi.mocked(useFeatureFlags).mockReturnValue({ demo_mode: true, messaging: true })
 
       render(<ProviderNav />)
 
+      // Shared DEMO_PRIMARY_PATHS — same set/order as desktop top-nav.
       expect(mockBottomTabBar.props?.tabs.map((t) => t.href)).toEqual([
         "/provider/calendar",
-        "/provider/bookings",
         "/provider/customers",
+        "/provider/services",
         "/provider/messages",
       ])
     })
 
-    it("demo mode: Mer drawer holds the 5 moved items (Översikt, Insikter, Tjänster, Profil, Hjälp)", () => {
-      vi.mocked(useFeatureFlags).mockReturnValue({ demo_mode: true, messaging: true })
+    it("demo mode: Mer drawer holds the 5 moved items (Översikt, Bokningar, Insikter, Profil, Hjälp)", () => {
+      vi.mocked(useFeatureFlags).mockReturnValue({ demo_mode: true, messaging: true, help_center: true })
 
       render(<ProviderNav />)
 
+      // Shared DEMO_MORE_PATHS — same set/order as desktop "Mer".
       expect(mockBottomTabBar.props?.moreItems.map((i) => i.href)).toEqual([
         "/provider/dashboard",
+        "/provider/bookings",
         "/provider/insights",
-        "/provider/services",
         "/provider/profile",
         "/provider/help",
       ])

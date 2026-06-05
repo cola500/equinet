@@ -191,7 +191,7 @@ export function WeekCalendar({
       {showTip && (
         <div className="flex items-center justify-between bg-green-50 border-b border-green-200 px-3 py-2 text-sm text-green-800">
           <span>Tips: Tryck direkt i kalendern för att skapa en bokning</span>
-          <button onClick={dismissTip} className="ml-2 text-green-600 hover:text-green-800 font-medium">OK</button>
+          <button onClick={dismissTip} className="ml-2 text-green-800 hover:text-green-900 font-medium">OK</button>
         </div>
       )}
 
@@ -248,7 +248,7 @@ export function WeekCalendar({
               </div>
               <div
                 className={`text-lg font-semibold ${
-                  isToday(day) ? "text-green-600" : ""
+                  isToday(day) ? "text-green-700" : ""
                 }`}
               >
                 {format(day, "d")}

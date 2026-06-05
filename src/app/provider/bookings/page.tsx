@@ -28,7 +28,8 @@ import { BookingNotesSection } from "@/components/booking/BookingNotesSection"
 import { Calendar, Mic } from "lucide-react"
 import { EmptyState } from "@/components/ui/empty-state"
 import Link from "next/link"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { useFeatureFlag, useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
@@ -36,6 +37,16 @@ import { BookingCardSkeleton } from "@/components/loading/BookingCardSkeleton"
 import { FirstUseTooltip } from "@/components/ui/first-use-tooltip"
 import { sortBookings, filterBookings, countByStatus, type BookingFilter } from "./booking-utils"
 import { clientLogger } from "@/lib/client-logger"
+
+// Demo: contextual copy for an empty status filter, in the same helpful tone as
+// the Tjänster empty state (so no demo surface shows a bare "Inga ...").
+const DEMO_FILTER_EMPTY: Partial<Record<BookingFilter, string>> = {
+  pending: "Inga väntande förfrågningar just nu — nya bokningsförfrågningar dyker upp här.",
+  confirmed: "Inga bekräftade bokningar i denna vy — bekräftade besök visas här.",
+  completed: "Inga genomförda bokningar ännu — de hamnar här när du markerar ett besök som genomfört.",
+  no_show: "Inga ej infunna bokningar — de visas här om en kund uteblir från ett besök.",
+  cancelled: "Inga avbokade bokningar — avbokningar hamnar här.",
+}
 
 interface Payment {
   id: string
@@ -110,6 +121,7 @@ function ProviderBookingsContent() {
   const [isCancelling, setIsCancelling] = useState(false)
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
+  const demo = isDemoModeWithFlags(useFeatureFlags())
   const { guardMutation } = useOfflineGuard()
 
   // Sync filter to URL (guard with isOnline to avoid RSC request when offline)
@@ -304,10 +316,10 @@ function ProviderBookingsContent() {
               key={key}
               onClick={() => setFilter(key)}
               aria-pressed={filter === key}
-              className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base touch-target ${
+              className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base touch-target border ${
                 filter === key
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
+                  ? "bg-gray-900 text-white border-gray-900"
+                  : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
               }`}
             >
               {label} ({counts[key]})
@@ -324,7 +336,9 @@ function ProviderBookingsContent() {
               title="Inga bokningar"
               description={filter === "all"
                 ? "Du har inga bokningar ännu. Se till att du har tjänster och tillgänglighet inställt, så dyker bokningar upp här när kunder bokar."
-                : "Inga bokningar att visa för detta filter."}
+                : demo
+                  ? (DEMO_FILTER_EMPTY[filter] ?? "Inga bokningar med den statusen just nu — de dyker upp här när en bokning får den statusen.")
+                  : "Inga bokningar att visa för detta filter."}
               action={filter === "all" ? { label: "Gå till tjänster", href: "/provider/services" } : undefined}
             />
             {filter === "all" && (
@@ -581,8 +595,8 @@ function ProviderBookingsContent() {
         </ResponsiveAlertDialogContent>
       </ResponsiveAlertDialog>
 
-      {/* Mobile FAB for voice log */}
-      {isVoiceLoggingEnabled && (
+      {/* Mobile FAB for voice log -- hidden in demo (voice-log is not part of the demo) */}
+      {isVoiceLoggingEnabled && !demo && (
         <div className="fixed bottom-20 right-4 md:hidden z-40 flex flex-col items-center gap-1">
           <button
             onClick={() => router.push("/provider/voice-log")}
