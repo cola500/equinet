@@ -316,10 +316,10 @@ function ProviderBookingsContent() {
               key={key}
               onClick={() => setFilter(key)}
               aria-pressed={filter === key}
-              className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base touch-target ${
+              className={`px-3 md:px-4 py-2 rounded-lg text-sm md:text-base touch-target border ${
                 filter === key
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
+                  ? "bg-gray-900 text-white border-gray-900"
+                  : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
               }`}
             >
               {label} ({counts[key]})

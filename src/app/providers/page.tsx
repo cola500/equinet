@@ -117,8 +117,8 @@ function ProvidersContent() {
                 aria-pressed={serviceType === value}
                 className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors touch-target ${
                   serviceType === value
-                    ? "bg-green-600 text-white border-green-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-green-500 hover:text-green-700"
+                    ? "bg-gray-900 text-white border-gray-900"
+                    : "bg-white text-gray-700 border-gray-300 hover:border-gray-400 hover:text-gray-900"
                 }`}
               >
                 {label}
