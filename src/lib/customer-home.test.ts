@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { getNextBooking, deriveHomeStatus, getHorseBookings, type DueLikeItem, type BookingLike } from "./customer-home"
+import { getNextBooking, deriveHomeStatus, getHorseBookings, sortHorsesByDue, type DueLikeItem, type BookingLike } from "./customer-home"
 
 const NOW = new Date("2026-06-05T10:00:00Z")
 
@@ -67,6 +67,39 @@ describe("getHorseBookings", () => {
 
   it("returns nulls when the horse has no relevant bookings", () => {
     expect(getHorseBookings([], "h1", NOW)).toEqual({ last: null, next: null })
+  })
+})
+
+describe("sortHorsesByDue", () => {
+  it("orders overdue → upcoming → ok, most days overdue first, no-due last", () => {
+    const horses = [
+      { id: "ok1" },
+      { id: "up1" },
+      { id: "over5" },
+      { id: "none" },
+      { id: "over12" },
+    ]
+    const dueItems = [
+      due({ horseId: "ok1", status: "ok" }),
+      due({ horseId: "up1", status: "upcoming", daysUntilDue: 4 }),
+      due({ horseId: "over5", status: "overdue", daysUntilDue: -5 }),
+      due({ horseId: "over12", status: "overdue", daysUntilDue: -12 }),
+      // "none" has no due record
+    ]
+    expect(sortHorsesByDue(horses, dueItems).map((h) => h.id)).toEqual([
+      "over12",
+      "over5",
+      "up1",
+      "ok1",
+      "none",
+    ])
+  })
+
+  it("does not mutate the input array", () => {
+    const horses = [{ id: "a" }, { id: "b" }]
+    const copy = [...horses]
+    sortHorsesByDue(horses, [])
+    expect(horses).toEqual(copy)
   })
 })
 

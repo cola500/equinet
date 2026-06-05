@@ -10,7 +10,7 @@ import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { HorseCardSkeleton } from "@/components/loading/HorseCardSkeleton"
 import { HomeStatusLine } from "@/components/customer/HomeStatusLine"
 import { HomeHorseCard } from "@/components/customer/HomeHorseCard"
-import { getNextBooking, deriveHomeStatus, type BookingLike } from "@/lib/customer-home"
+import { getNextBooking, deriveHomeStatus, sortHorsesByDue, type BookingLike } from "@/lib/customer-home"
 
 /**
  * Horse owner's home. Logged-in customers land here (not the public search) so
@@ -54,7 +54,7 @@ export default function CustomerHomePage() {
             Mina hästar
           </p>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {horses.map((horse) => (
+            {sortHorsesByDue(horses, dueItems).map((horse) => (
               <HomeHorseCard
                 key={horse.id}
                 horse={horse}

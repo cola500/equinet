@@ -84,6 +84,34 @@ export function getHorseBookings(
   }
 }
 
+const DUE_RANK: Record<DueLikeItem["status"], number> = { overdue: 0, upcoming: 1, ok: 2 }
+
+/**
+ * Sort horses overdue → upcoming → ok (horses with no due record last); within
+ * overdue, most days overdue first. Pure and stable. Same order everywhere.
+ */
+export function sortHorsesByDue<T extends { id: string }>(
+  horses: T[],
+  dueItems: DueLikeItem[]
+): T[] {
+  const byId = new Map(dueItems.map((i) => [i.horseId, i]))
+  const rankOf = (id: string) => {
+    const item = byId.get(id)
+    return item ? DUE_RANK[item.status] : 3
+  }
+  return [...horses].sort((a, b) => {
+    const ra = rankOf(a.id)
+    const rb = rankOf(b.id)
+    if (ra !== rb) return ra - rb
+    if (ra === 0) {
+      const ia = byId.get(a.id)!
+      const ib = byId.get(b.id)!
+      return Math.abs(ib.daysUntilDue) - Math.abs(ia.daysUntilDue)
+    }
+    return 0
+  })
+}
+
 export type HomeStatus =
   | { mode: "calm"; next: NextBooking | null }
   | {
