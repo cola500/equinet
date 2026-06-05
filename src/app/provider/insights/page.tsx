@@ -123,7 +123,7 @@ export default function ProviderInsightsPage() {
               aria-pressed={period === p}
               className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                 period === p
-                  ? "bg-green-600 text-white"
+                  ? "bg-gray-900 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
