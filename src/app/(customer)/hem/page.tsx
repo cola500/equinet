@@ -10,6 +10,7 @@ import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { HorseCardSkeleton } from "@/components/loading/HorseCardSkeleton"
 import { HomeStatusLine } from "@/components/customer/HomeStatusLine"
 import { HomeHorseCard } from "@/components/customer/HomeHorseCard"
+import { CustomerHomeEmpty } from "@/components/customer/CustomerHomeEmpty"
 import { getNextBooking, deriveHomeStatus, sortHorsesByDue, type BookingLike } from "@/lib/customer-home"
 
 /**
@@ -19,7 +20,7 @@ import { getNextBooking, deriveHomeStatus, sortHorsesByDue, type BookingLike } f
 export default function CustomerHomePage() {
   const router = useRouter()
   const { user, isLoading: authLoading, isCustomer } = useAuth()
-  const { horses, isLoading } = useHorses()
+  const { horses, isLoading, mutate } = useHorses()
   const { items: dueItems } = useDueForService()
   const { data: bookings = [] } = useSWR<BookingLike[]>("/api/bookings")
   const firstName = user?.name?.split(" ")[0] ?? ""
@@ -47,9 +48,11 @@ export default function CustomerHomePage() {
 
       {isLoading ? (
         <HorseCardSkeleton count={2} />
+      ) : horses.length === 0 ? (
+        <CustomerHomeEmpty onAdded={() => mutate()} />
       ) : (
         <>
-          {horses.length > 0 && <HomeStatusLine status={homeStatus} />}
+          <HomeStatusLine status={homeStatus} />
           <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
             Mina hästar
           </p>
