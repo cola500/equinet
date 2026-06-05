@@ -29,12 +29,13 @@ interface CustomerMoreItem extends MoreMenuItem {
 }
 
 const customerTabs: TabItem[] = [
-  { href: "/providers", label: "Sök", icon: Search, matchPrefix: "/providers" },
+  { href: "/hem", label: "Hem", icon: Home, matchPrefix: "/hem" },
   { href: "/customer/bookings", label: "Bokningar", icon: CalendarDays },
   { href: "/customer/horses", label: "Hästar", icon: HorseIcon },
 ]
 
 const customerMoreItems: CustomerMoreItem[] = [
+  { href: "/providers", label: "Hitta tjänster", icon: Search, matchPrefix: "/providers" },
   { href: "/announcements", label: "Lediga tider", icon: MapPin, matchPrefix: "/announcements" },
   { href: "/customer/group-bookings", label: "Gruppbokningar", icon: Users, matchPrefix: "/customer/group-bookings" },
   { href: "/customer/help", label: "Hjälp", icon: HelpCircle, matchPrefix: "/customer/help", featureFlag: "help_center" },
@@ -42,10 +43,9 @@ const customerMoreItems: CustomerMoreItem[] = [
 ]
 
 const allNavItems: CustomerNavItem[] = [
+  { href: "/hem", label: "Hem", matchPrefix: "/hem" },
   { href: "/providers", label: "Hitta tjänster", matchPrefix: "/providers" },
   { href: "/customer/bookings", label: "Mina bokningar" },
-  { href: "/announcements", label: "Lediga tider", matchPrefix: "/announcements" },
-  { href: "/customer/group-bookings", label: "Gruppbokningar", matchPrefix: "/customer/group-bookings" },
   { href: "/customer/horses", label: "Mina hästar" },
   { href: "/customer/help", label: "Hjälp", matchPrefix: "/customer/help", featureFlag: "help_center" },
   { href: "/customer/profile", label: "Min profil" },
