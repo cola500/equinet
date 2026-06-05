@@ -17,5 +17,6 @@ export default async function DashboardPage() {
     redirect(isDemoModeWithFlags(flags) ? "/provider/calendar" : "/provider/dashboard")
   }
 
-  redirect("/providers")
+  // Horse owners land on their home (their horses), not the public search.
+  redirect("/hem")
 }
