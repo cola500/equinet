@@ -3,12 +3,16 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import useSWR from "swr"
 import { useAuth } from "@/hooks/useAuth"
 import { useHorses } from "@/hooks/useHorses"
+import { useDueForService } from "@/hooks/useDueForService"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { HorseCardSkeleton } from "@/components/loading/HorseCardSkeleton"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { HomeStatusLine } from "@/components/customer/HomeStatusLine"
+import { getNextBooking, deriveHomeStatus, type BookingLike } from "@/lib/customer-home"
 
 /**
  * Horse owner's home. Logged-in customers land here (not the public search) so
@@ -18,7 +22,10 @@ export default function CustomerHomePage() {
   const router = useRouter()
   const { user, isLoading: authLoading, isCustomer } = useAuth()
   const { horses, isLoading } = useHorses()
+  const { items: dueItems } = useDueForService()
+  const { data: bookings = [] } = useSWR<BookingLike[]>("/api/bookings")
   const firstName = user?.name?.split(" ")[0] ?? ""
+  const homeStatus = deriveHomeStatus(dueItems, getNextBooking(bookings))
 
   useEffect(() => {
     if (!authLoading && !isCustomer) {
@@ -46,6 +53,7 @@ export default function CustomerHomePage() {
         <HorseCardSkeleton count={2} />
       ) : (
         <>
+          {horses.length > 0 && <HomeStatusLine status={homeStatus} />}
           <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
             Mina hästar
           </p>
