@@ -35,7 +35,7 @@ describe("ProviderNav mobile bottom bar (rendered, real BottomTabBar)", () => {
     expect(bottomBarLinkLabels(container)).toEqual([
       "Kalender",
       "Kunder",
-      "Mina tjänster",
+      "Tjänster",
       "Meddelanden",
     ])
     const nav = container.querySelector("nav.fixed") as HTMLElement

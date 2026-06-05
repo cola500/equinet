@@ -179,7 +179,7 @@ export default function ProviderDashboard() {
 
   return (
     <ProviderLayout>
-      <h1 className="text-3xl font-bold mb-8">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">
         {onboardingComplete ? "Välkommen tillbaka!" : "Välkommen till Equinet!"}
       </h1>
 
