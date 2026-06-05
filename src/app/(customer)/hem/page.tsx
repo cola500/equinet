@@ -2,16 +2,14 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import useSWR from "swr"
 import { useAuth } from "@/hooks/useAuth"
 import { useHorses } from "@/hooks/useHorses"
 import { useDueForService } from "@/hooks/useDueForService"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { HorseCardSkeleton } from "@/components/loading/HorseCardSkeleton"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { HomeStatusLine } from "@/components/customer/HomeStatusLine"
+import { HomeHorseCard } from "@/components/customer/HomeHorseCard"
 import { getNextBooking, deriveHomeStatus, type BookingLike } from "@/lib/customer-home"
 
 /**
@@ -41,8 +39,6 @@ export default function CustomerHomePage() {
     )
   }
 
-  const currentYear = new Date().getFullYear()
-
   return (
     <CustomerLayout>
       <h1 className="font-heading text-3xl md:text-4xl mb-6">
@@ -59,26 +55,12 @@ export default function CustomerHomePage() {
           </p>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {horses.map((horse) => (
-              <Card key={horse.id}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">{horse.name}</CardTitle>
-                  <CardDescription>
-                    {[
-                      horse.breed,
-                      horse.birthYear ? `${currentYear - horse.birthYear} år` : null,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ") || "Ingen extra info"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Link href={`/customer/horses/${horse.id}`}>
-                    <Button variant="outline" size="sm" className="min-h-[44px] sm:min-h-0">
-                      Visa häst
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
+              <HomeHorseCard
+                key={horse.id}
+                horse={horse}
+                dueItems={dueItems}
+                bookings={bookings}
+              />
             ))}
           </div>
         </>

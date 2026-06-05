@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { getNextBooking, deriveHomeStatus, type DueLikeItem, type BookingLike } from "./customer-home"
+import { getNextBooking, deriveHomeStatus, getHorseBookings, type DueLikeItem, type BookingLike } from "./customer-home"
 
 const NOW = new Date("2026-06-05T10:00:00Z")
 
@@ -46,6 +46,27 @@ describe("getNextBooking", () => {
 
   it("returns null when there are no bookings", () => {
     expect(getNextBooking([], NOW)).toBeNull()
+  })
+})
+
+describe("getHorseBookings", () => {
+  it("returns the most recent completed visit and the nearest upcoming one", () => {
+    const result = getHorseBookings(
+      [
+        booking({ horseId: "h1", status: "completed", bookingDate: "2026-05-01T08:00:00Z", service: { name: "Verkning" } }),
+        booking({ horseId: "h1", status: "completed", bookingDate: "2026-04-02T08:00:00Z", service: { name: "Omskoning" } }),
+        booking({ horseId: "h1", status: "confirmed", bookingDate: "2026-06-09T08:00:00Z", service: { name: "Verkning" } }),
+        booking({ horseId: "OTHER", status: "confirmed", bookingDate: "2026-06-06T08:00:00Z" }),
+      ],
+      "h1",
+      NOW
+    )
+    expect(result.last).toEqual({ service: "Verkning", date: "2026-05-01T08:00:00Z" })
+    expect(result.next).toEqual({ service: "Verkning", date: "2026-06-09T08:00:00Z" })
+  })
+
+  it("returns nulls when the horse has no relevant bookings", () => {
+    expect(getHorseBookings([], "h1", NOW)).toEqual({ last: null, next: null })
   })
 })
 

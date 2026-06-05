@@ -52,6 +52,38 @@ export function getNextBooking(bookings: BookingLike[], now: Date = new Date()):
   }
 }
 
+export interface HorseVisit {
+  service: string
+  date: string // raw; format at render
+}
+
+export interface HorseBookings {
+  last: HorseVisit | null
+  next: HorseVisit | null
+}
+
+/** This horse's most recent completed visit and its nearest upcoming one. */
+export function getHorseBookings(
+  bookings: BookingLike[],
+  horseId: string,
+  now: Date = new Date()
+): HorseBookings {
+  const forHorse = bookings.filter((b) => b.horseId === horseId)
+
+  const lastDone = forHorse
+    .filter((b) => b.status === "completed" && new Date(b.bookingDate).getTime() <= now.getTime())
+    .sort((a, b) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime())[0]
+
+  const nextUp = forHorse
+    .filter((b) => isUpcoming(b, now))
+    .sort((a, b) => new Date(a.bookingDate).getTime() - new Date(b.bookingDate).getTime())[0]
+
+  return {
+    last: lastDone ? { service: lastDone.service?.name ?? "Besök", date: lastDone.bookingDate } : null,
+    next: nextUp ? { service: nextUp.service?.name ?? "Besök", date: nextUp.bookingDate } : null,
+  }
+}
+
 export type HomeStatus =
   | { mode: "calm"; next: NextBooking | null }
   | {
