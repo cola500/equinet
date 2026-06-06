@@ -3,9 +3,18 @@ import { render, screen } from "@testing-library/react"
 import { Header } from "./Header"
 
 const mockUseAuth = vi.fn()
+const mockIsDemoMode = vi.fn(() => false)
 
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => mockUseAuth(),
+}))
+
+vi.mock("@/lib/demo-mode", () => ({
+  isDemoMode: () => mockIsDemoMode(),
+}))
+
+vi.mock("@/components/providers/FeatureFlagProvider", () => ({
+  useFeatureFlag: () => false,
 }))
 
 
@@ -88,5 +97,24 @@ describe("Header", () => {
     expect(screen.queryByText("Kom igång")).not.toBeInTheDocument()
     expect(screen.queryByText("Börja")).not.toBeInTheDocument()
     expect(screen.queryByTestId("notification-bell")).not.toBeInTheDocument()
+  })
+
+  it("shows CustomerNav for an authenticated customer in demo mode", () => {
+    // Demo now has a loginable customer persona (Lisa). She must keep her
+    // navigation — the nav must not be gated behind !demo.
+    mockIsDemoMode.mockReturnValue(true)
+    mockUseAuth.mockReturnValue({
+      user: { name: "Lisa Andersson", email: "lisa@test.com" },
+      isAuthenticated: true,
+      isLoading: false,
+      isProvider: false,
+      isCustomer: true,
+      isAdmin: false,
+      isStableOwner: false,
+    })
+
+    render(<Header />)
+
+    expect(screen.getByTestId("customer-nav")).toBeInTheDocument()
   })
 })
