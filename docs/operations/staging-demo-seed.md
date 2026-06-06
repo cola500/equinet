@@ -3,7 +3,7 @@ title: "Säker Staging Demo Seed"
 description: "Runbook för att säkert återställa demo-provider-data (Erik Järnfot) på staging via helper-scriptet — med project-ref-guard, dry-run och verifiering."
 category: operations
 status: active
-last_updated: 2026-06-01
+last_updated: 2026-06-06
 sections:
   - Syfte
   - Säkerhetsmodell
@@ -140,6 +140,29 @@ tjänster berörs inte.** Connection-stringen skrivs aldrig till `.env`-filer; t
 > (eller med `!`-prefix i Claude Code om klienten ger TTY). Klistra **aldrig** in URL:en som
 > vanlig text — bara i den tysta prompten.
 
+### 3. Inkludera en inloggningsbar demokund (för kundhemmet `/hem`)
+
+Default-seeden skapar kunderna som **ghost** (ingen login). För att kunna demonstrera
+**hästägarens hem** (`/hem`) krävs en inloggningsbar kund. Opt-in-flaggan `--customer-login`
+gör **en** kund (Lisa Andersson) inloggningsbar via Supabase Auth (samma säkra mönster som
+Erik). Default-beteendet är oförändrat — flaggan måste anges explicit.
+
+```bash
+npm run db:seed:staging-demo:customer:safe
+# eller: bash scripts/seed-staging-demo.sh --customer-login
+```
+
+| Fält | Värde |
+|------|-------|
+| E-post | `lisa.andersson@gmail.com` |
+| Lösenord | `DemoOwner123!` |
+| Roll | kund (hästägare) |
+| Data | 2 hästar (Molly, Storm), kommande + genomförda bokningar, försenat besök, vårdhistorik |
+
+> Detta är en **demo-uppgift** för staging (ej hemlighet), i nivå med Eriks `DemoProvider123!`.
+> Det är **inte** ett nytt kund-demoläge — ingen DemoLoginButton/demo-nav. Provider-demon (Erik)
+> påverkas inte. Prod vägras av guarden.
+
 ---
 
 ## Verifiering efter seed
@@ -152,6 +175,7 @@ Logga in på staging som Erik (uppgifter i [demo-setup.md](./demo-setup.md)) och
 | **Kalender** | Framtida bokningsblock syns. Banner "X bokningar väntar". Se gotcha nedan. |
 | **Bokningar** | Mix av status: Väntar / Bekräftade / Genomförda / Avbokade |
 | **Meddelanden** | Realistiska konversationer, **inga** test-strängar (t.ex. "3B.2 smoke-test") |
+| **Kundhem `/hem`** (om `--customer-login`) | Logga in som Lisa → landar på `/hem`; statusrad (lugnt/larm), hästkort, aktiv Hem-flik |
 
 > **Kalender-gotcha:** Veckovyn renderar i nuläget bara en dagkolumn (känd UI-bugg, ej
 > seed-relaterad). Verifiera framtida block i **dag-** eller **månadsvy** tills den buggen är

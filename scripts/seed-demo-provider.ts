@@ -35,6 +35,11 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 const PROVIDER_EMAIL = "erik.jarnfot@demo.equinet.se"
 const PROVIDER_PASSWORD = "DemoProvider123!"
 
+// Opt-in (--customer-login): make ONE demo customer (Lisa) loginable so the
+// horse-owner home (/hem) can be demoed. Demo credential, not a secret.
+const LOGIN_CUSTOMER_EMAIL = "lisa.andersson@gmail.com"
+const LOGIN_CUSTOMER_PASSWORD = "DemoOwner123!"
+
 // Used only for reset identification — not stored in any visible field
 const DEMO_CUSTOMER_EMAILS = [
   "lisa.andersson@gmail.com",
@@ -74,6 +79,53 @@ async function waitForPublicUser(userId: string, email: string): Promise<void> {
     await new Promise((r) => setTimeout(r, 200))
   }
   throw new Error(`Trigger did not create public.User for ${email} within 2s`)
+}
+
+/**
+ * Create a loginable customer via Supabase Auth (same pattern as the provider).
+ * Returns the public.User id (the trigger creates it from the auth user).
+ *
+ * Reset-safe: --reset deletes the demo customer's public.User but not the auth
+ * user, so on a repeat run the auth user is orphaned. We detect that (auth
+ * exists, public.User gone) and recreate cleanly.
+ */
+async function createCustomerAuth(
+  email: string,
+  firstName: string,
+  lastName: string,
+  password: string
+): Promise<string> {
+  const create = () =>
+    supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { firstName, lastName },
+      app_metadata: { userType: "customer", isAdmin: false },
+    })
+
+  let { data, error } = await create()
+
+  if (error && (error.code === "email_exists" || error.code === "user_already_exists")) {
+    const existing = await prisma.user.findUnique({ where: { email } })
+    if (existing) {
+      // Auth + public.User both present (e.g. no --reset) → reuse.
+      await waitForPublicUser(existing.id, email)
+      return existing.id
+    }
+    // Orphaned auth user (public.User reset away) → delete it and recreate.
+    const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
+    const orphan = list?.users?.find((u) => u.email === email)
+    if (orphan) await supabase.auth.admin.deleteUser(orphan.id)
+    ;({ data, error } = await create())
+  }
+
+  if (error || !data?.user) {
+    throw new Error(`Failed to create customer auth for ${email}: ${error?.message ?? "unknown"}`)
+  }
+
+  await waitForPublicUser(data.user.id, email)
+  return data.user.id
 }
 
 // ---------------------------------------------------------------------------
@@ -155,6 +207,8 @@ async function resetDemoData(providerId: string) {
 async function main() {
   const isReset = process.argv.includes("--reset")
   const isCheckOnly = process.argv.includes("--check-only")
+  // Opt-in: make the demo customer Lisa loginable (default off → behaviour unchanged).
+  const customerLogin = process.argv.includes("--customer-login")
 
   // Guard FIRST — before any DB write or Supabase Admin call.
   // Refuses prod / unknown hosted; refuses localhost when SEED_TARGET=staging.
@@ -383,22 +437,43 @@ async function main() {
 
   const customers: Record<string, string> = {}
   for (const c of customerData) {
-    const user = await prisma.user.upsert({
-      where: { email: c.email },
-      update: {},
-      create: {
-        email: c.email,
-        firstName: c.firstName,
-        lastName: c.lastName,
-        phone: c.phone,
-        userType: "customer",
-        city: c.city,
-        emailVerified: true,
-        emailVerifiedAt: new Date(),
-      },
-    })
-    customers[`${c.firstName} ${c.lastName}`] = user.id
-    console.log(`  Kund: ${c.firstName} ${c.lastName} (${c.city})`)
+    let userId: string
+    if (customerLogin && c.email === LOGIN_CUSTOMER_EMAIL) {
+      // Loginable demo customer (auth-backed, same pattern as the provider).
+      userId = await createCustomerAuth(c.email, c.firstName, c.lastName, LOGIN_CUSTOMER_PASSWORD)
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          userType: "customer",
+          firstName: c.firstName,
+          lastName: c.lastName,
+          phone: c.phone,
+          city: c.city,
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+        },
+      })
+      console.log(`  Kund (inloggningsbar): ${c.firstName} ${c.lastName} (${c.city})`)
+    } else {
+      // Default: ghost customer (no login) — unchanged behaviour.
+      const user = await prisma.user.upsert({
+        where: { email: c.email },
+        update: {},
+        create: {
+          email: c.email,
+          firstName: c.firstName,
+          lastName: c.lastName,
+          phone: c.phone,
+          userType: "customer",
+          city: c.city,
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+        },
+      })
+      userId = user.id
+      console.log(`  Kund: ${c.firstName} ${c.lastName} (${c.city})`)
+    }
+    customers[`${c.firstName} ${c.lastName}`] = userId
   }
   console.log("")
 
