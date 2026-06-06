@@ -1,7 +1,11 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { loadStripe } from "@stripe/stripe-js"
+// `/pure` defers loading the js.stripe.com script until loadStripe() is actually
+// called — the bare "@stripe/stripe-js" import loads it as a module side-effect,
+// which fired on /customer/bookings even in mock mode. Combined with the lazy
+// getStripePromise() below, Stripe.js now only loads in the real Stripe flow.
+import { loadStripe } from "@stripe/stripe-js/pure"
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js"
 import { Button } from "@/components/ui/button"
 import {
