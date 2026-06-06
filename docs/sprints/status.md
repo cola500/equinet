@@ -221,8 +221,28 @@ sections:
 | Item | Effort | Beskrivning |
 |------|--------|-------------|
 | E-postverifiering Resend (S17-5) | 0.5 dag | Verifiera Resend-leverans i prod |
-| **Spike: Evaluate Stripe Checkout Sessions with Payment Element** ([spike-doc](../architecture/spike-stripe-checkout-sessions.md)) — FÖRE production payments | 0.5–1 dag | Stripe rekommenderar numera Checkout Sessions API (`ui_mode=elements`) framför direkt PaymentIntents (mer färdigt checkout-stöd, mindre egen kod). **Utvärdera, ej migrera nu.** Frågor: passar `ui_mode=elements` bättre? påverkan på `PaymentService`, webhook-events (`checkout.session.completed`), metadata-mappning (`bookingId`/`providerId`/`customerId`), receipt/invoice-flow, mock-gateway, tester, migration risk? Nuvarande PaymentIntent-flöde behålls tills vidare; spike körs innan live-betalningar aktiveras. |
 | ✅ **RESOLVED (2026-06-06)** — Decouple Stripe webhook verification from subscription provider config | 0.5 dag | **Bugg (Stripe test-mode E2E):** `webhooks/stripe/route.ts` verifierade ALLA webhooks via `getSubscriptionGateway()`. När `SUBSCRIPTION_PROVIDER ≠ "stripe"` → `MockSubscriptionGateway` som (a) inte verifierar signatur och (b) returnerar `data: parsed.data` istället för `data.object` → `event.data.id` undefined → betalning aldrig `succeeded`. **Fix (`fix/decouple-stripe-webhook-verification`):** ny `src/domain/payment/StripeWebhookVerifier.ts` (`verifyStripeWebhook`) som alltid använder Stripe SDK + `STRIPE_WEBHOOK_SECRET`, oberoende av provider-config, och normaliserar till `data.object`. Routen använder den; dispatch oförändrad. Tester: verifierare-unit + route/integration uppdaterade (24 + 92 gröna). **`SUBSCRIPTION_PROVIDER=stripe` krävs inte längre för payment-webhook-verifiering.** Config-cleanup klar 2026-06-06: workarounden borttagen från staging (deploy `pp7wc26ne`), webhook-smoke grön utan den (ogiltig signatur → 400). |
+
+### Production Readiness
+
+> Öppna trådar inför **live-betalningar**. Härstammar från betalnings-hardening-spåret — se [wrap-up-retro](../retrospectives/2026-06-06-payment-hardening-wrapup.md).
+
+| Item | Storlek | Beskrivning | Varför | Trigger |
+|------|---------|-------------|--------|---------|
+| Checkout Sessions Spike | S | Utvärdera Stripe Checkout Sessions (`ui_mode=elements`) mot nuvarande direkt-PaymentIntents. Se [spike-doc](../architecture/spike-stripe-checkout-sessions.md). | Stripe rekommenderar Checkout Sessions för de flesta integrationer — mer färdigt checkout-stöd, mindre egen kod att underhålla. | Före production payments |
+| Stripe Idempotency Keys | S | Lägg en idempotency key på `StripePaymentGateway.initiatePayment` (Stripe `idempotencyKey`-option). | Varje Betala-klick skapar idag en ny PaymentIntent via upsert → övergivna PIs; snabb dubbelklick = två PIs. | Före live |
+| Restricted Stripe Keys | S | Byt secret key (`sk_`) → restricted key (`rk_`) med least-privilege-permissions, per miljö. | Stripe best practice — en komprometterad `rk_` gör mindre skada än en `sk_`. | Före live (test + prod) |
+| 3DS Verification | M | Lägg `https://hooks.stripe.com` i CSP `frame-src` och testa 3DS-kort (SCA-flöde). | Testkortet `4242` är non-3DS; riktiga europeiska kort triggar ofta 3DS som renderas i en `hooks.stripe.com`-iframe. | Före live med riktiga kort |
+
+### Platform Hardening
+
+> Tvärgående robusthet inför produktion — se [wrap-up-retro](../retrospectives/2026-06-06-payment-hardening-wrapup.md).
+
+| Item | Storlek | Beskrivning | Varför | Trigger |
+|------|---------|-------------|--------|---------|
+| Service Worker Update Strategy | M | Säkerställ att en ny Service Worker tar över efter deploy (t.ex. skipWaiting-prompt eller versions-trigger som tvingar uppdatering). | Användares browser fastnade på gammal SW efter deploy och krävde manuell unregister — risk att fix:ar inte når användare. | Nästa SW-relaterade bugg, eller före prod |
+| Payment Security Review | M | Formell, oberoende säkerhetsgranskning av hela betalflödet (IDOR, server-side amount, webhook-signatur, ownership, idempotens). | Betalningar är hög-risk; en sista skeptisk review innan riktiga pengar hanteras. Säkerhets-gaten kördes under hardeningen men en formell pre-live-review saknas. | Före production payments |
+| Production Monitoring | M | Alerting/observability för betalningar (failed payments, webhook-fel, dedup-anomalier) via Sentry/loggar + larm. | Upptäck betalnings- och webhook-problem i prod proaktivt istället för via kundklagomål. | Vid/före live |
 
 ### Vart att fixa (vid tillfalle)
 
