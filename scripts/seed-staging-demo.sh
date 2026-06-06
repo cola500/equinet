@@ -22,7 +22,13 @@ STAGING_REF="zzdamokfeenencuggjjp"
 PROD_REF="xybyzflfxnqqyxnvjklv"
 
 DRY_RUN=0
-[[ "${1:-}" == "--dry-run" ]] && DRY_RUN=1
+CUSTOMER_LOGIN=0
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) DRY_RUN=1 ;;
+    --customer-login) CUSTOMER_LOGIN=1 ;;  # also make the demo customer (Lisa) loginable
+  esac
+done
 
 TMP_ENV=""
 cleanup() { [[ -n "$TMP_ENV" && -f "$TMP_ENV" ]] && rm -f "$TMP_ENV"; }
@@ -76,12 +82,14 @@ echo "✓ Hämtade Supabase-env för staging (service-role-nyckel: ${#SRK} tecke
 # Env passed INLINE → seed-demo-provider's dotenv won't override it (.env.local stays untouched).
 run_seed() {
   local mode="$1" # --check-only | --reset
+  local extra=""
+  [[ "$CUSTOMER_LOGIN" == "1" && "$mode" == "--reset" ]] && extra="--customer-login"
   DATABASE_URL="$DB_URL" \
   DIRECT_DATABASE_URL="$DB_URL" \
   NEXT_PUBLIC_SUPABASE_URL="$SB_URL" \
   SUPABASE_SERVICE_ROLE_KEY="$SRK" \
   SEED_TARGET=staging \
-    npx tsx scripts/seed-demo-provider.ts "$mode"
+    npx tsx scripts/seed-demo-provider.ts "$mode" $extra
 }
 
 if [[ "$DRY_RUN" == "1" ]]; then
@@ -90,6 +98,7 @@ if [[ "$DRY_RUN" == "1" ]]; then
   exit 0
 fi
 
+[[ "$CUSTOMER_LOGIN" == "1" ]] && echo "  + skapar inloggningsbar demokund (Lisa Andersson)"
 read -rp "Kör db:seed:demo-provider:reset mot STAGING ($STAGING_REF)? Detta RADERAR demo-data. (y/N): " CONFIRM
 if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
   echo "Avbrutet — ingen seed körd."
