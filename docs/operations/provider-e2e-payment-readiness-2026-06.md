@@ -43,7 +43,7 @@ sections:
 
 **Rekommenderad första slice:** **Alternativ B först, sedan A** — verifiera/konfigurera Stripe **test-mode** på staging (liten, isolerad), kör därefter den fullständiga E2E-slicen. Se sektion 5.
 
-> **Uppdatering 2026-06-06 (Slice 1 utförd):** Staging-env är nu verifierad. Se sektion 2a. **Beslut: första E2E-rundan körs med mock-gateway; Stripe test-mode skjuts till separat senare slice.** Ingen config-ändring gjord ännu.
+> **Uppdatering 2026-06-06 (Slice 1 + 2 utförda):** Staging-env verifierad (Slice 1, sektion 2a) och **konfigurerad för mock-läge (Slice 2, sektion 2b)**. `PAYMENT_PROVIDER=mock` + `FEATURE_STRIPE_PAYMENTS=true`, redeployad och verifierad READY. Staging är nu redo för första E2E-rundan med mock-gateway. Ingen E2E körd ännu.
 
 ---
 
@@ -169,6 +169,44 @@ Egen, isolerad slice när vi vill ha realistisk betalning:
 
 ---
 
+## 2b. Slice 2-resultat — staging konfigurerad för mock-läge (2026-06-06) — DONE
+
+Config-ändring på `equinet-staging-app` (staging only, prod orört). Inga kodändringar.
+
+### Valt läge: **mock-gateway**
+
+| Variabel | Före | Efter | Typ |
+|----------|------|-------|-----|
+| `PAYMENT_PROVIDER` | `stripe` | **`mock`** | plain |
+| `FEATURE_STRIPE_PAYMENTS` | (saknades) | **`true`** | plain |
+| `STRIPE_SECRET_KEY` / publishable | finns (test) | **orörda** | — (ofarliga i mock-läge, läses ej) |
+
+Kod-grund: `getPaymentGateway()` (`PaymentGateway.ts:65`) → `PAYMENT_PROVIDER !== "stripe"` ger `MockPaymentGateway` (instant `succeeded`, inga externa anrop, **inget webhook**). `FEATURE_STRIPE_PAYMENTS=true` → env har högsta prioritet (`feature-flags.ts:74`, `envValue === "true"`) → `stripe_payments`-flaggan på.
+
+### Hur det utfördes (och en CLI-fälla som slog till)
+
+- **Vercel CLI `env add` skrev tomt värde** även via stdin-pipe (`printf 'mock' | vercel env add ...`) **och** satte typ `sensitive` — samma klass av fälla som CLAUDE.md dokumenterar för `--value`. `env pull` visade tomma strängar. En tom `FEATURE_STRIPE_PAYMENTS` hade tolkats som `false` (`"" === "true"` falskt) och tvingat flaggan **av**.
+- **Lösning enligt CLAUDE.md:** Vercel **REST API DELETE + POST** med `type: "plain"`. Skrivningarna scopeades mot staging-projektets `projectId` (aldrig prod). Token lästes utan att exponeras.
+- **Lärdom:** CLI:ns tomma-skrivning gäller inte bara `--value` utan även stdin-pipe; använd REST API för alla icke-triviala Vercel-env-skrivningar och verifiera alltid med `env pull`.
+
+### Redeploy + verifiering
+
+1. **Redeploy:** `vercel redeploy` på senaste Production-deployment → ny deployment `equinet-staging-e8fh5f7m6`, aliasad till `equinet-staging-app.vercel.app`. Ingen push behövdes (ny deployment binder aktuell runtime-env; båda variablerna läses server-side vid runtime).
+2. **Deploy READY:** ✅ bekräftat via `vercel ls` (Production, Ready, ~3 min bygge).
+3. **Flagga på:** ✅ publikt `GET https://equinet-staging.johanlindengard.com/api/feature-flags` → `"stripe_payments":true` (var `false` före). Detta är samma `isFeatureEnabled`-logik som gatear betalnings-API:t, så flagg-404:an är borta.
+4. **Mock-gateway:** ✅ `PAYMENT_PROVIDER=mock` verifierat via `env pull`. Ingen Stripe-anrop, **inget webhook krävs**, ingen riktig betalning möjlig.
+5. **Prod/main orört:** ✅ Alla skrivningar mot staging-`projectId`. Repots `.vercel` pekar fortfarande på prod-projektet `equinet-app` (orört). Branch: `staging`.
+
+> **Not:** Oautentiserat anrop mot betalnings-API:t kan inte särskilja flagg-404 från auth-401 (auth-check ligger före flagg-check i routen), därför verifieras flaggan via det publika feature-flags-endpointet — korrekt och tillräckligt utan E2E.
+
+### Status blockers efter Slice 2
+
+- **B2 (flagga OFF)** → ✅ LÖST (`FEATURE_STRIPE_PAYMENTS=true`).
+- **B7 (provider=stripe men mock valt)** → ✅ LÖST (`PAYMENT_PROVIDER=mock`).
+- **B4 (webhook saknas)** → ej relevant i mock-läge; kvarstår endast för den framtida Stripe-test-mode-slicen.
+
+---
+
 ## 3. Staging vs prod drift
 
 `origin/staging` vs `origin/main` per 2026-06-06:
@@ -222,12 +260,12 @@ Av de fyra alternativen (A: börja E2E nu, B: fixa Stripe/test-config först, C:
 1. ~~Kontrollera staging Vercel-env~~ → klart, se 2a (`PAYMENT_PROVIDER=stripe`, `pk_test_`, webhook saknas, flagga `false`).
 2. ~~Besluta läge~~ → **mock-gateway valt** för första rundan (webhook saknas, isolerar produktflödet).
 
-**Slice 2 (config, ej utförd): Sätt staging i mock-läge.**
-1. Byt `PAYMENT_PROVIDER=mock` (eller ta bort raden) i staging-env (B7).
-2. Slå på `stripe_payments`-flaggan på staging (B2).
-3. Redeploy (ev. tom commit för Lambda-env-cache).
+**Slice 2 (config): Sätt staging i mock-läge.** ✅ KLART — se sektion 2b.
+1. ~~Byt `PAYMENT_PROVIDER=mock`~~ → klart (REST API, type plain).
+2. ~~Slå på `stripe_payments`~~ → klart (`FEATURE_STRIPE_PAYMENTS=true`).
+3. ~~Redeploy~~ → klart (`equinet-staging-e8fh5f7m6`, READY). Ingen tom commit behövdes.
 
-**Slice 3: Kör den fullständiga E2E-slicen** enligt verifieringsplanen nedan, och dokumentera stegen som en lättviktig runbook samtidigt (Alt D — ingen separat förfas behövs).
+**Slice 3 (NÄSTA): Kör den fullständiga E2E-slicen** enligt verifieringsplanen nedan, och dokumentera stegen som en lättviktig runbook samtidigt (Alt D — ingen separat förfas behövs). Förberedelse-checklistan i sektion 6 är nu uppfylld vad gäller B2/B7; kvar: seed med `--customer-login` (B5) och själva körningen.
 
 **Varför inte C (prod-readiness) först:** Prod-synk av 94 commits är ett eget, större arbete som inte blockerar demo på staging. Gör den som separat spår *efter* att E2E-värdet är bevisat på staging — annars riskerar vi att blanda demo-stabilisering med en stor merge-review.
 
