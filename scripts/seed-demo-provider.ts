@@ -197,6 +197,13 @@ async function resetDemoData(providerId: string) {
     console.log("  No demo customers found")
   }
 
+  // Delete the provider's services LAST — after bookings + series (their FK
+  // references) are gone. Without this, renaming a service would create a new
+  // row and leave the old name as an orphan on staging. Implicit M2M links to
+  // RouteOrder announcements are cleared automatically by Prisma.
+  const servicesDeleted = await prisma.service.deleteMany({ where: { providerId } })
+  console.log(`  Deleted ${servicesDeleted.count} services`)
+
   console.log("Reset complete.\n")
 }
 
@@ -283,8 +290,8 @@ async function main() {
         description:
           "Certifierad hovslagare med 15 års erfarenhet i Örebro med omnejd. " +
           "Arbetar med alla typer av hästar — ridsporthästar, islandshästar, ponnier och kallblod. " +
-          "Erbjuder omskoning, barfotaverkning, akutbesök och hovbedömningar " +
-          "inom 50 km från Örebro.",
+          "Erbjuder helskoning, skoning fram, verkning för barfotagång, tappsko " +
+          "och akuta hovslagarbesök inom 50 km från Örebro.",
         address: "Stallvägen 4",
         city: "Örebro",
         postalCode: "701 47",
@@ -306,8 +313,8 @@ async function main() {
         description:
           "Certifierad hovslagare med 15 års erfarenhet i Örebro med omnejd. " +
           "Arbetar med alla typer av hästar — ridsporthästar, islandshästar, ponnier och kallblod. " +
-          "Erbjuder omskoning, barfotaverkning, akutbesök och hovbedömningar " +
-          "inom 50 km från Örebro.",
+          "Erbjuder helskoning, skoning fram, verkning för barfotagång, tappsko " +
+          "och akuta hovslagarbesök inom 50 km från Örebro.",
         address: "Stallvägen 4",
         city: "Örebro",
         postalCode: "701 47",
@@ -357,37 +364,51 @@ async function main() {
 
   const serviceData = [
     {
-      name: "Omskoning",
-      description: "Komplett omskoning med verkning och nytt skobeslag",
-      price: 1400,
+      name: "Helskoning",
+      description: "Skoning av alla fyra hovar, inklusive verkning",
+      price: 1450,
       durationMinutes: 75,
       recommendedIntervalWeeks: 8,
     },
     {
-      name: "Verkning (barfota)",
-      description: "Verkning och raspning för hästar utan järnskor",
-      price: 750,
+      name: "Skoning fram",
+      description: "Skoning av framhovarna, inklusive verkning",
+      price: 1000,
+      durationMinutes: 60,
+      recommendedIntervalWeeks: 8,
+    },
+    {
+      name: "Verkning",
+      description: "Verkning och raspning för barfotagång",
+      price: 700,
       durationMinutes: 45,
       recommendedIntervalWeeks: 6,
     },
     {
-      name: "Akutbesök",
-      description: "Akut hovslagarbesök vid skada eller hovproblem",
-      price: 2500,
-      durationMinutes: 60,
-      recommendedIntervalWeeks: null,
-    },
-    {
-      name: "Ungdomsverkning",
-      description: "Verkning av unga hästar och föl i uppväxt",
+      name: "Verkning unghäst",
+      description: "Verkning av unghästar och föl under uppväxt",
       price: 600,
       durationMinutes: 40,
       recommendedIntervalWeeks: 6,
     },
     {
-      name: "Hovslagarbedömning",
-      description: "Grundlig hovbedömning med skriftlig rapport",
-      price: 800,
+      name: "Tappsko",
+      description: "Återsättning av avtrampad eller tappad sko",
+      price: 400,
+      durationMinutes: 30,
+      recommendedIntervalWeeks: null,
+    },
+    {
+      name: "Akut hovslagarbesök",
+      description: "Akut bedömning och åtgärd vid hovskada eller hälta",
+      price: 1200,
+      durationMinutes: 60,
+      recommendedIntervalWeeks: null,
+    },
+    {
+      name: "Hovstatuskontroll",
+      description: "Genomgång av hovstatus med rekommendation och åtgärdsförslag",
+      price: 600,
       durationMinutes: 30,
       recommendedIntervalWeeks: null,
     },
@@ -565,88 +586,88 @@ async function main() {
     const bookingSpecs = [
       // --- Bekräftade, kommande ---
       {
-        customer: "Lisa Andersson", service: "Omskoning", horseKey: "Lisa Andersson/Molly",
+        customer: "Lisa Andersson", service: "Helskoning", horseKey: "Lisa Andersson/Molly",
         date: daysFromNow(2), startTime: "08:00", status: "confirmed",
-        customerNotes: "Molly har lite ömma fötter på grus, annars frisk",
+        customerNotes: "Molly är lite öm i hovarna på grusunderlag, annars frisk",
       },
       {
-        customer: "Anders Bergman", service: "Omskoning", horseKey: "Anders Bergman/Dante",
+        customer: "Anders Bergman", service: "Helskoning", horseKey: "Anders Bergman/Dante",
         date: daysFromNow(3), startTime: "10:30", status: "confirmed",
       },
       {
-        customer: "Peter Svensson", service: "Verkning (barfota)", horseKey: "Peter Svensson/Midnight",
+        customer: "Peter Svensson", service: "Verkning", horseKey: "Peter Svensson/Midnight",
         date: daysFromNow(5), startTime: "13:00", status: "confirmed",
       },
       {
-        customer: "Maria Holm", service: "Omskoning", horseKey: "Maria Holm/Prince",
+        customer: "Maria Holm", service: "Skoning fram", horseKey: "Maria Holm/Prince",
         date: daysFromNow(7), startTime: "09:00", status: "confirmed",
-        providerNotes: "Prince brukar stå bra. Förra gången ny sko på vänster fram.",
+        providerNotes: "Prince står bra. Förra gången ny sko på vänster fram — bakhovarna barfota.",
       },
       {
-        customer: "Emma Eriksson", service: "Akutbesök", horseKey: "Emma Eriksson/Samba",
+        customer: "Emma Eriksson", service: "Akut hovslagarbesök", horseKey: "Emma Eriksson/Samba",
         date: daysFromNow(10), startTime: "14:00", status: "confirmed",
         customerNotes: "Samba verkar halta lite på höger fram sedan igår",
       },
       // --- Pending ---
       {
-        customer: "Karin Lindqvist", service: "Ungdomsverkning", horseKey: "Karin Lindqvist/Bella",
+        customer: "Karin Lindqvist", service: "Tappsko", horseKey: "Karin Lindqvist/Bella",
         date: daysFromNow(4), startTime: "11:00", status: "pending",
-        customerNotes: "Bella är lite känslig i vänster bakben, var försiktig",
+        customerNotes: "Bella tappade en sko på vänster bak i hagen igår. Lite känslig i bakbenet, var försiktig.",
       },
       {
-        customer: "Sara Magnusson", service: "Omskoning", horseKey: "Sara Magnusson/Stella",
+        customer: "Sara Magnusson", service: "Helskoning", horseKey: "Sara Magnusson/Stella",
         date: daysFromNow(8), startTime: "15:00", status: "pending",
       },
       // --- Genomförda (8 st) ---
       {
-        customer: "Lisa Andersson", service: "Omskoning", horseKey: "Lisa Andersson/Storm",
+        customer: "Lisa Andersson", service: "Helskoning", horseKey: "Lisa Andersson/Storm",
         date: daysFromNow(-56), startTime: "09:00", status: "completed",
-        providerNotes: "Ökad slitning på höger framhov. Kollar igen vid nästa besök.",
+        providerNotes: "Skodd enligt plan. Höger fram något ojämn — korrigerad, fin balans nu. Återkontroll om 8 veckor.",
       },
       {
-        customer: "Anders Bergman", service: "Verkning (barfota)", horseKey: "Anders Bergman/Dante",
+        customer: "Anders Bergman", service: "Verkning", horseKey: "Anders Bergman/Dante",
         date: daysFromNow(-42), startTime: "10:00", status: "completed",
       },
       {
-        customer: "Peter Svensson", service: "Omskoning", horseKey: "Peter Svensson/Midnight",
+        customer: "Peter Svensson", service: "Helskoning", horseKey: "Peter Svensson/Midnight",
         date: daysFromNow(-70), startTime: "08:00", status: "completed",
       },
       {
-        customer: "Karin Lindqvist", service: "Omskoning", horseKey: "Karin Lindqvist/Silver",
+        customer: "Karin Lindqvist", service: "Helskoning", horseKey: "Karin Lindqvist/Silver",
         date: daysFromNow(-49), startTime: "09:00", status: "completed",
       },
       {
-        customer: "Emma Eriksson", service: "Verkning (barfota)", horseKey: "Emma Eriksson/Luna",
+        customer: "Emma Eriksson", service: "Verkning", horseKey: "Emma Eriksson/Luna",
         date: daysFromNow(-56), startTime: "13:00", status: "completed",
       },
       {
-        customer: "Stefan Olsson", service: "Omskoning", horseKey: "Stefan Olsson/Flash",
+        customer: "Stefan Olsson", service: "Helskoning", horseKey: "Stefan Olsson/Flash",
         date: daysFromNow(-35), startTime: "11:00", status: "completed",
         providerNotes: "Flash svårhanterad vid bakhovarna. Böjde i knä vid tag. Ta extra tid nästa gång.",
       },
       {
-        customer: "Johan Nilsson", service: "Hovslagarbedömning", horseKey: "Johan Nilsson/Tornado",
+        customer: "Johan Nilsson", service: "Hovstatuskontroll", horseKey: "Johan Nilsson/Tornado",
         date: daysFromNow(-28), startTime: "14:00", status: "completed",
       },
       {
-        customer: "Maria Holm", service: "Ungdomsverkning", horseKey: "Maria Holm/Nova",
+        customer: "Maria Holm", service: "Verkning unghäst", horseKey: "Maria Holm/Nova",
         date: daysFromNow(-42), startTime: "10:00", status: "completed",
-        providerNotes: "Nova i fin form för ung häst. Bra hovkvalitet.",
+        providerNotes: "Verkad enligt plan. Fin balans och bra hovkvalitet för ung häst.",
       },
       // --- Avbokade ---
       {
-        customer: "Sara Magnusson", service: "Omskoning", horseKey: "Sara Magnusson/Blixten",
+        customer: "Sara Magnusson", service: "Helskoning", horseKey: "Sara Magnusson/Blixten",
         date: daysFromNow(-14), startTime: "08:00", status: "cancelled",
         cancellationMessage: "Hästen hade feber, fick inte rida. Ber om ursäkt för sena beskedet.",
       },
       {
-        customer: "Karin Lindqvist", service: "Verkning (barfota)", horseKey: "Karin Lindqvist/Bella",
+        customer: "Karin Lindqvist", service: "Verkning", horseKey: "Karin Lindqvist/Bella",
         date: daysFromNow(-7), startTime: "12:00", status: "cancelled",
         cancellationMessage: "Tidsbrist pga jobbet. Bokar om nästa vecka.",
       },
       // --- Manuell bokning (skapad av leverantören) ---
       {
-        customer: "Johan Nilsson", service: "Omskoning", horseKey: "Johan Nilsson/Tornado",
+        customer: "Johan Nilsson", service: "Helskoning", horseKey: "Johan Nilsson/Tornado",
         date: daysFromNow(14), startTime: "10:00", status: "confirmed",
         isManualBooking: true,
       },
@@ -712,13 +733,13 @@ async function main() {
   // -------------------------------------------------------------------------
 
   const reviewSpecs = [
-    { customer: "Lisa Andersson", service: "Omskoning", rating: 5, comment: "Erik är otroligt duktig och noggrann. Storm stod lugnt hela tiden – och det säger en del!" },
-    { customer: "Anders Bergman", service: "Verkning (barfota)", rating: 4, comment: "Bra utfört arbete, lite försenat men Erik förklarade anledningen direkt. Inget problem." },
-    { customer: "Peter Svensson", service: "Omskoning", rating: 5, comment: "Toppenservice! Midnight är alltid lite nervös för nya människor men Erik hanterade det suveränt." },
-    { customer: "Karin Lindqvist", service: "Omskoning", rating: 4, comment: "Kompetent och trevlig. Bra pris för kvaliteten och Silver verkade nöjd med resultatet." },
-    { customer: "Emma Eriksson", service: "Verkning (barfota)", rating: 5, comment: "Snabbt och professionellt. Erik gav dessutom bra tips om daglig hovvård som jag inte visste." },
-    { customer: "Stefan Olsson", service: "Omskoning", rating: 3, comment: "Okej besök men Flash fick lite skärsår på hasorna. Hoppas det var en engångshändelse." },
-    { customer: "Johan Nilsson", service: "Hovslagarbedömning", rating: 5, comment: "Mycket grundlig bedömning med tydlig skriftlig rapport. Värt varje krona." },
+    { customer: "Lisa Andersson", service: "Helskoning", rating: 5, comment: "Erik är otroligt duktig och noggrann. Storm stod lugnt hela tiden – och det säger en del!" },
+    { customer: "Anders Bergman", service: "Verkning", rating: 4, comment: "Bra utfört arbete, lite försenat men Erik förklarade anledningen direkt. Inget problem." },
+    { customer: "Peter Svensson", service: "Helskoning", rating: 5, comment: "Toppenservice! Midnight är alltid lite nervös för nya människor men Erik hanterade det suveränt." },
+    { customer: "Karin Lindqvist", service: "Helskoning", rating: 4, comment: "Kompetent och trevlig. Bra pris för kvaliteten och Silver verkade nöjd med resultatet." },
+    { customer: "Emma Eriksson", service: "Verkning", rating: 5, comment: "Snabbt och professionellt. Erik gav dessutom bra tips om daglig hovvård som jag inte visste." },
+    { customer: "Stefan Olsson", service: "Helskoning", rating: 3, comment: "Okej besök men Flash fick ett litet nick vid ballen bak. Hoppas det var en engångshändelse." },
+    { customer: "Johan Nilsson", service: "Hovstatuskontroll", rating: 5, comment: "Mycket grundlig bedömning med tydlig skriftlig rapport. Värt varje krona." },
   ]
 
   const completedBookings = createdBookings.filter((b) => b.status === "completed")
@@ -792,29 +813,29 @@ async function main() {
   console.log("")
 
   // -------------------------------------------------------------------------
-  // 10. BookingSeries (återkommande bokning — Lisa Andersson / Molly / Omskoning)
+  // 10. BookingSeries (återkommande bokning — Lisa Andersson / Molly / Helskoning)
   // -------------------------------------------------------------------------
 
   const lisaId = customers["Lisa Andersson"]
   const mollyId = horses["Lisa Andersson/Molly"]
-  const omskoningId = services["Omskoning"]
+  const helskoningId = services["Helskoning"]
 
   let bookingSeriesId: string | null = null
 
-  if (lisaId && omskoningId) {
+  if (lisaId && helskoningId) {
     const existingSeries = await prisma.bookingSeries.findFirst({
-      where: { customerId: lisaId, providerId: provider.id, serviceId: omskoningId },
+      where: { customerId: lisaId, providerId: provider.id, serviceId: helskoningId },
     })
 
     if (existingSeries) {
       bookingSeriesId = existingSeries.id
-      console.log("  Bokningsserie finns: Omskoning Molly (Lisa Andersson)")
+      console.log("  Bokningsserie finns: Helskoning Molly (Lisa Andersson)")
     } else {
       const series = await prisma.bookingSeries.create({
         data: {
           customerId: lisaId,
           providerId: provider.id,
-          serviceId: omskoningId,
+          serviceId: helskoningId,
           horseId: mollyId ?? null,
           intervalWeeks: 8,
           totalOccurrences: 6,
@@ -824,7 +845,7 @@ async function main() {
         },
       })
       bookingSeriesId = series.id
-      console.log("  Skapade bokningsserie: Omskoning Molly (Lisa Andersson)")
+      console.log("  Skapade bokningsserie: Helskoning Molly (Lisa Andersson)")
     }
 
     // 2 genomförda bokningar i serien (8 och 16 veckor bakåt)
@@ -845,7 +866,7 @@ async function main() {
             data: {
               customerId: lisaId,
               providerId: provider.id,
-              serviceId: omskoningId,
+              serviceId: helskoningId,
               bookingDate: seriesDate,
               startTime: "08:00",
               endTime: "09:15",
@@ -876,7 +897,7 @@ async function main() {
       where: {
         customerId: lisaId,
         providerId: provider.id,
-        serviceId: omskoningId,
+        serviceId: helskoningId,
         horseId: mollyId ?? undefined,
         status: "confirmed",
       },
@@ -892,25 +913,25 @@ async function main() {
   console.log("")
 
   // -------------------------------------------------------------------------
-  // 11. Konversation + meddelanden (Anders Bergman / Dante / Omskoning)
+  // 11. Konversation + meddelanden (Anders Bergman / Dante / Helskoning)
   //     Visar Smart Reply-chips — sista meddelandet är från kunden, oläst.
   // -------------------------------------------------------------------------
 
   const andersId = customers["Anders Bergman"]
 
-  if (andersId && omskoningId) {
+  if (andersId && helskoningId) {
     const andersBooking = await prisma.booking.findFirst({
       where: {
         customerId: andersId,
         providerId: provider.id,
-        serviceId: omskoningId,
+        serviceId: helskoningId,
         status: "confirmed",
       },
       orderBy: { bookingDate: "asc" },
     })
 
     if (!andersBooking) {
-      console.log("  Hoppar konversation: bekräftad bokning Anders Bergman/Omskoning saknas")
+      console.log("  Hoppar konversation: bekräftad bokning Anders Bergman/Helskoning saknas")
     } else {
       const existingConv = await prisma.conversation.findUnique({
         where: { bookingId: andersBooking.id },
@@ -972,7 +993,7 @@ async function main() {
   console.log(`Kunder     : ${Object.keys(customers).length}`)
   console.log(`Hästar     : ${Object.keys(horses).length}`)
   console.log(`Bokningar  : ${createdBookings.length} (+ eventuellt befintliga om --reset ej kördes)`)
-  console.log(`Serie      : ${bookingSeriesId ? "Omskoning Molly — aktiv (6 tillfällen)" : "Ej skapad"}`)
+  console.log(`Serie      : ${bookingSeriesId ? "Helskoning Molly — aktiv (6 tillfällen)" : "Ej skapad"}`)
   console.log("\nDemo-walkthrough: Se docs/operations/demo-setup.md")
 }
 
