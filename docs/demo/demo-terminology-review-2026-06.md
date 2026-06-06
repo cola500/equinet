@@ -1,7 +1,7 @@
 ---
 title: Demo Seed Terminology Review — Hovslagare
 description: Read-only granskning av demo-seedens hovslagar-terminologi (tjänster, bokningar, vårdhistorik, anteckningar, meddelanden) med förslag på realistiska svenska termer och en minsta seed-slice.
-category: demo
+category: operations
 status: active
 last_updated: 2026-06-06
 sections:
