@@ -1,0 +1,19 @@
+Stripe test-mode E2E (deploy k4awyckz3, PAYMENT_PROVIDER=stripe):
+
+INITIERING (verifierat):
+- Kund klickade Betala -> POST /api/bookings/<id>/payment
+- PaymentIntent skapad i sandbox: pi_3TfP2MCZlHYlebEc0CaQVDWI
+  - amount 145000 öre = 1450 SEK (matchar booking-pris), currency sek
+  - test-mode (dashboard URL: /test/payments/), INGEN live
+- Payment-rad: status=pending, amount=1450 (booking fb2ec6a0-44ef-42bd-bf12-4838d4606f60)
+
+/pure-fix bekräftad: js.stripe.com laddas först när dialogen öppnas (on-demand), inte vid sidladdning.
+
+BLOCKERAT (miljö/verktyg):
+- js.stripe.com = net::ERR_FAILED i Playwright MCP-browsern -> Stripe Elements
+  kortformulär kan inte renderas -> 4242 kan inte matas in i denna browser.
+- Stripe MCP stripe_api_write exponerar inte PaymentIntent-confirm.
+- Stripe CLI ej funktionell.
+-> Kort-bekräftelse + webhook(payment_intent.succeeded) + receipt kunde inte
+   slutföras autonomt. Kräver riktig browser (4242 i Elements) eller fungerande
+   Stripe CLI (confirm pi_3TfP2M... --payment-method pm_card_visa).

@@ -221,6 +221,7 @@ sections:
 | Item | Effort | Beskrivning |
 |------|--------|-------------|
 | E-postverifiering Resend (S17-5) | 0.5 dag | Verifiera Resend-leverans i prod |
+| **Decouple Stripe webhook verification from subscription provider config** (hardening, FÖRE production readiness) | 0.5 dag | **Bugg upptäckt 2026-06-06 vid Stripe test-mode E2E:** `src/app/api/webhooks/stripe/route.ts` verifierar ALLA webhooks (även `payment_intent.*`) via `getSubscriptionGateway()`. När `SUBSCRIPTION_PROVIDER ≠ "stripe"` returneras `MockSubscriptionGateway`, som (a) inte verifierar signaturen och (b) returnerar `data: parsed.data` (Stripe-wrappern) istället för `data: parsed.data.object` → routen läser `event.data.id` = undefined → betalning markeras aldrig `succeeded`. Workaround på staging: `SUBSCRIPTION_PROVIDER=stripe`. **Rätt fix:** koppla loss webhook-signaturverifiering från subscription-provider — betalnings-webhooks ska inte bero på `SUBSCRIPTION_PROVIDER`. Egen Stripe-webhook-verifierare (eller verifiera via payment-gatewayen) som alltid använder Stripe när `STRIPE_WEBHOOK_SECRET` är satt. Markerad hardening/refactor — krävs före production readiness. |
 
 ### Vart att fixa (vid tillfalle)
 

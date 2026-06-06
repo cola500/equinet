@@ -1,0 +1,18 @@
+Slice C omkörning EFTER SW-fix (deploy 4rr6eeet2, sw.js innehåller stripe.network):
+
+SW-FIX EFFEKTIV:
+- SW kontrollerar sidan (navigator.serviceWorker.controller = true), active=activated, /sw.js (med fixen)
+- Gamla felet "FetchEvent.respondWith received an error: no-response :: js.stripe.com" är BORTA
+- Direkt fetch-prob:
+    api.stripe.com/v1         -> OK (nåddes via SW NetworkOnly-passthrough)
+    /api/feature-flags        -> OK (same-origin)
+    js.stripe.com/stripe.js   -> FAIL: TypeError "Failed to fetch"
+
+KVARVARANDE BLOCKER (Playwright-miljö, EJ app/SW):
+- js.stripe.com är onåbart specifikt från Playwright MCP-browsern (host-nivå nätverksblock).
+- Network: GET https://js.stripe.com/dahlia/stripe.js => [FAILED] net::ERR_FAILED
+- Console: "Failed to load Stripe.js" (chunk 5825-...js)
+- window.Stripe = undefined -> Stripe Elements iframe renderas inte (0 iframes) -> 4242 kan inte matas in HÄR.
+
+SLUTSATS: api.stripe.com funkar men js.stripe.com blockeras = miljöspecifikt för testbrowsern,
+inte appen. En riktig webbläsare (med js.stripe.com-åtkomst) bör nu fungera tack vare SW-fixen.

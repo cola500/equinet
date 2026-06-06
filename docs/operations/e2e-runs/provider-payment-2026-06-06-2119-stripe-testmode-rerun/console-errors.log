@@ -1,0 +1,4 @@
+[/customer/bookings, Betala -> dialog, efter SW-fix]
+- net::ERR_FAILED @ https://js.stripe.com/dahlia/stripe.js
+- Error: Failed to load Stripe.js (chunk 5825-7e9068db44339116.js)
+INGET "FetchEvent.respondWith: no-response" längre -> SW intercepterar ej längre (fixen verkar).
