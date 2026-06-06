@@ -148,7 +148,9 @@ describe("Login Page", () => {
       })
     })
 
-    it("redirects to /provider/calendar in demo mode when no callbackUrl", async () => {
+    it("redirects to /dashboard in demo mode when no callbackUrl", async () => {
+      // Login must not hardcode a role-specific demo redirect. /dashboard
+      // routes per userType (demo provider → calendar, customer → /hem).
       mockIsDemoMode.mockReturnValue(true)
       mockSignInWithPassword.mockResolvedValue({
         data: { user: { id: "u1" }, session: { access_token: "tok" } },
@@ -163,11 +165,11 @@ describe("Login Page", () => {
       await user.click(screen.getByRole("button", { name: "Logga in" }))
 
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith("/provider/calendar")
+        expect(mockPush).toHaveBeenCalledWith("/dashboard")
       })
     })
 
-    it("demo mode still honors a valid callbackUrl over the calendar default", async () => {
+    it("demo mode still honors a valid callbackUrl over the dashboard default", async () => {
       mockIsDemoMode.mockReturnValue(true)
       mockSearchParams = new URLSearchParams("callbackUrl=/provider/bookings")
       mockSignInWithPassword.mockResolvedValue({

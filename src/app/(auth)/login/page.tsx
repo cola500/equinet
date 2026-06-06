@@ -66,15 +66,11 @@ function LoginForm() {
     requestMobileTokenForNative().catch(() => {})
 
     // Redirect to callbackUrl if provided (must start with / to prevent open redirect).
-    // In demo mode, land on the calendar (the provider's daily workspace) instead of
-    // the dashboard — Slice 2 (demo-scoped; real providers still route via /dashboard).
+    // Otherwise route via /dashboard, which redirects per userType (provider →
+    // calendar/dashboard, customer → /hem). Login stays role-agnostic.
     const callbackUrl = searchParams.get("callbackUrl")
     const redirectTo =
-      callbackUrl && callbackUrl.startsWith("/")
-        ? callbackUrl
-        : demo
-          ? "/provider/calendar"
-          : "/dashboard"
+      callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard"
     router.push(redirectTo)
     router.refresh()
   }
