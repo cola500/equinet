@@ -4,24 +4,22 @@ import { NextRequest } from "next/server"
 // Mock dependencies BEFORE imports (vi.hoisted to avoid TDZ with vi.mock hoisting)
 const {
   mockHandleWebhookEvent,
-  mockVerifyWebhookSignature,
+  mockVerifyStripeWebhook,
   mockHandlePaymentIntentSucceeded,
   mockHandlePaymentIntentFailed,
   mockTryRecordEvent,
   mockDeleteEvent,
 } = vi.hoisted(() => ({
   mockHandleWebhookEvent: vi.fn(),
-  mockVerifyWebhookSignature: vi.fn(),
+  mockVerifyStripeWebhook: vi.fn(),
   mockHandlePaymentIntentSucceeded: vi.fn(),
   mockHandlePaymentIntentFailed: vi.fn(),
   mockTryRecordEvent: vi.fn(),
   mockDeleteEvent: vi.fn(),
 }))
 
-vi.mock("@/domain/subscription/SubscriptionGateway", () => ({
-  getSubscriptionGateway: () => ({
-    verifyWebhookSignature: mockVerifyWebhookSignature,
-  }),
+vi.mock("@/domain/payment/StripeWebhookVerifier", () => ({
+  verifyStripeWebhook: mockVerifyStripeWebhook,
 }))
 
 vi.mock("@/domain/subscription/SubscriptionServiceFactory", () => ({
@@ -76,7 +74,7 @@ describe("POST /api/webhooks/stripe", () => {
   })
 
   it("returns 400 when signature verification fails", async () => {
-    mockVerifyWebhookSignature.mockReturnValue(null)
+    mockVerifyStripeWebhook.mockReturnValue(null)
 
     const request = createWebhookRequest(
       JSON.stringify({ type: "checkout.session.completed", data: {} }),
@@ -94,7 +92,7 @@ describe("POST /api/webhooks/stripe", () => {
       type: "checkout.session.completed",
       data: { subscription: "sub_123" },
     })
-    mockVerifyWebhookSignature.mockReturnValue({
+    mockVerifyStripeWebhook.mockReturnValue({
       id: "evt_sig_test",
       type: "checkout.session.completed",
       data: { subscription: "sub_123" },
@@ -104,7 +102,7 @@ describe("POST /api/webhooks/stripe", () => {
     const request = createWebhookRequest(body, "whsec_test_sig_abc")
     await POST(request)
 
-    expect(mockVerifyWebhookSignature).toHaveBeenCalledWith(
+    expect(mockVerifyStripeWebhook).toHaveBeenCalledWith(
       body,
       "whsec_test_sig_abc"
     )
@@ -120,7 +118,7 @@ describe("POST /api/webhooks/stripe", () => {
         cancel_at_period_end: false,
       },
     }
-    mockVerifyWebhookSignature.mockReturnValue(webhookEvent)
+    mockVerifyStripeWebhook.mockReturnValue(webhookEvent)
     mockHandleWebhookEvent.mockResolvedValue(undefined)
 
     const request = createWebhookRequest(JSON.stringify(webhookEvent))
@@ -138,7 +136,7 @@ describe("POST /api/webhooks/stripe", () => {
       type: "checkout.session.completed",
       data: { subscription: "sub_123" },
     }
-    mockVerifyWebhookSignature.mockReturnValue(webhookEvent)
+    mockVerifyStripeWebhook.mockReturnValue(webhookEvent)
     mockHandleWebhookEvent.mockRejectedValue(new Error("Database error"))
     mockDeleteEvent.mockResolvedValue(undefined)
 
@@ -152,7 +150,7 @@ describe("POST /api/webhooks/stripe", () => {
   })
 
   it("handles missing stripe-signature header gracefully", async () => {
-    mockVerifyWebhookSignature.mockReturnValue(null)
+    mockVerifyStripeWebhook.mockReturnValue(null)
 
     const request = new NextRequest(
       "http://localhost:3000/api/webhooks/stripe",
@@ -165,7 +163,7 @@ describe("POST /api/webhooks/stripe", () => {
     const response = await POST(request)
 
     expect(response.status).toBe(400)
-    expect(mockVerifyWebhookSignature).toHaveBeenCalledWith(
+    expect(mockVerifyStripeWebhook).toHaveBeenCalledWith(
       expect.any(String),
       ""
     )
@@ -180,7 +178,7 @@ describe("POST /api/webhooks/stripe", () => {
         metadata: { bookingId: "booking-1" },
       },
     }
-    mockVerifyWebhookSignature.mockReturnValue(webhookEvent)
+    mockVerifyStripeWebhook.mockReturnValue(webhookEvent)
     mockHandlePaymentIntentSucceeded.mockResolvedValue(undefined)
 
     const request = createWebhookRequest(JSON.stringify(webhookEvent))
@@ -194,6 +192,33 @@ describe("POST /api/webhooks/stripe", () => {
     expect(mockHandleWebhookEvent).not.toHaveBeenCalled()
   })
 
+  it("processes payment_intent.succeeded regardless of SUBSCRIPTION_PROVIDER", async () => {
+    // Regression guard: the route used to verify via getSubscriptionGateway(),
+    // so payment webhooks broke when SUBSCRIPTION_PROVIDER was not "stripe".
+    // It now uses verifyStripeWebhook() and never reads SUBSCRIPTION_PROVIDER.
+    const prev = process.env.SUBSCRIPTION_PROVIDER
+    process.env.SUBSCRIPTION_PROVIDER = "mock"
+    try {
+      const webhookEvent = {
+        id: "evt_pi_indep",
+        type: "payment_intent.succeeded",
+        data: { id: "pi_indep", metadata: { bookingId: "booking-x" } },
+      }
+      mockVerifyStripeWebhook.mockReturnValue(webhookEvent)
+      mockHandlePaymentIntentSucceeded.mockResolvedValue(undefined)
+
+      const response = await POST(createWebhookRequest(JSON.stringify(webhookEvent)))
+
+      expect(response.status).toBe(200)
+      expect(mockHandlePaymentIntentSucceeded).toHaveBeenCalledWith("pi_indep", {
+        bookingId: "booking-x",
+      })
+    } finally {
+      if (prev === undefined) delete process.env.SUBSCRIPTION_PROVIDER
+      else process.env.SUBSCRIPTION_PROVIDER = prev
+    }
+  })
+
   it("routes payment_intent.payment_failed to PaymentWebhookService", async () => {
     const webhookEvent = {
       id: "evt_pi_failed_456",
@@ -203,7 +228,7 @@ describe("POST /api/webhooks/stripe", () => {
         metadata: { bookingId: "booking-2" },
       },
     }
-    mockVerifyWebhookSignature.mockReturnValue(webhookEvent)
+    mockVerifyStripeWebhook.mockReturnValue(webhookEvent)
     mockHandlePaymentIntentFailed.mockResolvedValue(undefined)
 
     const request = createWebhookRequest(JSON.stringify(webhookEvent))
@@ -223,7 +248,7 @@ describe("POST /api/webhooks/stripe", () => {
       type: "customer.subscription.updated",
       data: { id: "sub_123", status: "active" },
     }
-    mockVerifyWebhookSignature.mockReturnValue(webhookEvent)
+    mockVerifyStripeWebhook.mockReturnValue(webhookEvent)
     mockHandleWebhookEvent.mockResolvedValue(undefined)
 
     const request = createWebhookRequest(JSON.stringify(webhookEvent))
@@ -242,7 +267,7 @@ describe("POST /api/webhooks/stripe", () => {
         type: "customer.subscription.updated",
         data: { id: "sub_123", status: "active" },
       }
-      mockVerifyWebhookSignature.mockReturnValue(webhookEvent)
+      mockVerifyStripeWebhook.mockReturnValue(webhookEvent)
       mockTryRecordEvent.mockResolvedValue(false) // duplicate
 
       const request = createWebhookRequest(JSON.stringify(webhookEvent))
@@ -259,7 +284,7 @@ describe("POST /api/webhooks/stripe", () => {
         type: "customer.subscription.updated",
         data: { id: "sub_123", status: "active" },
       }
-      mockVerifyWebhookSignature.mockReturnValue(webhookEvent)
+      mockVerifyStripeWebhook.mockReturnValue(webhookEvent)
       mockTryRecordEvent.mockResolvedValue(true) // new event
       mockHandleWebhookEvent.mockResolvedValue(undefined)
 
@@ -277,7 +302,7 @@ describe("POST /api/webhooks/stripe", () => {
         type: "checkout.session.completed",
         data: { subscription: "sub_123" },
       }
-      mockVerifyWebhookSignature.mockReturnValue(webhookEvent)
+      mockVerifyStripeWebhook.mockReturnValue(webhookEvent)
       mockTryRecordEvent.mockResolvedValue(true)
       mockHandleWebhookEvent.mockRejectedValue(new Error("DB error"))
       mockDeleteEvent.mockResolvedValue(undefined)
@@ -295,7 +320,7 @@ describe("POST /api/webhooks/stripe", () => {
         type: "customer.subscription.updated",
         data: { id: "sub_123", status: "active" },
       }
-      mockVerifyWebhookSignature.mockReturnValue(webhookEvent)
+      mockVerifyStripeWebhook.mockReturnValue(webhookEvent)
       mockTryRecordEvent.mockRejectedValue(new Error("Database connection failed"))
 
       const request = createWebhookRequest(JSON.stringify(webhookEvent))
