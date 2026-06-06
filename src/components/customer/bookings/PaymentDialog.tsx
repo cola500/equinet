@@ -124,7 +124,9 @@ export function PaymentDialog({
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent>
+      {/* max-h + overflow so the tall Stripe Element form scrolls and the pay
+          button stays reachable on desktop (mobile Drawer already scrolls). */}
+      <ResponsiveDialogContent className="max-h-[90vh] overflow-y-auto">
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>Betala {amount} {currency}</ResponsiveDialogTitle>
           <ResponsiveDialogDescription>
