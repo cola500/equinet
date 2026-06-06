@@ -1,0 +1,3 @@
+/customer/bookings + mock-betalning (deploy eslm1cj6z /pure):
+- Console errors (all, hela flödet): 0
+- Inga ERR_FAILED, inga Stripe.js-fel.
