@@ -12,6 +12,7 @@ depends_on:
 related:
   - docs/payment-domain-review.md
   - docs/api/subscriptions.md
+  - docs/operations/provider-e2e-payment-runbook-2026-06.md
 sections:
   - Sammanfattning
   - 1. Current flow map
@@ -265,7 +266,7 @@ Av de fyra alternativen (A: börja E2E nu, B: fixa Stripe/test-config först, C:
 2. ~~Slå på `stripe_payments`~~ → klart (`FEATURE_STRIPE_PAYMENTS=true`).
 3. ~~Redeploy~~ → klart (`equinet-staging-e8fh5f7m6`, READY). Ingen tom commit behövdes.
 
-**Slice 3 (NÄSTA): Kör den fullständiga E2E-slicen** enligt verifieringsplanen nedan, och dokumentera stegen som en lättviktig runbook samtidigt (Alt D — ingen separat förfas behövs). Förberedelse-checklistan i sektion 6 är nu uppfylld vad gäller B2/B7; kvar: seed med `--customer-login` (B5) och själva körningen.
+**Slice 3 (NÄSTA): Kör den fullständiga E2E-slicen.** Runbook framtagen (Playwright-first): [provider-e2e-payment-runbook-2026-06.md](provider-e2e-payment-runbook-2026-06.md). Förberedelse-checklistan i sektion 6 är uppfylld vad gäller B2/B7; kvar: seed med `--customer-login` (B5) och själva körningen.
 
 **Varför inte C (prod-readiness) först:** Prod-synk av 94 commits är ett eget, större arbete som inte blockerar demo på staging. Gör den som separat spår *efter* att E2E-värdet är bevisat på staging — annars riskerar vi att blanda demo-stabilisering med en stor merge-review.
 
