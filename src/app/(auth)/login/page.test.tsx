@@ -85,6 +85,29 @@ describe("Login Page", () => {
       expect(screen.queryByText("Registrera dig här")).not.toBeInTheDocument()
       expect(screen.queryByText("Glömt lösenord?")).not.toBeInTheDocument()
     })
+
+    it("shows both demo login buttons in demo mode", () => {
+      mockIsDemoMode.mockReturnValue(true)
+      renderLogin()
+
+      expect(
+        screen.getByRole("button", { name: /demo som hästägare/i })
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole("button", { name: /demo som leverantör/i })
+      ).toBeInTheDocument()
+    })
+
+    it("hides demo login buttons when not in demo mode", () => {
+      renderLogin()
+
+      expect(
+        screen.queryByRole("button", { name: /demo som hästägare/i })
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole("button", { name: /demo som leverantör/i })
+      ).not.toBeInTheDocument()
+    })
   })
 
   describe("Successful login", () => {

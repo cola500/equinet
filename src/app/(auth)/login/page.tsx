@@ -15,6 +15,8 @@ import { ErrorState } from "@/components/ui/error-state"
 import { useRetry } from "@/hooks/useRetry"
 import { clientLogger } from "@/lib/client-logger"
 import { isDemoMode } from "@/lib/demo-mode"
+import { DemoLoginButton } from "@/components/landing/DemoLoginButton"
+import { DEMO_PERSONAS } from "@/components/landing/demo-personas"
 
 function LoginForm() {
   const router = useRouter()
@@ -202,6 +204,16 @@ function LoginForm() {
             </div>
             )}
           </form>
+          )}
+
+          {demo && (
+            <div className="mt-6 border-t pt-6 space-y-3">
+              <p className="text-center text-sm text-gray-500">
+                Eller utforska demon direkt
+              </p>
+              <DemoLoginButton {...DEMO_PERSONAS.customer} />
+              <DemoLoginButton {...DEMO_PERSONAS.provider} />
+            </div>
           )}
         </CardContent>
       </Card>

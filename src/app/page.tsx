@@ -21,6 +21,7 @@ import { HorseIcon } from "@/components/icons/HorseIcon"
 import { AnnouncementPreview } from "@/components/AnnouncementPreview"
 import { isDemoMode } from "@/lib/demo-mode"
 import { DemoLoginButton } from "@/components/landing/DemoLoginButton"
+import { DEMO_PERSONAS } from "@/components/landing/demo-personas"
 
 // --- Data ---
 
@@ -151,11 +152,43 @@ export default function Home() {
             Boka direkt. Få en påminnelse innan det är dags igen.
           </p>
           {demoMode ? (
-            <div className="flex flex-col items-center gap-4 px-4 sm:px-0">
-              <p className="text-sm text-gray-500 font-medium uppercase tracking-wider">
-                Demomiljö
-              </p>
-              <DemoLoginButton />
+            <div className="flex flex-col items-center gap-6 px-4 sm:px-0">
+              <div className="text-center">
+                <p className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
+                  Utforska appen
+                </p>
+                <p className="text-gray-600">
+                  Välj vilken typ av användare du vill prova Equinet som.
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 w-full max-w-2xl">
+                <div className="bg-white rounded-xl border p-6 flex flex-col gap-4 text-left">
+                  <div>
+                    <p className="font-heading text-lg font-bold mb-2">🐴 Hästägare</p>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>Se hästar</li>
+                      <li>Kommande bokningar</li>
+                      <li>Vårdhistorik</li>
+                    </ul>
+                  </div>
+                  <div className="mt-auto">
+                    <DemoLoginButton {...DEMO_PERSONAS.customer} />
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl border p-6 flex flex-col gap-4 text-left">
+                  <div>
+                    <p className="font-heading text-lg font-bold mb-2">🔨 Leverantör</p>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>Kalender</li>
+                      <li>Kunder</li>
+                      <li>Tjänster</li>
+                    </ul>
+                  </div>
+                  <div className="mt-auto">
+                    <DemoLoginButton {...DEMO_PERSONAS.provider} />
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center px-4 sm:px-0">
