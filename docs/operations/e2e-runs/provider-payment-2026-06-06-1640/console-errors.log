@@ -1,0 +1,15 @@
+Console-fel under hela körningen (browser):
+
+1) Stripe.js misslyckas ladda (flera gånger):
+   - net::ERR_FAILED @ https://js.stripe.com/dahlia/stripe.js
+   - Error: Failed to load Stripe.js (_next/static/chunks/1967-...js)
+   Bedömning: js.stripe.com blockeras/failar i Playwright-browsern (sannolikt
+   miljö/nätverk). BLOCKERADE INTE mock-betalningen — betalning blev succeeded
+   serverside och UI visade "Betalning genomförd!". Relevant att lösa innan
+   riktig Stripe test-mode (då krävs Stripe.js för kortformuläret).
+
+2) 401 @ /api/auth/session (×4):
+   Benignt — session-check returnerar 401 på landings-/login-sidan i utloggat
+   läge (vid personabyte). Förväntat, inte ett fel i flödet.
+
+Inga 404/500 på payment eller receipt. Inga abort-kriterier triggade.
