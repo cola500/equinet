@@ -234,6 +234,7 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Story | Effort | Beskrivning |
 |-------|--------|-------------|
 | Besöksplats-modell (→ Stall-epic) | Discovery | Dagens rutt använder i demon kundens **hemkoordinat** som proxy för **besöksplats**. Korrekt modell: stall-/besöksadress kopplad till häst/bokning (en kund kan ha hästar på olika stall). Hör hemma i kommande **Stall-epic/discovery**, inte i Dagens rutt. Demo-förbehåll dokumenterat i [verifieringsdokumentet](../discovery/dagens-rutt-verifiering-2026-06.md). |
+| Provider booking-detaljvy (`/provider/bookings/[id]`) | 0.5-1 dag | Ingen per-bokning-detaljvy för leverantör finns idag (`/provider/bookings` är en listvy, ingen `[id]`-route) → stoppkortet i Dagens rutt kan **inte** länka till bokningsdetaljer. När en sådan vy byggs: gör stoppkortet klickbart dit (`stop.id` = bookingId finns redan i `today-route`-svaret). Medvetet **ej byggt** i "Navigera"-slicen 2026-06-07. |
 
 > Klart i Dagens rutt-spåret: MVP, riktig körsträcka, demo-seed, OSRM-dedup — se [Arkiv / Done](#arkiv--done).
 

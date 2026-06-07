@@ -5,7 +5,7 @@ import dynamic from "next/dynamic"
 import useSWR from "swr"
 import { format } from "date-fns"
 import { sv } from "date-fns/locale"
-import { MapPin, Clock } from "lucide-react"
+import { MapPin, Clock, Navigation } from "lucide-react"
 import { fetcher } from "@/lib/swr"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
@@ -37,9 +37,29 @@ interface DayRouteStop {
   endTime: string
   serviceType: string
   address: string | null
+  city: string | null
   latitude: number | null
   longitude: number | null
   customer: { firstName: string; lastName: string }
+}
+
+/** Full address (street + city) for display, or null if neither is set. */
+function fullAddress(stop: Pick<DayRouteStop, "address" | "city">): string | null {
+  const parts = [stop.address, stop.city].filter(Boolean)
+  return parts.length > 0 ? parts.join(", ") : null
+}
+
+/**
+ * Google Maps directions URL — platform-neutral (opens the Maps app on mobile,
+ * web on desktop). Prefers coordinates; falls back to the address; null if neither.
+ */
+function mapsNavUrl(stop: DayRouteStop): string | null {
+  const base = "https://www.google.com/maps/dir/?api=1&destination="
+  if (stop.latitude != null && stop.longitude != null) {
+    return base + encodeURIComponent(`${stop.latitude},${stop.longitude}`)
+  }
+  const addr = fullAddress(stop)
+  return addr ? base + encodeURIComponent(addr) : null
 }
 
 interface TodayRouteResponse {
@@ -234,33 +254,49 @@ export default function TodayRoutePage() {
           )}
 
           <ol className="space-y-2">
-            {stops.map((stop, index) => (
-              <li key={stop.id}>
-                <Card>
-                  <CardContent className="flex items-start gap-3 py-3">
-                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-600 text-sm font-bold text-white">
-                      {index + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
-                        <Clock className="h-4 w-4 text-gray-400" aria-hidden="true" />
-                        {stop.startTime}–{stop.endTime}
-                      </div>
-                      <p className="mt-0.5 font-medium text-gray-900">
-                        {stop.customer.firstName} {stop.customer.lastName}
-                      </p>
-                      {stop.address && (
-                        <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
-                          <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
-                          {stop.address}
+            {stops.map((stop, index) => {
+              const address = fullAddress(stop)
+              const navUrl = mapsNavUrl(stop)
+              return (
+                <li key={stop.id}>
+                  <Card>
+                    <CardContent className="flex items-start gap-3 py-3">
+                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-600 text-sm font-bold text-white">
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
+                          <Clock className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                          {stop.startTime}–{stop.endTime}
+                        </div>
+                        <p className="mt-0.5 font-medium text-gray-900">
+                          {stop.customer.firstName} {stop.customer.lastName}
                         </p>
+                        {address && (
+                          <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
+                            <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
+                            {address}
+                          </p>
+                        )}
+                        <p className="mt-0.5 text-xs text-gray-400">{stop.serviceType}</p>
+                      </div>
+                      {navUrl && (
+                        <a
+                          href={navUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-0.5 inline-flex min-h-[44px] shrink-0 items-center gap-1.5 self-center rounded-md border border-green-600 px-3 py-2 text-sm font-medium text-green-700 transition-colors hover:bg-green-50"
+                          aria-label={`Navigera till ${stop.customer.firstName} ${stop.customer.lastName}${address ? `, ${address}` : ""}`}
+                        >
+                          <Navigation className="h-4 w-4" aria-hidden="true" />
+                          Navigera
+                        </a>
                       )}
-                      <p className="mt-0.5 text-xs text-gray-400">{stop.serviceType}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </li>
-            ))}
+                    </CardContent>
+                  </Card>
+                </li>
+              )
+            })}
           </ol>
         </div>
       )}

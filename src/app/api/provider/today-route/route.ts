@@ -14,6 +14,7 @@ interface DayRouteStop {
   endTime: string
   serviceType: string
   address: string | null
+  city: string | null
   latitude: number | null
   longitude: number | null
   customer: { firstName: string; lastName: string }
@@ -74,6 +75,7 @@ export const GET = withApiHandler(
             latitude: true,
             longitude: true,
             address: true,
+            city: true,
           },
         },
         service: { select: { name: true } },
@@ -87,6 +89,7 @@ export const GET = withApiHandler(
       endTime: b.endTime,
       serviceType: b.service.name,
       address: b.customer.address,
+      city: b.customer.city,
       latitude: b.customer.latitude,
       longitude: b.customer.longitude,
       customer: {
