@@ -102,19 +102,29 @@ export default function TodayRoutePage() {
 
   // Fetch the actual driving distance/time from OSRM (via routing.ts). Falls back
   // to the Haversine estimate when routing is unavailable or there are < 2 points.
+  // We also keep the routed geometry (r.coordinates) so RouteMapVisualization can
+  // reuse it instead of issuing a second identical OSRM request for the same path.
   const [routeMetrics, setRouteMetrics] = useState<{ km: number; min: number } | null>(null)
+  const [routeGeometry, setRouteGeometry] = useState<[number, number][] | null>(null)
   const pathKey = routePath.map((p) => p.join(",")).join(";")
   useEffect(() => {
     let cancelled = false
     setRouteMetrics(null)
+    setRouteGeometry(null)
     if (routePath.length < 2) return
     getRoute(routePath)
       .then((r) => {
-        if (!cancelled) setRouteMetrics({ km: r.distance / 1000, min: r.duration / 60 })
+        if (!cancelled) {
+          setRouteMetrics({ km: r.distance / 1000, min: r.duration / 60 })
+          setRouteGeometry(r.coordinates)
+        }
       })
       .catch((err) => {
         if (!cancelled) {
           setRouteMetrics(null)
+          // Straight-line fallback geometry — mirrors the map's own fallback so the
+          // line still renders when routing fails.
+          setRouteGeometry(routePath)
           clientLogger.warn("Today route distance fell back to estimate", { error: String(err) })
         }
       })
@@ -207,6 +217,14 @@ export default function TodayRoutePage() {
             orders={orders}
             selectedOrderIds={selectedOrderIds}
             startLocation={startLocation}
+            // Reuse the routed geometry we already fetched (avoids a duplicate OSRM
+            // call). Only when the map would draw the original route (>= 2 stops with
+            // coordinates); otherwise let the map decide for itself (undefined).
+            precomputedRoutePath={
+              stops.filter((s) => s.latitude != null && s.longitude != null).length >= 2
+                ? routeGeometry
+                : undefined
+            }
           />
 
           {stopsWithoutCoords.length > 0 && (

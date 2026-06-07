@@ -39,13 +39,21 @@ interface RouteMapVisualizationProps {
   selectedOrderIds: string[]
   optimizedOrderIds?: string[]
   startLocation?: { lat: number; lon: number }
+  /**
+   * Routed geometry for the original path, already computed by the caller.
+   * When provided (incl. null), the component mirrors it and skips its own OSRM
+   * fetch — avoiding a duplicate request when the caller already has the route.
+   * `undefined` (default) means the component fetches the route itself.
+   */
+  precomputedRoutePath?: [number, number][] | null
 }
 
 export default function RouteMapVisualization({
   orders,
   selectedOrderIds,
   optimizedOrderIds,
-  startLocation = { lat: 57.7089, lon: 11.9746 } // Göteborg centrum
+  startLocation = { lat: 57.7089, lon: 11.9746 }, // Göteborg centrum
+  precomputedRoutePath
 }: RouteMapVisualizationProps) {
   const mapRef = useRef<L.Map | null>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -104,6 +112,15 @@ export default function RouteMapVisualization({
   useEffect(() => {
     let cancelled = false
 
+    // If the caller already computed the routed original path, mirror it and skip
+    // our own OSRM fetch (avoids a duplicate request for the same route).
+    if (precomputedRoutePath !== undefined) {
+      setRoutedOriginalPath(precomputedRoutePath)
+      return () => {
+        cancelled = true
+      }
+    }
+
     // Fetch original path (in selection order)
     if (originalPath && originalPath.length > 1 && !routedOriginalPath) {
       clientLogger.info('Fetching ORIGINAL route for points', { count: originalPath.length })
@@ -132,7 +149,7 @@ export default function RouteMapVisualization({
     return () => {
       cancelled = true
     }
-  }, [originalPath, routedOriginalPath])
+  }, [originalPath, routedOriginalPath, precomputedRoutePath])
 
   // Fetch optimized path when optimization is done
   useEffect(() => {
