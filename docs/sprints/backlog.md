@@ -252,7 +252,7 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | offline_mode | Komplex, inga E2E-tester | E2E + stabilisering 1-2 veckor |
 | follow_provider | Värde vid volym | Verifiering vid skalning |
 | municipality_watch | Värde vid volym | Verifiering vid skalning |
-| stable_profiles | Aldrig testad i prod | **Beslut behövs** — hanteras via [Stall-epic](#stall-epic-post-launch). Slice 1 bryter ut kärnan till ny flagga `horse_stable_link`. |
+| stable_profiles | Aldrig testad i prod | **Beslut behövs** — hanteras via [Stall-epic](#stall-epic-post-launch). Skyddar enbart stallägar-flödet (profiler, spots, invites, nav); häst → stalltillhörighet är numera grundfunktion utan flagga. |
 
 ## Messaging-epic (post-launch)
 
@@ -275,7 +275,7 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 
 | Slice | Effort | Beskrivning |
 |-------|--------|-------------|
-| Slice 1 (grundbyggsten): häst → stalltillhörighet + namn på profil | 2-4h (aktivera) | Flagg-split: bryt ut `StableSelector` + häst→stall-API + publik sök ur `stable_profiles` till ny `horse_stable_link`. Stallägar-flödet förblir av. Demo-stall i seed. Väntar PO-go. |
+| ~~Slice 1 (grundbyggsten): häst → stalltillhörighet + namn på profil~~ **LEVERERAD 2026-06-07** | 2-4h (aktivera) | Bröts först ut till flaggan `horse_stable_link`; PO befordrade till grundfunktion → flaggan borttagen, alltid aktiv. Stallägar-flödet förblir av bakom `stable_profiles`. Demo-stall i seed. |
 | Slice 2: stallprofil synlig (skapa stall, se hästar i stallet) | 0.5 dag (aktivera) | Aktivera befintlig stallägar-kod efter verifieringsrunda. |
 | Slice 3: medlemskap + inbjudningar med godkännande | Medel (bygga) | Medlems-entitet + ansök/godkänn-flöde saknas idag. |
 | Slice 4 (kärnvärde): gemensamt leverantörsbesök | Störst (bygga) | Stall-koppla `GroupBookingRequest`; flera hästar till ett besök. Det enda genuint nya. |
