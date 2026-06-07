@@ -6,18 +6,11 @@ import L from 'leaflet'
 import { getRouteWithFallback } from '@/lib/routing'
 import { clientLogger } from '@/lib/client-logger'
 
-// Prevent Leaflet from re-initializing icons.
-// Leaflet's _getIconUrl is a private property not in the type definitions,
-// but must be deleted to prevent broken default marker icons in bundled builds.
-if (typeof window !== 'undefined') {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  delete (L.Icon.Default.prototype as any)._getIconUrl
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  })
-}
+// All markers use self-contained CSS divIcons (start + numbered stops), so we
+// deliberately DON'T configure Leaflet's default image-based icon. Previously the
+// default icon pointed at a cdnjs CDN, whose images failed to load in the browser
+// (net::ERR_FAILED) under our cross-origin policy — leaving the start ("hem")
+// marker invisible. divIcons have no external dependency and render reliably.
 
 interface RouteOrder {
   id: string
@@ -247,9 +240,16 @@ export default function RouteMapVisualization({
 
     if (selectedOrders.length === 0) return
 
-    // Add start location marker
-    const startMarker = L.marker([startLocation.lat, startLocation.lon])
-      .bindPopup('<strong>Startposition</strong><br/>Göteborg centrum')
+    // Add start ("hem") location marker — a self-contained divIcon (no external image).
+    const startIcon = L.divIcon({
+      html: '<div class="start-marker" role="img" aria-label="Startposition"><svg viewBox="0 0 24 24" width="16" height="16" fill="white" aria-hidden="true"><path d="M12 3 3 10.5h2.25V20h4.5v-5.25h4.5V20h4.5v-9.5H21z"/></svg></div>',
+      className: 'custom-div-icon',
+      iconSize: [30, 30],
+      iconAnchor: [15, 30],
+      popupAnchor: [0, -30],
+    })
+    const startMarker = L.marker([startLocation.lat, startLocation.lon], { icon: startIcon })
+      .bindPopup('<strong>Startposition</strong>')
       .addTo(map)
     markersRef.current.push(startMarker)
 
@@ -402,6 +402,17 @@ export default function RouteMapVisualization({
         .custom-div-icon {
           background: transparent;
           border: none;
+        }
+        .start-marker {
+          background-color: #3b82f6;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 3px solid white;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
       `}</style>
     </div>
