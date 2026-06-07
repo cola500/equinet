@@ -2,9 +2,9 @@ name: Quality Gates
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, staging]
   push:
-    branches: [main]
+    branches: [main, staging]
 
 jobs:
   # Unit tests with coverage enforcement
@@ -49,8 +49,11 @@ jobs:
         run: npx vitest run --coverage
 
   # E2E tests -- uses Supabase local dev for real auth
+  # Tungt Playwright-jobb: kör bara mot main. Hoppas över på staging-PR:er för
+  # snabb feedback (unit/typecheck/lint/build räcker som gate på staging).
   e2e-tests:
     name: E2E Tests
+    if: github.base_ref == 'main' || github.ref_name == 'main'
     runs-on: ubuntu-latest
     env:
       # Dummy URL for prisma generate during npm ci (overridden after supabase start)
@@ -136,8 +139,10 @@ jobs:
         run: npx supabase stop
 
   # Offline E2E smoke -- production build with Service Worker on port 3001
+  # Tungt Playwright-jobb: kör bara mot main, hoppas över på staging-PR:er.
   offline-smoke:
     name: Offline E2E Smoke
+    if: github.base_ref == 'main' || github.ref_name == 'main'
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:54322/postgres
@@ -430,11 +435,12 @@ jobs:
             echo "❌ Unit tests failed"
             exit 1
           fi
-          if [[ "${{ needs.e2e-tests.result }}" != "success" ]]; then
+          # E2E + offline-smoke hoppas över på staging-PR:er (skipped = OK där).
+          if [[ "${{ needs.e2e-tests.result }}" != "success" && "${{ needs.e2e-tests.result }}" != "skipped" ]]; then
             echo "❌ E2E tests failed"
             exit 1
           fi
-          if [[ "${{ needs.offline-smoke.result }}" != "success" ]]; then
+          if [[ "${{ needs.offline-smoke.result }}" != "success" && "${{ needs.offline-smoke.result }}" != "skipped" ]]; then
             echo "❌ Offline E2E smoke failed"
             exit 1
           fi
