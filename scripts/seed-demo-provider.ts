@@ -444,16 +444,25 @@ async function main() {
   // 5. Customers (9 st)
   // -------------------------------------------------------------------------
 
+  // Street address + coordinates are real-ish points in/around Örebro (within
+  // Erik's 50 km service area). Needed so "Dagens rutt" can plot stops on the
+  // map and compute real driving distance. Anders's address matches the demo
+  // conversation. (User has no postalCode column — street + city only.)
+  //
+  // NOTE (demo proxy): the customer's home coordinates stand in for the *visit
+  // location* here. That is a temporary demo simplification — the correct model
+  // is a stable/visit address linked to the horse or booking. See the future
+  // Stall-epic/discovery; this slice intentionally does NOT change product logic.
   const customerData = [
-    { email: "lisa.andersson@gmail.com",      firstName: "Lisa",   lastName: "Andersson", phone: "0703-112 233", city: "Örebro" },
-    { email: "anders.bergman@hotmail.com",    firstName: "Anders", lastName: "Bergman",   phone: "0721-445 566", city: "Västerås" },
-    { email: "karin.lindqvist@telia.com",     firstName: "Karin",  lastName: "Lindqvist", phone: "0768-778 899", city: "Arboga" },
-    { email: "peter.svensson@gmail.com",      firstName: "Peter",  lastName: "Svensson",  phone: "0706-334 455", city: "Kumla" },
-    { email: "emma.eriksson@outlook.com",     firstName: "Emma",   lastName: "Eriksson",  phone: "0735-667 788", city: "Örebro" },
-    { email: "stefan.olsson@live.se",         firstName: "Stefan", lastName: "Olsson",    phone: "0702-990 011", city: "Kungsör" },
-    { email: "maria.holm@gmail.com",          firstName: "Maria",  lastName: "Holm",      phone: "0739-223 344", city: "Örebro" },
-    { email: "johan.nilsson@yahoo.com",       firstName: "Johan",  lastName: "Nilsson",   phone: "0704-556 677", city: "Hallsberg" },
-    { email: "sara.magnusson@icloud.com",     firstName: "Sara",   lastName: "Magnusson", phone: "0761-889 900", city: "Örebro" },
+    { email: "lisa.andersson@gmail.com",      firstName: "Lisa",   lastName: "Andersson", phone: "0703-112 233", city: "Örebro",    address: "Hagvägen 8",        latitude: 59.2820, longitude: 15.1950 },
+    { email: "anders.bergman@hotmail.com",    firstName: "Anders", lastName: "Bergman",   phone: "0721-445 566", city: "Västerås",  address: "Ekebyvägen 12",     latitude: 59.6161, longitude: 16.5274 },
+    { email: "karin.lindqvist@telia.com",     firstName: "Karin",  lastName: "Lindqvist", phone: "0768-778 899", city: "Arboga",    address: "Kungsörsvägen 5",   latitude: 59.3930, longitude: 15.8420 },
+    { email: "peter.svensson@gmail.com",      firstName: "Peter",  lastName: "Svensson",  phone: "0706-334 455", city: "Kumla",     address: "Skolgatan 14",      latitude: 59.1290, longitude: 15.1390 },
+    { email: "emma.eriksson@outlook.com",     firstName: "Emma",   lastName: "Eriksson",  phone: "0735-667 788", city: "Örebro",    address: "Almbyvägen 22",     latitude: 59.2660, longitude: 15.2400 },
+    { email: "stefan.olsson@live.se",         firstName: "Stefan", lastName: "Olsson",    phone: "0702-990 011", city: "Kungsör",   address: "Drottninggatan 7",  latitude: 59.4250, longitude: 16.0760 },
+    { email: "maria.holm@gmail.com",          firstName: "Maria",  lastName: "Holm",      phone: "0739-223 344", city: "Örebro",    address: "Björkvägen 3",      latitude: 59.2960, longitude: 15.2300 },
+    { email: "johan.nilsson@yahoo.com",       firstName: "Johan",  lastName: "Nilsson",   phone: "0704-556 677", city: "Hallsberg", address: "Stationsgatan 9",   latitude: 59.0650, longitude: 15.1110 },
+    { email: "sara.magnusson@icloud.com",     firstName: "Sara",   lastName: "Magnusson", phone: "0761-889 900", city: "Örebro",    address: "Ringgatan 18",      latitude: 59.2700, longitude: 15.1850 },
   ]
 
   const customers: Record<string, string> = {}
@@ -470,6 +479,9 @@ async function main() {
           lastName: c.lastName,
           phone: c.phone,
           city: c.city,
+          address: c.address,
+          latitude: c.latitude,
+          longitude: c.longitude,
           emailVerified: true,
           emailVerifiedAt: new Date(),
         },
@@ -479,7 +491,12 @@ async function main() {
       // Default: ghost customer (no login) — unchanged behaviour.
       const user = await prisma.user.upsert({
         where: { email: c.email },
-        update: {},
+        // Keep coordinates fresh even on a re-run without --reset (idempotent).
+        update: {
+          address: c.address,
+          latitude: c.latitude,
+          longitude: c.longitude,
+        },
         create: {
           email: c.email,
           firstName: c.firstName,
@@ -487,6 +504,9 @@ async function main() {
           phone: c.phone,
           userType: "customer",
           city: c.city,
+          address: c.address,
+          latitude: c.latitude,
+          longitude: c.longitude,
           emailVerified: true,
           emailVerifiedAt: new Date(),
         },
@@ -584,7 +604,9 @@ async function main() {
     }
   } else {
     const bookingSpecs = [
-      // --- Bekräftade, kommande ---
+      // --- "Dagens rutt"-demodag: dag 2 har 3 stopp på olika adresser så
+      //     /provider/today visar en trovärdig kördag med karta + körsträcka.
+      //     Lisa (Örebro 08:00) → Peter (Kumla 10:30) → Johan (Hallsberg 13:00).
       {
         customer: "Lisa Andersson", service: "Helskoning", horseKey: "Lisa Andersson/Molly",
         date: daysFromNow(2), startTime: "08:00", status: "confirmed",
@@ -596,7 +618,7 @@ async function main() {
       },
       {
         customer: "Peter Svensson", service: "Verkning", horseKey: "Peter Svensson/Midnight",
-        date: daysFromNow(5), startTime: "13:00", status: "confirmed",
+        date: daysFromNow(2), startTime: "10:30", status: "confirmed",
       },
       {
         customer: "Maria Holm", service: "Skoning fram", horseKey: "Maria Holm/Prince",
@@ -666,9 +688,10 @@ async function main() {
         cancellationMessage: "Tidsbrist pga jobbet. Bokar om nästa vecka.",
       },
       // --- Manuell bokning (skapad av leverantören) ---
+      // Tredje stoppet på "Dagens rutt"-demodagen (dag 2, Hallsberg).
       {
         customer: "Johan Nilsson", service: "Helskoning", horseKey: "Johan Nilsson/Tornado",
-        date: daysFromNow(14), startTime: "10:00", status: "confirmed",
+        date: daysFromNow(2), startTime: "13:00", status: "confirmed",
         isManualBooking: true,
       },
     ]
