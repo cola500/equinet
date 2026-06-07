@@ -47,7 +47,8 @@ const sampleResponse = {
       startTime: "08:00",
       endTime: "09:00",
       serviceType: "Hovslagning",
-      address: "Storgatan 1, Alingsås",
+      address: "Storgatan 1",
+      city: "Alingsås",
       latitude: 57.7,
       longitude: 11.97,
       customer: { firstName: "Anna", lastName: "Svensson" },
@@ -57,7 +58,8 @@ const sampleResponse = {
       startTime: "11:00",
       endTime: "12:00",
       serviceType: "Tandvård",
-      address: "Ekvägen 4, Vårgårda",
+      address: "Ekvägen 4",
+      city: "Vårgårda",
       latitude: 57.8,
       longitude: 12.1,
       customer: { firstName: "Erik", lastName: "Berg" },
@@ -87,8 +89,50 @@ describe("TodayRoutePage", () => {
     expect(screen.getByText("Anna Svensson")).toBeInTheDocument()
     expect(screen.getByText("Erik Berg")).toBeInTheDocument()
     expect(screen.getByText("08:00–09:00")).toBeInTheDocument()
+    // Full address = street + city joined
     expect(screen.getByText("Storgatan 1, Alingsås")).toBeInTheDocument()
     expect(screen.getByText("Tandvård")).toBeInTheDocument()
+  })
+
+  it("renders a navigation link per stop using coordinates, opening in a new tab", () => {
+    mockSWR(sampleResponse)
+    render(<TodayRoutePage />)
+
+    const links = screen.getAllByRole("link", { name: /navigera/i })
+    expect(links).toHaveLength(2)
+    expect(links[0]).toHaveAttribute(
+      "href",
+      "https://www.google.com/maps/dir/?api=1&destination=57.7%2C11.97"
+    )
+    expect(links[0]).toHaveAttribute("target", "_blank")
+    expect(links[0]).toHaveAttribute("rel", expect.stringContaining("noopener"))
+  })
+
+  it("falls back to the address for the navigation link when coordinates are missing", () => {
+    mockSWR({
+      date: "2026-06-07",
+      startLocation: { lat: 57.71, lon: 11.98 },
+      stops: [
+        {
+          id: "b3",
+          startTime: "09:00",
+          endTime: "10:00",
+          serviceType: "Verkning",
+          address: "Hagvägen 8",
+          city: "Örebro",
+          latitude: null,
+          longitude: null,
+          customer: { firstName: "Karin", lastName: "Lind" },
+        },
+      ],
+    })
+    render(<TodayRoutePage />)
+
+    const link = screen.getByRole("link", { name: /navigera/i })
+    expect(link).toHaveAttribute(
+      "href",
+      "https://www.google.com/maps/dir/?api=1&destination=Hagv%C3%A4gen%208%2C%20%C3%96rebro"
+    )
   })
 
   it("renders the map when there are stops", () => {
