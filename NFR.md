@@ -4,7 +4,7 @@ description: "Non-functional requirements med status, gap-analys och story-ready
 category: root
 tags: [nfr, production-readiness, security, performance, monitoring]
 status: active
-last_updated: 2026-04-11
+last_updated: 2026-06-07
 related:
   - docs/architecture/database.md
   - docs/security/pentest-2026-02-15.md
@@ -243,7 +243,7 @@ Varje gap är formaterat som en story-ready post med prioritet, effort och accep
 **Kategori:** Funktionell / Säkerhet
 **Effort:** XL (1v+)
 **Varför:** Ingen intäkt utan betalning. Säkerhetskritiskt -- PCI DSS-hantering.
-**Status:** Pågår -- Stripe subscription-infrastruktur implementerad (domain service, gateway, repository, API routes, webhook, UI). Väntar på Stripe-nycklar och aktivering via feature flag `stripe_subscriptions`.
+**Status:** Betalnings-hardening klar 2026-06-06 -- Stripe **test-mode verifierad end-to-end** (betalning → webhook → status). `StripeWebhookVerifier` verifierar alltid via Stripe SDK + `STRIPE_WEBHOOK_SECRET` oberoende av `SUBSCRIPTION_PROVIDER`. Subscription-infrastruktur + webhook-idempotens (dedup) implementerade. **Live-mode väntar på Stripe företagsverifiering** (config, inte kod). Se [wrap-up-retro](docs/retrospectives/2026-06-06-payment-hardening-wrapup.md).
 **Acceptance Criteria:**
 - [x] Stripe subscription-infrastruktur (checkout, portal, status, webhook)
 - [ ] Stripe- eller Swish-integration fungerar i produktion
