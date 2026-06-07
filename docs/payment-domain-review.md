@@ -2,8 +2,11 @@
 title: Payment/checkout-domänen -- genomlysning
 description: Analys av betalnings- och prenumerationslogik -- ansvar, styrkor, svagheter, risker
 category: architecture
-status: current
-last_updated: 2026-03-28
+status: active
+last_updated: 2026-06-07
+related:
+  - docs/architecture/stripe-webhook-architecture.md
+  - docs/architecture/webhook-idempotency-pattern.md
 sections:
   - Översikt
   - Centrala filer
@@ -18,6 +21,7 @@ sections:
 # Payment/checkout-domänen -- genomlysning
 
 > Genomförd 2026-03-28. Baserad på faktisk kod.
+> **Webhook-delen uppdaterad 2026-06-07** efter webhook-refaktorn (2026-06-06). Arkitektur-beslutet i [stripe-webhook-architecture.md](architecture/stripe-webhook-architecture.md). Payment-route-fynden (PaymentService oanvänd, kvitto-HTML, invoice-kollision) är från 2026-03-28 och ej omverifierade i denna runda.
 
 ---
 
@@ -30,8 +34,10 @@ Equinet har **två separata betalningsdomäner** som inte är kopplade till vara
 
 | Domän | Service | Gateway | Route-filer | Prisma-modell |
 |-------|---------|---------|-------------|---------------|
-| Payment | PaymentService (200 LOC) | MockPaymentGateway | `bookings/[id]/payment`, `bookings/[id]/receipt` | Payment |
+| Payment | PaymentService + PaymentWebhookService | Mock + StripePaymentGateway | `bookings/[id]/payment`, `bookings/[id]/receipt`, `webhooks/stripe` | Payment |
 | Subscription | SubscriptionService (183 LOC) | Mock + StripeSubscriptionGateway | `provider/subscription/*`, `webhooks/stripe` | ProviderSubscription |
+
+> **Webhook delas av båda domänerna:** `POST /api/webhooks/stripe` routar `payment_intent.*` → `PaymentWebhookService` och prenumerations-events → `SubscriptionService`. Signaturverifiering är **provider-oberoende** (se [stripe-webhook-architecture.md](architecture/stripe-webhook-architecture.md)).
 
 ---
 
@@ -44,6 +50,11 @@ Equinet har **två separata betalningsdomäner** som inte är kopplade till vara
 | `domain/payment/PaymentService.ts` | 200 | processPayment, getPaymentStatus |
 | `domain/payment/createPaymentService.ts` | 79 | Factory med Prisma-beroenden |
 | `domain/payment/PaymentGateway.ts` | 64 | IPaymentGateway + MockPaymentGateway |
+| `domain/payment/StripePaymentGateway.ts` | -- | Riktig Stripe PaymentIntent-implementation (real betalning) |
+| `domain/payment/StripeWebhookVerifier.ts` | 37 | `verifyStripeWebhook()` -- provider-oberoende signaturverifiering, normaliserar `data.object` |
+| `domain/payment/PaymentWebhookService.ts` | -- | Hanterar `payment_intent.succeeded/failed` -- slår upp Payment via `providerPaymentId`, atomisk statusuppdatering med terminal-state-guard |
+| `domain/payment/createPaymentWebhookService.ts` | -- | Factory för PaymentWebhookService |
+| `infrastructure/persistence/stripe/stripeWebhookEventRepository.ts` | -- | Dedup: `tryRecordEvent` (atomisk insert-or-ignore) + `deleteEvent` (vid processfel → retry) |
 | `domain/payment/InvoiceNumberGenerator.ts` | 10 | EQ-YYYYMM-XXXXXX format |
 | `domain/payment/mapPaymentErrorToStatus.ts` | 36 | 4 feltyper -> HTTP-status |
 | `app/api/bookings/[id]/payment/route.ts` | ~280 | POST (betala) + GET (status) |
@@ -60,7 +71,7 @@ Equinet har **två separata betalningsdomäner** som inte är kopplade till vara
 | `app/api/provider/subscription/checkout/route.ts` | ~42 | POST (initiera checkout) |
 | `app/api/provider/subscription/portal/route.ts` | ~39 | POST (Stripe billing portal) |
 | `app/api/provider/subscription/status/route.ts` | ~21 | GET (prenumerationsstatus) |
-| `app/api/webhooks/stripe/route.ts` | ~35 | POST (Stripe webhook) |
+| `app/api/webhooks/stripe/route.ts` | ~76 | POST (Stripe webhook) -- verifiering + dedup + dual-routing (payment + subscription) |
 
 ---
 
@@ -136,11 +147,15 @@ withApiHandler(provider + feature flag) -> SubscriptionService.initiateCheckout(
 
 ### 5. Stripe webhook (POST /api/webhooks/stripe)
 
+Uppdaterad 2026-06-06. Se [stripe-webhook-architecture.md](architecture/stripe-webhook-architecture.md).
+
 ```
-Raw body + signature -> gateway.verifyWebhookSignature()
-  -> SubscriptionService.handleWebhookEvent()
-    -> handleCheckoutCompleted / handleSubscriptionUpdated / handleSubscriptionDeleted / handleInvoicePaid
-    -> repo.upsert/update
+Raw body + signature -> verifyStripeWebhook()          (provider-oberoende: alltid Stripe SDK + STRIPE_WEBHOOK_SECRET)
+  -> stripeWebhookEventRepository.tryRecordEvent()      (atomisk dedup; dubblett -> { received: true })
+  -> route per event-typ:
+       payment_intent.*  -> PaymentWebhookService.handlePaymentIntentSucceeded/Failed()
+       övriga            -> SubscriptionService.handleWebhookEvent()
+  -> vid processfel: deleteEvent() (släpp dedup-raden) + throw -> Stripe retryar
 ```
 
 ---
@@ -163,9 +178,9 @@ SubscriptionService med ren DI, gateway-abstraktion (Mock + Stripe), repository-
 
 Ingen automatisk statuskaskad. En bokning kan vara "confirmed" utan betalning. Enkel modell som undviker komplexa statusmaskiner.
 
-### 5. Stripe-webhook har signaturverifiering
+### 5. Stripe-webhook har provider-oberoende signaturverifiering
 
-`verifyWebhookSignature()` validerar att webhook-anropet verkligen kommer från Stripe.
+`verifyStripeWebhook()` (`StripeWebhookVerifier.ts`) validerar att anropet kommer från Stripe — **alltid via Stripe SDK + `STRIPE_WEBHOOK_SECRET`, oberoende av `PAYMENT_PROVIDER`/`SUBSCRIPTION_PROVIDER`**. Plus idempotens via dedup-tabell (se [webhook-idempotency-pattern.md](architecture/webhook-idempotency-pattern.md)).
 
 ---
 
@@ -189,9 +204,9 @@ Ingen automatisk statuskaskad. En bokning kan vara "confirmed" utan betalning. E
 
 `bookings/[id]/receipt/route.ts` genererar HTML med template strings. Otestat, svårt att underhålla, blandar data-hämtning med presentation.
 
-### 3. Webhook-hantering saknar idempotency-tracking
+### 3. ~~Webhook-hantering saknar idempotency-tracking~~ -- LÖST 2026-06-06
 
-Stripe kan skicka samma webhook flera gånger. Nuvarande kod processar varje leverans utan att kontrollera om eventet redan hanterats. Risk: dubbla status-uppdateringar (låg påverkan men inte robust).
+Webhooken gör nu atomisk dedup via `stripeWebhookEventRepository.tryRecordEvent()` (insert-or-ignore på event-ID) och släpper dedup-raden vid processfel så Stripe kan retrya. Se [webhook-idempotency-pattern.md](architecture/webhook-idempotency-pattern.md).
 
 ### 4. Invoice-nummer har kollisionsrisk
 
@@ -209,7 +224,8 @@ Subscription använder repository-pattern (`ISubscriptionRepository`). Payment a
 |-----|---------------|
 | SubscriptionService | Ren DI, gateway-abstraktion, feature flag, Result-pattern |
 | StripeSubscriptionGateway | Verifierad Stripe-integration, signaturkontroll |
-| Webhook-routing | Tydlig dispatch per event-typ |
+| Webhook-routing | Tydlig dispatch per event-typ (payment + subscription) |
+| Webhook-verifiering + idempotens | `StripeWebhookVerifier` (provider-oberoende) + dedup-tabell + retry-on-error (2026-06-06) |
 | MockPaymentGateway | Deterministisk, inga externa beroenden |
 | PaymentService (koden) | Välskriven -- problemet är att den inte används |
 | Payment Prisma-schema | Korrekt med @unique constraints och index |
@@ -222,7 +238,6 @@ Subscription använder repository-pattern (`ISubscriptionRepository`). Payment a
 | `bookings/[id]/receipt/route.ts` | 358 LOC inline HTML |
 | PaymentService vs route-logik | Oklart vilken som är "source of truth" |
 | Invoice-nummer kollision | Ej hanterat constraint-fel |
-| Webhook idempotency | Saknas, risk vid retry |
 
 ---
 
