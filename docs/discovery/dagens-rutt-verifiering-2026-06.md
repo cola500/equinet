@@ -109,11 +109,18 @@ Under verifieringen visade 2026-06-07 "Inga bokningar idag" trots en pending bok
   - Johan Nilsson — Hallsberg (Stationsgatan 9) — 13:00 — Helskoning (manuell)
 - Ingen ny bokning (count oförändrad, 18), ingen ny tabell/flagga. `--reset` rensar gamla bokningar/kunder och återskapar med koordinater.
 
-**Demodag:** dag **2 efter seed-körning** (i lokal verifiering 2026-06-09). Öppna Dagens rutt → välj datum 2 dagar fram.
+**Demodag (viktigt — relativ till seed-körningen):** seed-dagarna räknas med `daysFromNow`, så 3-stoppsdagen = **datumet seeden kördes + 2 dagar** (INTE "2 dagar från idag" sett från visningsdagen). I Dagens rutt: öppna vyn och välj det datumet i datumväljaren.
 
-**Lokal verifiering (demo Erik, dag 2):** **"3 stopp · Körsträcka: 63 km · ~68 min"** (riktig OSRM-väg), karta visar 3 utspridda markörer Örebro → Kumla → Hallsberg + startposition. Screenshot: `dagens-rutt-screenshots/06-seed-3stop-local.png`.
+- Lokal verifiering (seed körd 2026-06-07) → demodag **2026-06-09**.
+- Staging (seed körd 2026-06-06) → demodag **2026-06-08**.
 
-> Staging-reset körs separat via det interaktiva helper-scriptet (`npm run db:seed:staging-demo:customer:safe`) — kan inte köras autonomt (frågar efter staging-DB-URL).
+> Tips: hittar du bara 1 stopp på en avlägsen adress (t.ex. Anders i Västerås, ~187 km) har du landat på **dag 3** — backa/fram en dag till 3-stoppsdagen.
+
+**Lokal verifiering (demo Erik, demodag):** **"3 stopp · Körsträcka: 63 km · ~68 min"** (riktig OSRM-väg), karta visar 3 utspridda markörer Örebro → Kumla → Hallsberg + startposition. Screenshot: `dagens-rutt-screenshots/06-seed-3stop-local.png`.
+
+**Staging-verifiering (2026-06-07, demodag 2026-06-08):** identiskt utfall — **"3 stopp · Körsträcka: 63 km · ~68 min"**, Lisa (Hagvägen 8) → Peter (Skolgatan 14) → Johan (Stationsgatan 9), meningsfull karta. Inga föräldralösa/gamla demo-data. Screenshot: `dagens-rutt-screenshots/07-staging-3stop.png`.
+
+> Staging-reset körs via det interaktiva helper-scriptet (`npm run db:seed:staging-demo:customer:safe`) — kan inte köras autonomt (frågar efter staging-DB-URL).
 
 ### ⚠️ Demo-proxy: kundkoordinat ≠ besöksplats
 
