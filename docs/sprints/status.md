@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-04-30
+last_updated: 2026-06-07
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -17,6 +17,8 @@ sections:
 > **Instruktion:** Uppdatera denna fil vid varje commit. Tech lead laser den for review och koordinering.
 
 ## Aktiv sprint
+
+> **Nuläge (2026-06-07):** Ingen numrerad sprint pågår. Arbetet sedan S67 körs som **ad-hoc slices** (t.ex. Dagens rutt, CI-gate på staging, backlog-hygien — PR #367–373) och spåras i den kanoniska **[backlog.md](backlog.md)** ("Aktiva produktspår" + "Arkiv / Done"). Senast avslutade numrerade sprint: **S67**.
 
 **Sprint 67** — iOS staging capability via separat Vercel-projekt. **KLAR 2026-05-09.** Se [sprint-67-ios-staging-capability.md](sprint-67-ios-staging-capability.md).
 
@@ -134,6 +136,8 @@ sections:
 > Sessionsstatus skrivs av varje session i sin egen fil: `docs/sprints/session-<sprint>-<domän>.md`
 
 ## Tidigare sprintar (alla klara)
+
+> Sprint-historik (sprint-nivå). Backlog-items på item-nivå finns i [backlog.md](backlog.md) "Arkiv / Done"; per-sprint-detaljer i [retrospectives/](../retrospectives/).
 
 | Sprint | Tema | Stories |
 |--------|------|---------|
