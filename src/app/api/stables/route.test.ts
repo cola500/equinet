@@ -68,6 +68,13 @@ describe("GET /api/stables", () => {
     expect(res.status).toBe(200)
   })
 
+  it("works when only stable_profiles is enabled", async () => {
+    mockIsFeatureEnabled.mockImplementation(async (flag: string) => flag === "stable_profiles")
+
+    const res = await GET(makeRequest())
+    expect(res.status).toBe(200)
+  })
+
   it("returns 429 when rate limited", async () => {
     const { rateLimiters } = await import("@/lib/rate-limit")
     vi.mocked(rateLimiters.api).mockResolvedValueOnce(false)
@@ -85,6 +92,13 @@ describe("GET /api/stables", () => {
     expect(json.data[0].name).toBe("Testgården")
     expect(json.data[0]._count.availableSpots).toBe(2)
     expect(mockSearchPublic).toHaveBeenCalledWith({})
+  })
+
+  it("does not leak contact details (email/phone) in the search list", async () => {
+    const res = await GET(makeRequest())
+    const json = await res.json()
+    expect(json.data[0]).not.toHaveProperty("contactEmail")
+    expect(json.data[0]).not.toHaveProperty("contactPhone")
   })
 
   it("passes municipality filter to service", async () => {

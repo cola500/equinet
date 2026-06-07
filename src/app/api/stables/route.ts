@@ -6,7 +6,12 @@ import { sanitizeSearchQuery } from "@/lib/sanitize"
 import { logger } from "@/lib/logger"
 import type { StableFilters, StableWithCounts } from "@/infrastructure/persistence/stable/IStableRepository"
 
-// Public select: strip sensitive fields before returning
+// Public select: strip sensitive fields before returning.
+// Contact details (email/phone) are intentionally NOT included in the search
+// list — they belong on the single-stable profile (toPublicProfile in
+// /api/stables/[stableId]), which is gated by stable_profiles. The search list
+// is also reachable via the lightweight horse_stable_link flag, so leaking
+// every stable's contact PII here would widen exposure beyond the owner flow.
 function toPublicStable(stable: StableWithCounts) {
   return {
     id: stable.id,
@@ -16,8 +21,6 @@ function toPublicStable(stable: StableWithCounts) {
     municipality: stable.municipality,
     latitude: stable.latitude,
     longitude: stable.longitude,
-    contactEmail: stable.contactEmail,
-    contactPhone: stable.contactPhone,
     profileImageUrl: stable.profileImageUrl,
     _count: stable._count,
   }

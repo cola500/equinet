@@ -420,7 +420,8 @@ async function main() {
       data: {
         userId: stableOwner.id,
         name: "Stall Solbacken",
-        description: DEMO_TAG,
+        // Readable description that still carries the demo tag for reset cleanup.
+        description: `Demostall i Alingsås (${DEMO_TAG})`,
         city: "Alingsås",
         municipality: "Alingsås",
         isActive: true,
