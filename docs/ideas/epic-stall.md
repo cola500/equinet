@@ -2,7 +2,7 @@
 title: "Epic: Stallgemenskap och gemensam planering"
 description: "Hästägare i samma stall samordnar leverantörsbesök. Slicad enligt Seven Dimensions, med kartläggning av redan byggd (men avstängd) Stable-kod."
 category: idea
-status: draft
+status: active
 last_updated: 2026-06-07
 tags: [stable, stall, epic, seven-dimensions, post-launch]
 related:
@@ -83,9 +83,9 @@ Slicing gjord 2026-06-07. Notera att slicens effort skiljer på **aktivera** (be
 
 **Leverans:** Hästägaren kan ange vilket stall hästen står i, och stallnamnet visas på hästprofilen. Inget medlemskap, ingen stalladmin, inga inbjudningar, ingen community, ingen gemensam bokning, ingen ny behörighetsmodell.
 
-**Genomförande:** Aktivera — inte bygga. Den smala kärnan (`StableSelector` på hästprofil + häst→stall-API + publik sök) bryts ut ur `stable_profiles` till en egen flagga `horse_stable_link`, så stallägar-flödet (profiler, spots, invites, nav) **förblir avstängt**. Demo-stall seedas så det syns i demon.
+**Genomförande:** Aktivera — inte bygga. Den smala kärnan (`StableSelector` på hästprofil + häst→stall-API + publik sök) bröts först ut ur `stable_profiles` till en egen flagga `horse_stable_link`. **2026-06-07 beslutade PO** att häst → stalltillhörighet är en **grundfunktion** — flaggan togs bort och funktionen är nu alltid aktiv. Stallägar-flödet (profiler, spots, invites, nav) **förblir avstängt** bakom `stable_profiles`. Demo-stall seedas så det syns i demon.
 
-**Effort:** ~2–4h (mekaniskt: flagg-split + seed + verifiering).
+**Effort:** ~2–4h (mekaniskt: aktivering + seed + verifiering). Status: **levererad** (flagg-borttagning 2026-06-07).
 
 **Värde-andel:** Låg i sig — detta är medvetet en återanvändbar **grundbyggsten**, inte epikens värde-MVP. Kärnvärdet ligger i Slice 4.
 
@@ -145,11 +145,13 @@ Från epik-utkastet, med vad koden idag implicit svarar:
 ## Beslut
 
 - **2026-06-07** (Johan + tech lead): Discovery genomförd på branch `discovery/stall-foundation` (worktree från `staging`). Konstaterat att Stable-foundation redan finns men ligger avstängd.
-- **Riktning:** "Beskär & aktivera kärnan" — Slice 1 görs genom flagg-split (`horse_stable_link`), inte nybygge. Stallskapande hör till epiken (Slice 2+), inte Slice 1.
+- **Riktning:** "Beskär & aktivera kärnan" — Slice 1 byggdes först som flagg-split (`horse_stable_link`), inte nybygge. Stallskapande hör till epiken (Slice 2+), inte Slice 1.
 - **MVP-foundation:** Slice 1 (häst → stalltillhörighet + namn på profil). Resten av stallägar-flödet förblir avstängt.
+- **2026-06-07** (PO): Häst → stalltillhörighet befordrad till **grundfunktion**. Flaggan `horse_stable_link` borttagen; funktionen alltid aktiv. `stable_profiles` kvar som separat flagga för stallägar-flödet.
 
 ## Nästa steg
 
-- Inväntar PO-godkännande att implementera **Slice 1** (flagg-split + demo-stall + verifiering). Ingen kod ändrad i discovery-fasen.
+- **Slice 1 levererad** (flagg-borttagning 2026-06-07). Häst → stall är alltid aktiv.
+- Slice 2–5 (stallprofiler, medlemskap, gemensamt besök, roller) prioriteras separat — fortsatt bakom `stable_profiles` / framtida epik-arbete.
 - Vid implementation: följ `.claude/rules/prisma.md` om seed/migration, lägg backlog-rad i `docs/sprints/status.md`.
 - Slice 2–5 prioriteras separat när Slice 1 är på plats.

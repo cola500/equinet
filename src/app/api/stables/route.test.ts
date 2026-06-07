@@ -1,11 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { GET } from "./route"
 import { NextRequest } from "next/server"
-import { isFeatureEnabled } from "@/lib/feature-flags"
-
-vi.mock("@/lib/feature-flags", () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
-}))
 
 vi.mock("@/lib/rate-limit", () => ({
   rateLimiters: {
@@ -13,8 +8,6 @@ vi.mock("@/lib/rate-limit", () => ({
   },
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
 }))
-
-const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 // Mock StableService
 const mockSearchPublic = vi.fn()
@@ -48,29 +41,10 @@ const mockStable = {
 describe("GET /api/stables", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockIsFeatureEnabled.mockResolvedValue(true)
     mockSearchPublic.mockResolvedValue([mockStable])
   })
 
-  it("returns 404 when both stable feature flags are disabled", async () => {
-    mockIsFeatureEnabled.mockResolvedValue(false)
-
-    const res = await GET(makeRequest())
-    expect(res.status).toBe(404)
-    expect(mockIsFeatureEnabled).toHaveBeenCalledWith("horse_stable_link")
-    expect(mockIsFeatureEnabled).toHaveBeenCalledWith("stable_profiles")
-  })
-
-  it("works when only horse_stable_link is enabled", async () => {
-    mockIsFeatureEnabled.mockImplementation(async (flag: string) => flag === "horse_stable_link")
-
-    const res = await GET(makeRequest())
-    expect(res.status).toBe(200)
-  })
-
-  it("works when only stable_profiles is enabled", async () => {
-    mockIsFeatureEnabled.mockImplementation(async (flag: string) => flag === "stable_profiles")
-
+  it("is public (no feature gate) and returns 200", async () => {
     const res = await GET(makeRequest())
     expect(res.status).toBe(200)
   })

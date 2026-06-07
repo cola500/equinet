@@ -391,11 +391,11 @@ async function main() {
   console.log("")
 
   // -------------------------------------------------------------------------
-  // 5b. Create demo stable + link horses (feature flag: horse_stable_link)
-  //     Only the lightweight horse→stable link is exercised here. The full
-  //     stable-owner flow (stable_profiles) stays off; the stable just needs a
-  //     User as FK owner. Two horses share the stable, one is left unlinked so
-  //     both states are visible in the demo.
+  // 5b. Create demo stable + link horses.
+  //     The horse→stable link is a base feature (no flag). The full stable-owner
+  //     flow (stable_profiles) stays off; the stable just needs a User as FK
+  //     owner. Two horses share the stable, one is left unlinked so both states
+  //     are visible in the demo.
   // -------------------------------------------------------------------------
 
   const stableOwner = await prisma.user.upsert({

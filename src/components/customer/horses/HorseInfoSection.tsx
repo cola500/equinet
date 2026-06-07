@@ -10,7 +10,6 @@ import {
   ResponsiveDialog, ResponsiveDialogContent, ResponsiveDialogDescription,
   ResponsiveDialogHeader, ResponsiveDialogTitle, ResponsiveDialogFooter,
 } from "@/components/ui/responsive-dialog"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { StableSelector } from "@/components/stable/StableSelector"
 import type { Horse } from "@/app/customer/horses/[id]/types"
 import { GENDER_LABELS } from "@/app/customer/horses/[id]/types"
@@ -34,7 +33,6 @@ export function HorseInfoSection({
   horse, editDialogOpen, onEditDialogOpenChange,
   editForm, onEditFormChange, isSaving, onOpenEdit, onSave, onHorseChanged,
 }: HorseInfoSectionProps) {
-  const stableLinkEnabled = useFeatureFlag("horse_stable_link")
   return (
     <>
       <div className="space-y-6">
@@ -65,17 +63,15 @@ export function HorseInfoSection({
           </Card>
         )}
 
-        {stableLinkEnabled && (
-          <Card>
-            <CardContent className="py-4">
-              <StableSelector
-                horseId={horse.id}
-                currentStable={horse.stable}
-                onStableChanged={() => onHorseChanged?.()}
-              />
-            </CardContent>
-          </Card>
-        )}
+        <Card>
+          <CardContent className="py-4">
+            <StableSelector
+              horseId={horse.id}
+              currentStable={horse.stable}
+              onStableChanged={() => onHorseChanged?.()}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Edit horse dialog */}

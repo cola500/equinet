@@ -47,7 +47,6 @@ describe("GET /api/feature-flags", () => {
       provider_subscription: false,
       help_center: true,
       stable_profiles: false,
-      horse_stable_link: false,
       stripe_payments: false,
       demo_mode: false,
       messaging: true,
