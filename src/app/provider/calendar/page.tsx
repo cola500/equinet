@@ -439,12 +439,20 @@ function CalendarContent() {
           <h1 className="text-2xl md:text-3xl font-bold">Kalender</h1>
           <p className="text-gray-600 mt-1">Överblick av dina bokningar</p>
         </div>
-        <button
-          onClick={() => manualBookingDialog.openDialog()}
-          className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors"
-        >
-          + Bokning
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push("/provider/today")}
+            className="border border-green-600 text-green-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-green-50 transition-colors"
+          >
+            Dagens rutt
+          </button>
+          <button
+            onClick={() => manualBookingDialog.openDialog()}
+            className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors"
+          >
+            + Bokning
+          </button>
+        </div>
       </div>
 
       <PendingBookingsBanner
