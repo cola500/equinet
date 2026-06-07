@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Alla kända stories och uppgifter, speglar roadmap.md. Plockas in i sprintar vid behov."
 category: sprint
 status: active
-last_updated: 2026-05-14
+last_updated: 2026-06-07
 tags: [backlog, roadmap, planning]
 sections:
   - Blockerare
@@ -154,6 +154,13 @@ Identifierade mönster (2026-04-17) som är smartare än vanligt men bara finns 
 |-------|--------|-------------|
 | Proaktiv push-notifikation vid förfallna hästar | 45 min | Daglig cron-route (`/api/cron/due-for-service-notify`) skickar push via `PushDeliveryService` + `DueForServiceLookup` till leverantörer med ≥1 overdue-häst. Infrastrukturen finns, bara kopplingen saknas. Teateranalys 2026-04-25 (GAP 4). |
 | UX: "Boka"-knappen i förfallna-listan | 30 min | Action-läget vid bokning av häst i `/provider/due-for-service`-listan är oklart. Förbättra flödet — t.ex. förifylla häst + tjänst i kalendern/manuell-bokningsdialogen istället för bara en länk till kalendern. Sprint 60 review-fynd 2026-04-25. |
+
+## Dagens rutt (uppföljning)
+
+| Story | Effort | Beskrivning |
+|-------|--------|-------------|
+| Geokoda demo-kunder för Dagens rutt | 30 min | Demo-seeden (`scripts/seed-demo-provider.ts`) saknar kund-koordinater och har ~1 bokning/dag → kartan i `/provider/today` blir tom och rutt-linjen/körsträckan kan inte visas i standard-demon. Geokoda demo-kundernas adresser (Nominatim eller hårdkodade lat/lng) och ge minst en dag ≥2 stopp så demon visar en riktig flerstopps-rutt. Watch från Dagens rutt-verifieringen 2026-06-07 — se [dagens-rutt-verifiering-2026-06.md](../discovery/dagens-rutt-verifiering-2026-06.md). |
+| Dubbel OSRM-call i Dagens rutt | 1-2h | `/provider/today` anropar `/api/routing` (OSRM) två gånger med samma path: i `RouteMapVisualization` (`getRouteWithFallback`, geometri) och i sidan (`getRoute`, körsträcka-siffran). Lyft ut distansen via callback/prop från `RouteMapVisualization` så den hämtas en gång och återanvänds. Rör delad komponent (används även av route-planning) → egen slice med review. Watch från slice 2, 2026-06-07. |
 
 ## Features som kraver arbete innan lansering
 
