@@ -248,7 +248,7 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | offline_mode | Komplex, inga E2E-tester | E2E + stabilisering 1-2 veckor |
 | follow_provider | Värde vid volym | Verifiering vid skalning |
 | municipality_watch | Värde vid volym | Verifiering vid skalning |
-| stable_profiles | Aldrig testad i prod | **Beslut behövs** (se Kräver PO-beslut) |
+| stable_profiles | Aldrig testad i prod | **Beslut behövs** — hanteras via [Stall-epic](#stall-epic-post-launch). Slice 1 bryter ut kärnan till ny flagga `horse_stable_link`. |
 
 ## Messaging-epic (post-launch)
 
@@ -264,6 +264,18 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Leverantör ↔ leverantör community (separat epic) | 2-3 sprintar | Nätverkseffekt (remisser, vikarier). Utforska efter messaging-epic validerats. |
 
 **Messaging-polish (minor, post-MVP):** aria-label på ProviderNav-badge (15 min), pending-state på MessagingSection-knapp (15 min), pagination för långa trådar (1-2h), leverantörs-läskvitto (1h), typing indicator (2-3h).
+
+## Stall-epic (post-launch)
+
+> Slicad enligt Seven Dimensions 2026-06-07. Se [epic-stall.md](../ideas/epic-stall.md). **Discovery-fynd:** Stable-foundation (modell, stallägar-flöde, invites, spots, `Horse.stableId`) är **redan byggd** men avstängd bakom flaggan `stable_profiles`. Effort skiljer på *aktivera* (befintlig kod) och *bygga* (nytt).
+
+| Slice | Effort | Beskrivning |
+|-------|--------|-------------|
+| Slice 1 (grundbyggsten): häst → stalltillhörighet + namn på profil | 2-4h (aktivera) | Flagg-split: bryt ut `StableSelector` + häst→stall-API + publik sök ur `stable_profiles` till ny `horse_stable_link`. Stallägar-flödet förblir av. Demo-stall i seed. Väntar PO-go. |
+| Slice 2: stallprofil synlig (skapa stall, se hästar i stallet) | 0.5 dag (aktivera) | Aktivera befintlig stallägar-kod efter verifieringsrunda. |
+| Slice 3: medlemskap + inbjudningar med godkännande | Medel (bygga) | Medlems-entitet + ansök/godkänn-flöde saknas idag. |
+| Slice 4 (kärnvärde): gemensamt leverantörsbesök | Störst (bygga) | Stall-koppla `GroupBookingRequest`; flera hästar till ett besök. Det enda genuint nya. |
+| Slice 5: roller/multi-admin, synlighet, häst i flera stall | Medel (bygga) | Schemaändring: single owner → roller; single `stableId` → m2m. |
 
 ## Process & tech-debt (vid tillfälle)
 
