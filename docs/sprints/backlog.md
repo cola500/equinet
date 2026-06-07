@@ -28,7 +28,6 @@ sections:
   - Parking lot
   - Vid lansering
   - Arkiv / Done
-  - Arkiv / Kandidat (granska)
   - Research
 ---
 
@@ -63,6 +62,7 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | `supabase_auth_poc` | PoC klar sedan S10 → ta bort flaggan? (kandidat: arkivera) | Städning |
 | Mapbox-token | Köpa konto/token för att aktivera `route_planning` + `route_announcements` (kod klar)? | Ruttplanering live |
 | Fortnox API-access | Ansöka om access för fakturerings-integration? | Fortnox-spår |
+| Seven Dimensions + teater-metodik (R8) | Behåll / förenkla / ta bort? Process-metodik-eval; fönstret (S55) passerat. Din process-kompass. | Arbetssätt |
 
 > Process-/tech-lead-beslut (inte PO) ligger under [Process & tech-debt](#process--tech-debt-vid-tillfälle): t.ex. `gh-pr-merge`-wrapper (enforcement eller bort) och versionering av `.claude/skills`.
 
@@ -144,6 +144,8 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | withApiHandler resterande routes (~131 st) | Löpande | Opportunistiskt. |
 | Zod `.strict()` på mobile-token | 30 min | Saknas på request body. |
 | console.* i legacy docs | 0.5 dag | Låg prioritet. |
+| horses-CRUD coverage-gap (S43-1) | 1-2h | `page.test.tsx` täcker bara form-nivå; delete-bekräftelsedialog, edit-flöde och `handleDelete`/`handleAddHorse` fetch-logik otestade. MSW-mockad page-test eller tunn E2E-smoke. Slå ev. ihop med BDD-coverage-item. |
+| due-for-service `filter=upcoming`-test saknas (S43-2) | 15 min | Integration-test täcker `overdue` + `all` men inte `filter=upcoming` (route-URL:en dokumenterar parametern). |
 
 ## Kodeffektivitet (tech debt)
 
@@ -221,6 +223,8 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | LoginError `emailNotConfirmed` eget fall | 30 min | S34-3: ger "fel e-post/lösenord" istället för "verifiera din e-post". |
 | LoginError `.cancelled` URLError | 30 min | S34-3: mappas till `.networkUnavailable` men kan triggas av app-navigering. |
 | ios-learnings + patterns från S34 | 30 min | `.confirmationDialog`, `LoginError`-enum, `URLError`-catch-ordning, mailto-encoding → `.claude/rules/ios-learnings.md`. |
+| iOS native-flöde-audit via mobile-mcp (S42-4) | 1-1.5h | 13 native-flöden, visuell baseline. Pre-launch-värde för iOS. Avbruten från S42. |
+| iOS XCUITest smoke-svit | 2-3 dagar | Plan finns ([ios-xcuitest-bootstrap.md](../plans/ios-xcuitest-bootstrap.md)). Login + 3 native-flöden. Post-launch. |
 
 ## Due-for-service (uppföljning)
 
@@ -289,6 +293,9 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Live Activity / Siri Shortcut (iOS) | Wow-features, ej kärnvärde. Återaktivera om demo-/marknadsföringsvärde behövs. |
 | Leverantör ↔ leverantör community | Annan persona, annan moderering. Efter messaging-epic validerats. |
 | Mät modellval per story (Opus/Sonnet/Haiku) | Metric-dimension i generate-metrics.sh. Efter 10+ stories/modell. |
+| MFA-verify minor-fynd (security polish, post-S51-0) | MFA-admin är shippat. 6 minors (distinkta audit-log-strängar för success/failure, submit-disable efter 429, test-assertions på AdminAuditLog, m.fl.). Ej blockerande. Återaktivera om MFA-spåret/forensik prioriteras. |
+| Granska "redan fixat"-rate grep-pattern | Metrics-process-justering. Vilande metrics-kadens. |
+| S42-3 Full-suite flake-rapport | Flake-baseline, vilande sedan S42. Återaktivera vid flaky-test-problem. |
 
 ## Vid lansering
 
@@ -358,25 +365,23 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | CustomerCard tabs-extraktion (660→202) | S25-1 | Sektioner extraherade |
 | PrismaBookingRepository gemensamma selects | S25-2 | Namngivna konstanter |
 
-## Arkiv / Kandidat (granska)
+### Process & infra (verifierat klart 2026-06-07)
 
-> **Konservativt flyttat hit vid backlog-hygien 2026-06-07.** Troligen klart eller inaktuellt — bekräfta arkiv eller återaktivera. Inget raderat.
+> Flyttade hit från "Arkiv / Kandidat" efter PO-review — koden/jobben finns redan.
 
-| Item | Källa | Bedömning |
-|------|-------|-----------|
-| Miljö-hardening-sprint (S48-kandidat) | status.md | **Troligen klar** — dedikerad `equinet-staging.johanlindengard.com` finns, iOS staging-scheme, `.env`-hierarki. Bekräfta restpunkter. |
-| Migrationstest på ren DB i CI | status.md | **Troligen klar** — `migration-from-scratch`-jobbet i `quality-gates.yml` kör `migrate reset` från scratch. |
-| Tech-lead-review av sprint-avslut (hook) | status.md (S45) | Process-retro-åtgärd. Kvarstår behov? |
-| Plan-commit-gate: hook + rule (S43-1) | status.md | Process-retro. Pre-commit-gate finns delvis (CLAUDE.md nämner plan-commit-gate). |
-| Sprint-avslut-gate: hook (S43→S44) | status.md | Process-retro. Sprint-avslut-gate finns delvis. |
-| horses-CRUD coverage-gap (S43-1) | status.md | Liten testlucka. Bekräfta om fortfarande relevant. |
-| due-for-service `filter=upcoming`-test saknas (S43-2) | status.md | 15 min testlucka. |
-| Granska "redan fixat"-rate grep-pattern | status.md | Metrics-process-justering. |
-| MFA-verify minor-fynd (post-S51-0) | status.md | 6 minors (audit-log-strängar, submit-disable efter 429, test-assertions). Bekräfta om MFA-spåret återupptas. |
-| `gh pr merge`-wrapper för check-own-pr-merge (S47-4) | status.md | Dubblett av process-beslutet i [Process & tech-debt](#process--tech-debt-vid-tillfälle). |
-| Utvärdera Seven Dimensions + teater-metodik (R8) | status.md | Process-retro-bedömning (15 min). |
-| S42-3 Full-suite flake-rapport / S42-4 iOS native-flöde-audit | status.md | Avbrutna från S42. Bekräfta om fortfarande värdefulla. |
-| Implementera iOS XCUITest smoke-svit | status.md | Plan finns ([ios-xcuitest-bootstrap.md](../plans/ios-xcuitest-bootstrap.md)). Post-launch. Behåll eller parkera? |
+| Item | Bevis |
+|------|-------|
+| Miljö-hardening-sprint (S48-kandidat) | `equinet-staging.johanlindengard.com` + separat Supabase + iOS staging-scheme + env-hierarki |
+| Migrationstest på ren DB i CI | `migration-from-scratch`-jobbet i `quality-gates.yml` (`prisma migrate reset` från scratch) |
+| Plan-commit-gate: hook + rule (S43-1) | `scripts/check-plan-commit.sh` + dokumenterat i CLAUDE.md |
+| Sprint-avslut-gate: hook (S43→S44) | `scripts/check-sprint-closure.sh` |
+| gh-pr-merge-wrapper (S47-4) | `scripts/gh-pr-merge.sh` + `check-own-pr-merge.sh` (enforcement/bort-beslutet bor i Process & tech-debt) |
+
+### Superseded
+
+| Item | Ersatt av |
+|------|-----------|
+| Tech-lead-review av sprint-avslut (hook, S45) | `scripts/check-sprint-closure.sh` (sprint-avslut-gate) — ingen separat tech-lead-hook behövs |
 
 ---
 
