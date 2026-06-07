@@ -52,12 +52,20 @@ describe("GET /api/stables", () => {
     mockSearchPublic.mockResolvedValue([mockStable])
   })
 
-  it("returns 404 when feature flag is disabled", async () => {
-    mockIsFeatureEnabled.mockResolvedValueOnce(false)
+  it("returns 404 when both stable feature flags are disabled", async () => {
+    mockIsFeatureEnabled.mockResolvedValue(false)
 
     const res = await GET(makeRequest())
     expect(res.status).toBe(404)
+    expect(mockIsFeatureEnabled).toHaveBeenCalledWith("horse_stable_link")
     expect(mockIsFeatureEnabled).toHaveBeenCalledWith("stable_profiles")
+  })
+
+  it("works when only horse_stable_link is enabled", async () => {
+    mockIsFeatureEnabled.mockImplementation(async (flag: string) => flag === "horse_stable_link")
+
+    const res = await GET(makeRequest())
+    expect(res.status).toBe(200)
   })
 
   it("returns 429 when rate limited", async () => {

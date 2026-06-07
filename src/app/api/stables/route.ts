@@ -24,7 +24,13 @@ function toPublicStable(stable: StableWithCounts) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!(await isFeatureEnabled("stable_profiles"))) {
+  // Public stable search is needed both by the lightweight horse→stable link
+  // (horse_stable_link) and by the full stable-owner browse (stable_profiles).
+  const [horseStableLink, stableProfiles] = await Promise.all([
+    isFeatureEnabled("horse_stable_link"),
+    isFeatureEnabled("stable_profiles"),
+  ])
+  if (!horseStableLink && !stableProfiles) {
     return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
   }
 

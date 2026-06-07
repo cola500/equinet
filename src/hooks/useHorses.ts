@@ -12,6 +12,7 @@ interface HorseData {
   microchipNumber: string | null
   photoUrl: string | null
   createdAt: string
+  stable: { id: string; name: string; municipality: string | null } | null
 }
 
 /**
