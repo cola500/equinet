@@ -10,6 +10,7 @@ sections:
   - Screenshots
   - Observationer (hypotesen)
   - Bugg hittad & fixad (5 Whys)
+  - Slice 2: Riktig körsträcka (2026-06-07)
   - Kvarstående luckor
 tags:
   - route-planning
@@ -77,11 +78,30 @@ Under verifieringen visade 2026-06-07 "Inga bokningar idag" trots en pending bok
 
 **Fix:** Matcha hela lokala dagen via range `{ gte: startOfDay(target), lte: endOfDay(target) }` (date-fns, server-lokal tid) — samma konvention som `native/dashboard` "dagens bokningar". Regressionstest tillagt. Efter fixen visar 2026-06-07 korrekt sin bokning.
 
+## Slice 2: Riktig körsträcka (2026-06-07)
+
+**Mål:** visa faktisk körväg-sträcka i stället för fågelväg.
+
+**Vad fanns redan:** `routing.ts` `getRoute()` returnerar redan `{ coordinates, distance (m), duration (s) }` från OSRM, men `RouteMapVisualization` använder `getRouteWithFallback()` som **slänger** distance — den verkliga sträckan hämtades alltså redan för kartan men användes inte. MVP:ns sammanfattning räknade fågelväg (Haversine).
+
+**Vald approach (minimal):** Återanvänd `routing.ts` `getRoute` **klient-sida** i `/provider/today`: hämta riktig rutt för `[start → stopp i ordning → start]` och visa **"Körsträcka: X km · ~Y min"**. Vid fel/<2 punkter → fallback **"Uppskattad sträcka: ~Z km (fågelväg)"** via befintlig Haversine. Ingen API-ändring, ingen ändring i `/api/routing` eller `RouteMapVisualization`, ingen ny tabell/flagga.
+
+> Alternativet "API returnerar `routeDistanceKm`" valdes bort: det hade krävt att duplicera OSRM-logik server-side (bryter "duplicera aldrig") eller refaktorera den delade `/api/routing`-endpointen (regressionsrisk mot route-planning) — båda scope-växt. `routing.ts` exponerar redan sträckan klient-sida.
+
+**Tester (3 nya, alla gröna):** faktisk routing-distance används när tillgänglig; fallback till Haversine när routing kastar; routing anropas med start + stopp + retur till start i rätt ordning. Plus att labeln skiljer "Körsträcka" från "Uppskattad sträcka (fågelväg)".
+
+**Visuell sanity (demo Erik, 2026-06-09, 3-stopps ephemeral dag):** vyn visade **"Körsträcka: 76 km · ~100 min"** (riktig OSRM-väg) mot MVP:ns fågelväg-estimat ~54 km — skillnaden ~40 % är precis det leverantörsvärde slicen syftar till. Screenshot: `dagens-rutt-screenshots/05-real-distance-desktop.png`.
+
+> Observation: date-range-fixen från slice 1 verifierades på köpet — en riktig seed-bokning lagrad vid lokal midnatt (2026-06-08T22:00Z = lokal 2026-06-09) dök korrekt upp på 2026-06-09.
+
+**Risker (hanterade):** OSRM-fel → fallback (testat). Saknade koordinater/<2 stopp → fallback. Dubbel OSRM-call (kartan + sammanfattningen anropar `/api/routing` med samma path) — acceptabelt vid demo-volym, noteras som watch. Latency: icke-blockerande (estimat visas direkt, uppgraderas till körsträcka).
+
 ## Kvarstående luckor (watch, ej i denna slice)
 
 - **Geokoda demo-kunder** i `seed-demo-provider.ts` + ge minst en dag ≥2 stopp, annars är kartan tom/ointressant i standard-demon.
 - **Häst-/stall-position som fallback** när kundadress saknar koordinater (i dag används kundposition; stopp utan koordinater listas men visas inte på kartan, med en amber-notis).
-- **Riktig körsträcka** (OSRM) i sammanfattningen i stället för Haversine-fågelväg — kartan ritar redan OSRM-väg, men km-siffran är luftlinje.
+- ~~**Riktig körsträcka** (OSRM) i sammanfattningen i stället för Haversine-fågelväg~~ — **klart i slice 2** (2026-06-07).
+- **Dubbel OSRM-call**: kartan (`getRouteWithFallback`) och sammanfattningen (`getRoute`) anropar `/api/routing` med samma path. Kan lyftas ut via callback från `RouteMapVisualization` så distansen återanvänds — men det rör en delad komponent, så lämnat utanför denna slice.
 - Ruttoptimering är medvetet **utanför** denna slice.
 
 > DoD uppfylld: Kalender → Dagens rutt fungerar, karta + lista + tomt-läge, desktop + mobil, inga nya tabeller/flaggor, `check:all` 4/4 grön, inga console errors från egen kod.

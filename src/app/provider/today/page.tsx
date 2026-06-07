@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
 import useSWR from "swr"
 import { format } from "date-fns"
@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label"
 import { OfflineNotAvailable } from "@/components/ui/OfflineNotAvailable"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 import { calculateDistance } from "@/lib/geo/distance"
+import { getRoute } from "@/lib/routing"
+import { clientLogger } from "@/lib/client-logger"
 
 // Dynamic import to avoid SSR issues with Leaflet.
 const RouteMapVisualization = dynamic(
@@ -81,6 +83,47 @@ export default function TodayRoutePage() {
     fetcher
   )
 
+  const stops = data?.stops ?? []
+  const startLocation = data?.startLocation ?? undefined
+  const stopsWithoutCoords = stops.filter((s) => s.latitude == null || s.longitude == null)
+  const estimatedKm = estimateTotalDistanceKm(data?.startLocation ?? null, stops)
+
+  // Ordered round-trip path (start -> stops in order -> start) in [lat, lon],
+  // using only stops with coordinates. Needs >= 2 points for routing.
+  const routePath = useMemo<[number, number][]>(() => {
+    const pts = stops
+      .filter((s) => s.latitude != null && s.longitude != null)
+      .map((s) => [s.latitude as number, s.longitude as number] as [number, number])
+    if (pts.length === 0) return []
+    if (!startLocation) return pts
+    return [[startLocation.lat, startLocation.lon], ...pts, [startLocation.lat, startLocation.lon]]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(stops.map((s) => [s.latitude, s.longitude])), startLocation?.lat, startLocation?.lon])
+
+  // Fetch the actual driving distance/time from OSRM (via routing.ts). Falls back
+  // to the Haversine estimate when routing is unavailable or there are < 2 points.
+  const [routeMetrics, setRouteMetrics] = useState<{ km: number; min: number } | null>(null)
+  const pathKey = routePath.map((p) => p.join(",")).join(";")
+  useEffect(() => {
+    let cancelled = false
+    setRouteMetrics(null)
+    if (routePath.length < 2) return
+    getRoute(routePath)
+      .then((r) => {
+        if (!cancelled) setRouteMetrics({ km: r.distance / 1000, min: r.duration / 60 })
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setRouteMetrics(null)
+          clientLogger.warn("Today route distance fell back to estimate", { error: String(err) })
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathKey])
+
   if (!isOnline) {
     return (
       <ProviderLayout>
@@ -88,11 +131,6 @@ export default function TodayRoutePage() {
       </ProviderLayout>
     )
   }
-
-  const stops = data?.stops ?? []
-  const startLocation = data?.startLocation ?? undefined
-  const stopsWithoutCoords = stops.filter((s) => s.latitude == null || s.longitude == null)
-  const totalKm = estimateTotalDistanceKm(data?.startLocation ?? null, stops)
 
   const orders = stops.map((s) => ({
     id: s.id,
@@ -156,9 +194,13 @@ export default function TodayRoutePage() {
             <span className="font-medium text-gray-900">
               {stops.length} stopp
             </span>
-            {totalKm != null && (
-              <span>Total körsträcka: ~{Math.round(totalKm)} km (fågelväg)</span>
-            )}
+            {routeMetrics ? (
+              <span>
+                Körsträcka: {Math.round(routeMetrics.km)} km · ~{Math.round(routeMetrics.min)} min
+              </span>
+            ) : estimatedKm != null ? (
+              <span>Uppskattad sträcka: ~{Math.round(estimatedKm)} km (fågelväg)</span>
+            ) : null}
           </div>
 
           <RouteMapVisualization

@@ -19,7 +19,12 @@ vi.mock("swr", () => ({
   default: vi.fn(),
 }))
 
+vi.mock("@/lib/routing", () => ({
+  getRoute: vi.fn(),
+}))
+
 import useSWR from "swr"
+import { getRoute } from "@/lib/routing"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import TodayRoutePage from "./page"
 
@@ -64,6 +69,9 @@ describe("TodayRoutePage", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(useOnlineStatus).mockReturnValue(true)
+    // Default: routing never resolves -> page stays on the Haversine estimate.
+    // Routing-specific tests override this per case.
+    vi.mocked(getRoute).mockReturnValue(new Promise(() => {}))
   })
 
   it("renders the page title", () => {
@@ -106,5 +114,46 @@ describe("TodayRoutePage", () => {
     mockSWR(undefined)
     render(<TodayRoutePage />)
     expect(screen.getByTestId("offline-not-available")).toBeInTheDocument()
+  })
+
+  it("uses the real driving distance when routing is available", async () => {
+    // 54 km / 75 min driving route
+    vi.mocked(getRoute).mockResolvedValue({
+      coordinates: [],
+      distance: 54000,
+      duration: 4500,
+    })
+    mockSWR(sampleResponse)
+    render(<TodayRoutePage />)
+
+    expect(await screen.findByText(/Körsträcka:/)).toBeInTheDocument()
+    expect(screen.getByText(/54 km/)).toBeInTheDocument()
+    expect(screen.getByText(/75 min/)).toBeInTheDocument()
+    // The driving label must NOT be the fågelväg estimate
+    expect(screen.queryByText(/fågelväg/)).not.toBeInTheDocument()
+  })
+
+  it("falls back to the estimated distance when routing fails", async () => {
+    vi.mocked(getRoute).mockRejectedValue(new Error("OSRM down"))
+    mockSWR(sampleResponse)
+    render(<TodayRoutePage />)
+
+    expect(await screen.findByText(/Uppskattad sträcka/)).toBeInTheDocument()
+    expect(screen.getByText(/fågelväg/)).toBeInTheDocument()
+    expect(screen.queryByText(/Körsträcka:/)).not.toBeInTheDocument()
+  })
+
+  it("calls routing with start + stops + return to start in order", async () => {
+    vi.mocked(getRoute).mockResolvedValue({ coordinates: [], distance: 1000, duration: 600 })
+    mockSWR(sampleResponse)
+    render(<TodayRoutePage />)
+
+    await screen.findByText(/Körsträcka:/)
+    const path = vi.mocked(getRoute).mock.calls[0][0]
+    // [start, stop1, stop2, start] -> round trip from provider position
+    expect(path[0]).toEqual([57.71, 11.98])
+    expect(path[1]).toEqual([57.7, 11.97])
+    expect(path[2]).toEqual([57.8, 12.1])
+    expect(path[path.length - 1]).toEqual([57.71, 11.98])
   })
 })
