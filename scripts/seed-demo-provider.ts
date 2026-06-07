@@ -53,6 +53,12 @@ const DEMO_CUSTOMER_EMAILS = [
   "sara.magnusson@icloud.com",
 ] as const
 
+// Dedicated owner for the demo stable (Stall Solbacken). Holds the Stable.userId
+// FK only — has no horses or bookings, and is not part of DEMO_CUSTOMER_EMAILS.
+// Created idempotently in main() and removed in resetDemoData().
+const STABLE_OWNER_EMAIL = "stall.solbacken@demo.equinet.se"
+const DEMO_STABLE_NAME = "Stall Solbacken"
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -196,6 +202,14 @@ async function resetDemoData(providerId: string) {
   } else {
     console.log("  No demo customers found")
   }
+
+  // Delete the demo stable + its dedicated owner (independent of demo customers).
+  // Horse.stableId is SetNull, so any link is cleared automatically; no horse is
+  // auto-linked to this stable anyway.
+  const stablesDeleted = await prisma.stable.deleteMany({ where: { name: DEMO_STABLE_NAME } })
+  if (stablesDeleted.count > 0) console.log(`  Deleted ${stablesDeleted.count} demo stable`)
+  const stableOwnerDeleted = await prisma.user.deleteMany({ where: { email: STABLE_OWNER_EMAIL } })
+  if (stableOwnerDeleted.count > 0) console.log(`  Deleted ${stableOwnerDeleted.count} demo stable owner`)
 
   // Delete the provider's services LAST — after bookings + series (their FK
   // references) are gone. Without this, renaming a service would create a new
@@ -575,6 +589,47 @@ async function main() {
       horses[`${h.owner}/${h.name}`] = created.id
       console.log(`  Skapade häst: ${h.name} (${h.breed}, ${h.color})`)
     }
+  }
+  console.log("")
+
+  // -------------------------------------------------------------------------
+  // 6b. Demo stable (Stall Solbacken)
+  //     Base demo data for the horse→stable feature (always-on, no flag).
+  //     A dedicated owner User holds the Stable.userId FK; no horse is auto-
+  //     linked — the demo customer (Lisa) picks the stable via the UI. The
+  //     full stable-owner flow stays gated by stable_profiles (off).
+  // -------------------------------------------------------------------------
+
+  const stableOwner = await prisma.user.upsert({
+    where: { email: STABLE_OWNER_EMAIL },
+    update: {},
+    create: {
+      email: STABLE_OWNER_EMAIL,
+      firstName: "Stall",
+      lastName: "Solbacken",
+      userType: "customer",
+      city: "Alingsås",
+      municipality: "Alingsås",
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+    },
+  })
+
+  const existingStable = await prisma.stable.findFirst({ where: { name: DEMO_STABLE_NAME } })
+  if (existingStable) {
+    console.log(`  Stall finns: ${DEMO_STABLE_NAME}`)
+  } else {
+    await prisma.stable.create({
+      data: {
+        userId: stableOwner.id,
+        name: DEMO_STABLE_NAME,
+        description: "Demostall i Alingsås (DEMO-SEED)",
+        city: "Alingsås",
+        municipality: "Alingsås",
+        isActive: true,
+      },
+    })
+    console.log(`  Skapade stall: ${DEMO_STABLE_NAME} (Alingsås)`)
   }
   console.log("")
 

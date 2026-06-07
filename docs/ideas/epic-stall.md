@@ -87,6 +87,8 @@ Slicing gjord 2026-06-07. Notera att slicens effort skiljer på **aktivera** (be
 
 **Effort:** ~2–4h (mekaniskt: aktivering + seed + verifiering). Status: **levererad** (flagg-borttagning 2026-06-07).
 
+**Demo-data:** Demo-stallet **Stall Solbacken** definieras i den kanoniska demo-seeden `scripts/seed-demo-provider.ts` (lokal + staging) — på ett ställe. Ingen häst auto-kopplas; demo-kunden (Lisa) väljer stallet via UI:t. `prisma/seed-demo.ts` är legacy/local-only och innehåller inte stallet.
+
 **Värde-andel:** Låg i sig — detta är medvetet en återanvändbar **grundbyggsten**, inte epikens värde-MVP. Kärnvärdet ligger i Slice 4.
 
 ### Slice 2 — Stallprofil synlig: skapa stall, se hästar i stallet

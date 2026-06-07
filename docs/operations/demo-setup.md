@@ -219,6 +219,6 @@ Rekommenderad ordning för att visa plattformen för en pilot-leverantör:
 
 ## Relaterade filer
 
-- Seed-script: `scripts/seed-demo-provider.ts`
+- **Kanonisk demo-seed (source of truth, lokal + staging):** `scripts/seed-demo-provider.ts` — all demo-grunddata (personer, hästar, **Stall Solbacken**, bokningar) definieras här på ett ställe. `prisma/seed-demo.ts` är legacy/local-only och ska inte få ny demo-grunddata.
 - Demo-mode logic: `src/lib/demo-mode.ts`
 - Tillåtna demo-paths: `src/lib/demo-mode.ts → DEMO_ALLOWED_PATHS`
