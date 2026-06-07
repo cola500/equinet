@@ -42,9 +42,10 @@ export function StableSelector({
         `/api/stables?search=${encodeURIComponent(query)}&limit=10`
       )
       if (res.ok) {
-        const data = await res.json()
+        const json = await res.json()
+        const stables: StableResult[] = Array.isArray(json?.data) ? json.data : []
         setResults(
-          data.map((s: StableResult) => ({
+          stables.map((s) => ({
             id: s.id,
             name: s.name,
             municipality: s.municipality,
@@ -124,12 +125,7 @@ export function StableSelector({
       {currentStable ? (
         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
           <div>
-            <a
-              href={`/stables/${currentStable.id}`}
-              className="font-medium text-blue-600 hover:underline"
-            >
-              {currentStable.name}
-            </a>
+            <span className="font-medium">{currentStable.name}</span>
             {currentStable.municipality && (
               <span className="text-sm text-gray-500 ml-2">
                 {currentStable.municipality}

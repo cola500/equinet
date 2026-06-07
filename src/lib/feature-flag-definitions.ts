@@ -110,6 +110,14 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: true,
     category: "shared",
   },
+  horse_stable_link: {
+    key: "horse_stable_link",
+    label: "Stalltillhörighet för häst",
+    description: "Hästägare kan koppla sin häst till ett befintligt stall och se stallnamnet på hästen. Kräver inte stallägarflödet (stable_profiles).",
+    defaultEnabled: false,
+    clientVisible: true,
+    category: "shared",
+  },
   stripe_payments: {
     key: "stripe_payments",
     label: "Stripe-betalningar",

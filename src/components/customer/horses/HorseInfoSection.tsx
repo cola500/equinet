@@ -34,7 +34,7 @@ export function HorseInfoSection({
   horse, editDialogOpen, onEditDialogOpenChange,
   editForm, onEditFormChange, isSaving, onOpenEdit, onSave, onHorseChanged,
 }: HorseInfoSectionProps) {
-  const stableProfilesEnabled = useFeatureFlag("stable_profiles")
+  const stableLinkEnabled = useFeatureFlag("horse_stable_link")
   return (
     <>
       <div className="space-y-6">
@@ -65,7 +65,7 @@ export function HorseInfoSection({
           </Card>
         )}
 
-        {stableProfilesEnabled && (
+        {stableLinkEnabled && (
           <Card>
             <CardContent className="py-4">
               <StableSelector

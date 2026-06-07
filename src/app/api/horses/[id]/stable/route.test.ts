@@ -60,7 +60,7 @@ describe("PATCH /api/horses/[id]/stable", () => {
     vi.mocked(isFeatureEnabled).mockResolvedValueOnce(false)
     const res = await PATCH(makeRequest({ stableId: "s1" }), routeContext)
     expect(res.status).toBe(404)
-    expect(isFeatureEnabled).toHaveBeenCalledWith("stable_profiles")
+    expect(isFeatureEnabled).toHaveBeenCalledWith("horse_stable_link")
   })
 
   it("returns 429 when rate limited", async () => {

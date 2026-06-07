@@ -52,12 +52,27 @@ describe("GET /api/stables", () => {
     mockSearchPublic.mockResolvedValue([mockStable])
   })
 
-  it("returns 404 when feature flag is disabled", async () => {
-    mockIsFeatureEnabled.mockResolvedValueOnce(false)
+  it("returns 404 when both stable feature flags are disabled", async () => {
+    mockIsFeatureEnabled.mockResolvedValue(false)
 
     const res = await GET(makeRequest())
     expect(res.status).toBe(404)
+    expect(mockIsFeatureEnabled).toHaveBeenCalledWith("horse_stable_link")
     expect(mockIsFeatureEnabled).toHaveBeenCalledWith("stable_profiles")
+  })
+
+  it("works when only horse_stable_link is enabled", async () => {
+    mockIsFeatureEnabled.mockImplementation(async (flag: string) => flag === "horse_stable_link")
+
+    const res = await GET(makeRequest())
+    expect(res.status).toBe(200)
+  })
+
+  it("works when only stable_profiles is enabled", async () => {
+    mockIsFeatureEnabled.mockImplementation(async (flag: string) => flag === "stable_profiles")
+
+    const res = await GET(makeRequest())
+    expect(res.status).toBe(200)
   })
 
   it("returns 429 when rate limited", async () => {
@@ -77,6 +92,13 @@ describe("GET /api/stables", () => {
     expect(json.data[0].name).toBe("Testgården")
     expect(json.data[0]._count.availableSpots).toBe(2)
     expect(mockSearchPublic).toHaveBeenCalledWith({})
+  })
+
+  it("does not leak contact details (email/phone) in the search list", async () => {
+    const res = await GET(makeRequest())
+    const json = await res.json()
+    expect(json.data[0]).not.toHaveProperty("contactEmail")
+    expect(json.data[0]).not.toHaveProperty("contactPhone")
   })
 
   it("passes municipality filter to service", async () => {

@@ -40,6 +40,7 @@ import { HorseIcon } from "@/components/icons/HorseIcon"
 import { clientLogger } from "@/lib/client-logger"
 import { DueStatusBadge } from "@/components/customer/DueStatusBadge"
 import { HorseForm, emptyHorseForm, type HorseFormData } from "@/components/horses/HorseForm"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 
 interface Horse {
   id: string
@@ -53,6 +54,7 @@ interface Horse {
   microchipNumber: string | null
   photoUrl: string | null
   createdAt: string
+  stable: { id: string; name: string; municipality: string | null } | null
 }
 
 const GENDER_LABELS: Record<string, string> = {
@@ -66,6 +68,7 @@ export default function CustomerHorsesPage() {
   const { isLoading: authLoading, isCustomer } = useAuth()
   const { horses, isLoading, mutate: mutateHorses } = useSWRHorses()
   const { items: dueItems } = useDueForService()
+  const stableLinkEnabled = useFeatureFlag("horse_stable_link")
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [horseToDelete, setHorseToDelete] = useState<Horse | null>(null)
   const [formData, setFormData] = useState<HorseFormData>(emptyHorseForm)
@@ -212,6 +215,11 @@ export default function CustomerHorsesPage() {
                         .filter(Boolean)
                         .join(" · ") || "Ingen extra info"}
                     </CardDescription>
+                    {stableLinkEnabled && horse.stable && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        Stall: <span className="font-medium text-gray-700">{horse.stable.name}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardHeader>

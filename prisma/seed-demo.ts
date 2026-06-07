@@ -65,6 +65,14 @@ async function resetDemoData() {
   })
   console.log(`  Deleted ${horses.count} demo horses`)
 
+  // Delete demo stables (Horse.stableId is SetNull; horses already removed above)
+  const stables = await prisma.stable.deleteMany({
+    where: {
+      description: { contains: DEMO_TAG },
+    },
+  })
+  console.log(`  Deleted ${stables.count} demo stables`)
+
   // Delete demo customers (by email pattern)
   const customers = await prisma.user.deleteMany({
     where: {
@@ -379,6 +387,60 @@ async function main() {
       horses[h.name] = created.id
       console.log(`  Created horse: ${h.name} (${h.breed}, ${h.color})`)
     }
+  }
+  console.log("")
+
+  // -------------------------------------------------------------------------
+  // 5b. Create demo stable + link horses (feature flag: horse_stable_link)
+  //     Only the lightweight horse→stable link is exercised here. The full
+  //     stable-owner flow (stable_profiles) stays off; the stable just needs a
+  //     User as FK owner. Two horses share the stable, one is left unlinked so
+  //     both states are visible in the demo.
+  // -------------------------------------------------------------------------
+
+  const stableOwner = await prisma.user.upsert({
+    where: { email: "stall.solbacken@demo.equinet.se" },
+    update: {},
+    create: {
+      email: "stall.solbacken@demo.equinet.se",
+      firstName: "Stall",
+      lastName: "Solbacken",
+      userType: "customer",
+      city: "Alingsås",
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+    },
+  })
+
+  let demoStable = await prisma.stable.findFirst({
+    where: { name: "Stall Solbacken" },
+  })
+  if (!demoStable) {
+    demoStable = await prisma.stable.create({
+      data: {
+        userId: stableOwner.id,
+        name: "Stall Solbacken",
+        // Readable description that still carries the demo tag for reset cleanup.
+        description: `Demostall i Alingsås (${DEMO_TAG})`,
+        city: "Alingsås",
+        municipality: "Alingsås",
+        isActive: true,
+      },
+    })
+    console.log(`  Created stable: ${demoStable.name} (Alingsås)`)
+  } else {
+    console.log(`  Stable exists: ${demoStable.name}`)
+  }
+
+  const stableHorseNames = ["Storm", "Saga"]
+  for (const horseName of stableHorseNames) {
+    const horseId = horses[horseName]
+    if (!horseId) continue
+    await prisma.horse.update({
+      where: { id: horseId },
+      data: { stableId: demoStable.id },
+    })
+    console.log(`  Linked horse ${horseName} -> ${demoStable.name}`)
   }
   console.log("")
 
