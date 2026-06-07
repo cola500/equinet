@@ -3,7 +3,7 @@ title: "Equinet Roadmap"
 description: "Produktroadmap med prioriteringar, blockerare och tidslinje"
 category: guide
 status: active
-last_updated: 2026-04-11
+last_updated: 2026-06-07
 tags: [roadmap, product, strategy]
 sections:
   - Produktionsredo idag
@@ -17,7 +17,8 @@ sections:
 
 # Equinet Roadmap
 
-> Uppdateras efter varje sprint-retro. Senast: Sprint 22 (2026-04-11).
+> **Strategisk vy.** Den operativa, kanoniska backloggen finns i [docs/sprints/backlog.md](sprints/backlog.md) — den här filen beskriver riktning och milstolpar, inte enskilda stories.
+> Innehållet nedan speglar Sprint 22 (2026-04-11) och uppdateras vid nästa roadmap-genomgång; för aktuellt läge se backlog.md "Aktiva produktspår".
 
 ## Produktionsredo idag
 
