@@ -11,8 +11,11 @@ sections:
   - Epic
   - Personas och värde
   - Success-mått
+  - Epic Progress
+  - Epic Reality Check
   - Nuläge i koden (discovery 2026-06-07)
   - Slicing enligt Seven Dimensions
+  - Föreslagna nästa slices
   - Öppna frågor
   - Beslut
   - Nästa steg
@@ -42,7 +45,53 @@ Många hästägare står i samma stall och använder samma leverantörer (hovsla
 - Administrationen för både hästägare och leverantörer minskar.
 - Stallgemenskapen blir en naturlig del av Equinet.
 
+## Epic Progress
+
+> Epiken är **påbörjad och har levererat grundbyggstenen**. Häst → stalltillhörighet är live som grundfunktion (ingen flagga). Resten av stallägar-flödet finns byggt men avstängt; community/gemensamma besök är obyggt.
+
+### Slice 1 — Häst → Stalltillhörighet
+
+**Status:** Klar (live på staging, 2026-06-07). PR [#378](https://github.com/cola500/equinet/pull/378) + [#379](https://github.com/cola500/equinet/pull/379) + [#380](https://github.com/cola500/equinet/pull/380).
+
+**Levererat:**
+- Häst kan kopplas till ett befintligt stall (`StableSelector` på hästprofilens Info-flik).
+- Stallnamn visas på hästprofilen.
+- Stallnamn visas på hästkortet i listan (visas bara när stall är satt).
+- Publik stallsökning fungerar (`/api/stables`, rate-limited, utan kontakt-PII).
+- Stall kan väljas om / kopplas bort (omval via `SetNull`).
+- Demo-stall **Stall Solbacken** finns i den kanoniska demo-seeden (`scripts/seed-demo-provider.ts`, lokal + staging).
+- Verifierat end-to-end på staging: login som Lisa → hästprofil → sök "Solbacken" → välj → namnet visas. `stable_profiles` förblev av.
+
+**Levererat värde:** Hästägaren kan registrera vilket stall hästen står i — den återanvändbara grundbyggsten resten av epiken vilar på (gemensam plats att samordna kring börjar med att veta vilken häst som står var).
+
+**Lärdomar:**
+- **Återanvändning > nybygge:** Hela `Stable`-modellen + domän + API + UI fanns redan (byggt ~mars 2026, avstängt). Slicen blev "beskär & aktivera", inte bygga. Discovery före implementation sparade dagar.
+- **Flagg-split → flagg-borttagning:** Kärnan bröts först ut till `horse_stable_link`, sedan befordrade PO den till grundfunktion och flaggan togs bort. Stallägar-flödet hölls kvar bakom `stable_profiles`.
+- **Vilande kod hade verkliga buggar:** `StableSelector` läste fel svarsform (`data.map` mot `{data:[]}`) → sök gav aldrig träff. Avstängd kod är inte verifierad kod.
+- **Säkerhet vid ny exponering:** Att vidga räckvidden (publik sök via grundfunktion) tvingade fram att kontakt-PII (email/telefon) togs bort ur sök-svaret.
+- **Seed-systemskuld:** Demo-stallet hamnade först i fel (legacy) seed. Konsolidering gav en kanonisk demo-seed — ny demo-grunddata läggs nu på ett ställe. Se [[feedback_staging_seed_gotchas]].
+
+## Epic Reality Check
+
+| Område | Status | Kommentar |
+|--------|--------|-----------|
+| Häst → Stall (tillhörighet) | **Levererat** | Live som grundfunktion, ingen flagga. Visas på profil + kort, sök fungerar. |
+| Stallsökning (publik) | **Levererat** | `/api/stables`, rate-limited, utan kontakt-PII. |
+| Demo-data (Stall Solbacken) | **Levererat** | I kanonisk seed, verifierad på staging. |
+| Stallprofiler (`stable_profiles`) | **Finns tekniskt, ej exponerat** | Skapa/redigera stallprofil, se hästar i stallet — byggt men avstängt bakom `stable_profiles` (off). |
+| Stallplats-uthyrning (spots) | **Finns tekniskt, ej exponerat** | `StableSpot` + API + UI byggt, avstängt bakom `stable_profiles`. |
+| Inbjudningar (invites) | **Delvis / ej exponerat** | E-post-token-invite byggt men avstängt; **ingen medlems-entitet** — "accept" saknar tydlig innebörd. |
+| Stallmedlemskap | **Saknas** | Ingen medlems-entitet separat från "äger en häst i stallet". |
+| Stallroller (admin/medlem) | **Saknas** | `Stable.userId @unique` = en ägare. Ingen multi-admin, ingen roll. |
+| Ansök/godkänn medlemskap | **Saknas** | Bara push-invite finns (avstängt); inget ansöknings-/godkännandeflöde. |
+| Häst i flera stall | **Saknas** | `stableId` är single FK → en häst = ett stall. |
+| Gemensamma leverantörsbesök | **Saknas** | Epikens kärnvärde. `GroupBookingRequest` finns men är inte stall-kopplad. |
+| Leverantörsplanering per stall | **Saknas** | Ingen vy för "vilka hästar i stall X vill ha besök". |
+| Aktiviteter/besöksvy per stall | **Saknas** | Ej påbörjat. |
+
 ## Nuläge i koden (discovery 2026-06-07)
+
+> **Historisk ögonblicksbild** från discovery-fasen. För aktuell status, se [Epic Progress](#epic-progress) + [Epic Reality Check](#epic-reality-check) ovan. (Sedan dess: häst → stalltillhörighet är **levererad och live** som grundfunktion; raderna "Registrera häst i stall"/"Stallbyte" nedan är nu exponerade, inte bara byggda.)
 
 > **Centralt fynd:** Stora delar av epikens datamodell och stallägar-flöde **är redan byggt** men ligger **avstängt** bakom feature-flaggan `stable_profiles` (`defaultEnabled: false`). Byggdes ~mars 2026 (commit `a7f140dc`, migration `20260309120609_add_stable_models`), före demo-pivoten 2026-04-22, och har legat vilande sedan dess.
 
@@ -131,6 +180,38 @@ Slicing gjord 2026-06-07. Notera att slicens effort skiljer på **aktivera** (be
 
 **Effort:** Medel.
 
+## Föreslagna nästa slices
+
+Tunna vertikala slices som bygger vidare på den **levererade** grundbyggstenen (häst → stall är live). Ordnade efter värde/ansträngning. De är medvetet smalare än de strategiska Slice 2–5 ovan — varje levererar något verifierbart, inte en hel epic. PO prioriterar.
+
+### Nästa-slice A — Leverantören ser stallnamn på bokning + Dagens rutt
+
+- **Problem:** Leverantören ser inte att flera bokningar gäller hästar på samma stall → planerar häst för häst trots samlokalisering.
+- **Hypotes:** Visas stallnamnet (när satt) i leverantörens bokningsdetaljer och Dagens rutt-stopp får hen första signalen om samlokalisering — utan att vi bygger gemensam bokning.
+- **Minsta slice:** Read-only visning av `Horse.stable.name` i leverantörens bokningsvy och Dagens rutt-stopp. Data finns redan; ingen ny modell, ingen flagga.
+- **Förväntat värde:** Leverantören börjar se stall-kopplingar → planeringsunderlag. Mycket låg ansträngning, direkt nytta.
+
+### Nästa-slice B — Stalladress som besöksplats i Dagens rutt
+
+- **Problem:** Dagens rutt använder kundens **hemkoordinat** som proxy för besöksplats. En kund kan ha hästar på olika stall → fel adress/körsträcka. (Känd skuld i backlog: "Besöksplats-modell → Stall-epic".)
+- **Hypotes:** Används stallets koordinat som besöksplats när hästen har ett stall blir rutten korrekt.
+- **Minsta slice:** När en bokning gäller en häst med `stableId` och stallet har lat/long → använd den som besöksplats (fallback: kundens koordinat). `Stable` har redan lat/long-fält. (Obs: demo-stallet saknar koordinater idag — seed-justering ingår.)
+- **Förväntat värde:** Löser en konkret känd bugg i Dagens rutt och knyter grundbyggstenen till leverantörsnyttan.
+
+### Nästa-slice C — "Andra hästar i ditt stall" (överblick, PII-säker)
+
+- **Problem:** En hästägare vet inte att andra hästar står i samma stall — ingen känsla av gemensam plats.
+- **Hypotes:** Ser jag att "3 andra hästar står i Stall Solbacken" börjar community-känslan utan medlemskap/roller.
+- **Minsta slice:** På hästprofilen, visa **antal** andra hästar med samma `stableId` (aggregat, inga namn/ägare → ingen PII-läcka). Bygger på `Stable.horses`.
+- **Förväntat värde:** Första "gemenskap"-signalen, minimal kod, ingen ny behörighetsmodell. Senare slice kan exponera detaljer bakom samtycke.
+
+### Nästa-slice D — Publik stallprofil (read-only)
+
+- **Problem:** Stallet är bara ett namn på hästen; ingen kan se en stall-sida.
+- **Hypotes:** En enkel publik stallprofil (namn, ort, antal hästar) gör stallet till en synlig "plats".
+- **Minsta slice:** Aktivera **enbart läs-vyn** av stallprofilen för seedade stall — splitta `stable_profiles` i läs (`stable_profiles_read`) vs ägar-redigering (skapa/spots/invites förblir av). `/api/stables/[stableId]` + `StableProfileView` finns redan.
+- **Förväntat värde:** Synlig stall-plats utan att aktivera redigering/uthyrning/inbjudningar. Något större (flagg-split + UX-verifiering av vilande kod).
+
 ## Öppna frågor
 
 Från epik-utkastet, med vad koden idag implicit svarar:
@@ -153,7 +234,7 @@ Från epik-utkastet, med vad koden idag implicit svarar:
 
 ## Nästa steg
 
-- **Slice 1 levererad** (flagg-borttagning 2026-06-07). Häst → stall är alltid aktiv.
-- Slice 2–5 (stallprofiler, medlemskap, gemensamt besök, roller) prioriteras separat — fortsatt bakom `stable_profiles` / framtida epik-arbete.
+- **Slice 1 levererad och live** (häst → stalltillhörighet, grundfunktion, verifierad på staging 2026-06-07 via PR #378/#379/#380). Se [Epic Progress](#epic-progress).
+- **Välj nästa slice:** PO prioriterar bland [Föreslagna nästa slices](#föreslagna-nästa-slices) (A–D). Rekommendation: börja med **A** (leverantören ser stallnamn) eller **B** (stalladress som besöksplats) — bägge är tunna, bygger direkt på grundbyggstenen och ger leverantörsnytta utan ny modell.
+- De strategiska Slice 2–5 (stallprofiler, medlemskap, gemensamt besök, roller) kvarstår som riktning men cuttas om till tunnare slices när de tas upp.
 - Vid implementation: följ `.claude/rules/prisma.md` om seed/migration, lägg backlog-rad i `docs/sprints/status.md`.
-- Slice 2–5 prioriteras separat när Slice 1 är på plats.
