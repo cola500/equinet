@@ -11,6 +11,7 @@ sections:
   - Observationer (hypotesen)
   - Bugg hittad & fixad (5 Whys)
   - Slice 2: Riktig körsträcka (2026-06-07)
+  - Slice 3: Demo-seed — trovärdig kördag (2026-06-07)
   - Kvarstående luckor
 tags:
   - route-planning
@@ -96,13 +97,36 @@ Under verifieringen visade 2026-06-07 "Inga bokningar idag" trots en pending bok
 
 **Risker (hanterade):** OSRM-fel → fallback (testat). Saknade koordinater/<2 stopp → fallback. Dubbel OSRM-call (kartan + sammanfattningen anropar `/api/routing` med samma path) — acceptabelt vid demo-volym, noteras som watch. Latency: icke-blockerande (estimat visas direkt, uppgraderas till körsträcka).
 
+## Slice 3: Demo-seed — trovärdig kördag (2026-06-07)
+
+**Mål:** ge demo-leverantören Erik en trovärdig kördag så Dagens rutt visar karta + riktig körsträcka i staging/demo.
+
+**Ändring (endast seed-data, `scripts/seed-demo-provider.ts` — ingen produktlogik):**
+- **Koordinater på alla 9 demo-kunder**: `address` + `latitude`/`longitude` (realistiska punkter i Örebro-regionen, inom Eriks 50 km-område). (`User` saknar `postalCode`-kolumn → gata + ort.)
+- **3-stopps demodag**: flyttade två befintliga framtida bokningar till **dag 2** (där Lisa redan låg), så dagen får en sydlig kördag:
+  - Lisa Andersson — Örebro (Hagvägen 8) — 08:00 — Helskoning
+  - Peter Svensson — Kumla (Skolgatan 14) — 10:30 — Verkning
+  - Johan Nilsson — Hallsberg (Stationsgatan 9) — 13:00 — Helskoning (manuell)
+- Ingen ny bokning (count oförändrad, 18), ingen ny tabell/flagga. `--reset` rensar gamla bokningar/kunder och återskapar med koordinater.
+
+**Demodag:** dag **2 efter seed-körning** (i lokal verifiering 2026-06-09). Öppna Dagens rutt → välj datum 2 dagar fram.
+
+**Lokal verifiering (demo Erik, dag 2):** **"3 stopp · Körsträcka: 63 km · ~68 min"** (riktig OSRM-väg), karta visar 3 utspridda markörer Örebro → Kumla → Hallsberg + startposition. Screenshot: `dagens-rutt-screenshots/06-seed-3stop-local.png`.
+
+> Staging-reset körs separat via det interaktiva helper-scriptet (`npm run db:seed:staging-demo:customer:safe`) — kan inte köras autonomt (frågar efter staging-DB-URL).
+
+### ⚠️ Demo-proxy: kundkoordinat ≠ besöksplats
+
+Kundens **hemkoordinat** används här som proxy för **besöksplatsen**. Det är en **medveten, temporär demo-förenkling** för att Dagens rutt ska kunna ritas — **inte** en korrekt domänmodell.
+
+Korrekt framtida modell: en **stall-/besöksadress kopplad till hästen eller bokningen** (en kund kan ha hästar på olika stall; besöket sker där hästen står, inte nödvändigtvis på kundens hemadress). Detta hör hemma i **kommande Stall-epic/discovery**, inte i Dagens rutt-slicen. Denna PR ändrar därför avsiktligt **ingen produktlogik** — bara demo-seed.
+
 ## Kvarstående luckor (watch, ej i denna slice)
 
-- **Geokoda demo-kunder** i `seed-demo-provider.ts` + ge minst en dag ≥2 stopp, annars är kartan tom/ointressant i standard-demon.
-- **Häst-/stall-position som fallback** när kundadress saknar koordinater (i dag används kundposition; stopp utan koordinater listas men visas inte på kartan, med en amber-notis).
+- ~~**Geokoda demo-kunder** i `seed-demo-provider.ts` + ge minst en dag ≥2 stopp~~ — **klart i slice 3** (2026-06-07).
+- **Besöksplats-modell (Stall-epic)**: ersätt demo-proxyn (kundens hemkoordinat) med stall-/besöksadress kopplad till häst/bokning. Hör hemma i Stall-epic/discovery — se förbehållet ovan.
 - ~~**Riktig körsträcka** (OSRM) i sammanfattningen i stället för Haversine-fågelväg~~ — **klart i slice 2** (2026-06-07).
 - **Dubbel OSRM-call**: kartan (`getRouteWithFallback`) och sammanfattningen (`getRoute`) anropar `/api/routing` med samma path. Kan lyftas ut via callback från `RouteMapVisualization` så distansen återanvänds — men det rör en delad komponent, så lämnat utanför denna slice.
 - Ruttoptimering är medvetet **utanför** denna slice.
 
 > DoD uppfylld: Kalender → Dagens rutt fungerar, karta + lista + tomt-läge, desktop + mobil, inga nya tabeller/flaggor, `check:all` 4/4 grön, inga console errors från egen kod.
-</content>

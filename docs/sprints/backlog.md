@@ -159,7 +159,8 @@ Identifierade mönster (2026-04-17) som är smartare än vanligt men bara finns 
 
 | Story | Effort | Beskrivning |
 |-------|--------|-------------|
-| Geokoda demo-kunder för Dagens rutt | 30 min | Demo-seeden (`scripts/seed-demo-provider.ts`) saknar kund-koordinater och har ~1 bokning/dag → kartan i `/provider/today` blir tom och rutt-linjen/körsträckan kan inte visas i standard-demon. Geokoda demo-kundernas adresser (Nominatim eller hårdkodade lat/lng) och ge minst en dag ≥2 stopp så demon visar en riktig flerstopps-rutt. Watch från Dagens rutt-verifieringen 2026-06-07 — se [dagens-rutt-verifiering-2026-06.md](../discovery/dagens-rutt-verifiering-2026-06.md). |
+| ~~Geokoda demo-kunder för Dagens rutt~~ | ~~30 min~~ | **KLAR 2026-06-07** (slice 3) — `scripts/seed-demo-provider.ts` har nu koordinater på alla 9 demo-kunder + en 3-stopps demodag (dag 2). Se [dagens-rutt-verifiering-2026-06.md](../discovery/dagens-rutt-verifiering-2026-06.md). |
+| Besöksplats-modell (→ Stall-epic) | Discovery | Dagens rutt använder i demon kundens **hemkoordinat** som proxy för **besöksplats**. Korrekt modell: stall-/besöksadress kopplad till häst eller bokning (en kund kan ha hästar på olika stall). Hör hemma i kommande **Stall-epic/discovery**, inte i Dagens rutt. Demo-förbehållet dokumenterat i verifieringsdokumentet. |
 | Dubbel OSRM-call i Dagens rutt | 1-2h | `/provider/today` anropar `/api/routing` (OSRM) två gånger med samma path: i `RouteMapVisualization` (`getRouteWithFallback`, geometri) och i sidan (`getRoute`, körsträcka-siffran). Lyft ut distansen via callback/prop från `RouteMapVisualization` så den hämtas en gång och återanvänds. Rör delad komponent (används även av route-planning) → egen slice med review. Watch från slice 2, 2026-06-07. |
 
 ## Features som kraver arbete innan lansering
