@@ -6,7 +6,9 @@ import { prisma } from "@/lib/prisma"
 
 /**
  * A single stop in the provider's day, shaped for RouteMapVisualization
- * and the stop list. Coordinates come from the customer's address.
+ * and the stop list. The visit location is the horse's stable when that stable
+ * has coordinates; otherwise it falls back to the customer's address.
+ * `stableName` is set whenever the horse is stabled (even without coordinates).
  */
 interface DayRouteStop {
   id: string
@@ -18,6 +20,7 @@ interface DayRouteStop {
   latitude: number | null
   longitude: number | null
   customer: { firstName: string; lastName: string }
+  stableName?: string
 }
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ogiltigt datumformat (YYYY-MM-DD)")
@@ -78,25 +81,57 @@ export const GET = withApiHandler(
             city: true,
           },
         },
+        horse: {
+          select: {
+            stable: {
+              select: {
+                name: true,
+                address: true,
+                city: true,
+                latitude: true,
+                longitude: true,
+              },
+            },
+          },
+        },
         service: { select: { name: true } },
       },
       orderBy: { startTime: "asc" },
     })
 
-    const stops: DayRouteStop[] = bookings.map((b) => ({
-      id: b.id,
-      startTime: b.startTime,
-      endTime: b.endTime,
-      serviceType: b.service.name,
-      address: b.customer.address,
-      city: b.customer.city,
-      latitude: b.customer.latitude,
-      longitude: b.customer.longitude,
-      customer: {
-        firstName: b.customer.firstName,
-        lastName: b.customer.lastName,
-      },
-    }))
+    const stops: DayRouteStop[] = bookings.map((b) => {
+      const stable = b.horse?.stable ?? null
+      // Visit happens at the stable when it has coordinates; otherwise the
+      // customer's home address (current behaviour). The stable name is shown
+      // regardless of whether the stable has coordinates.
+      const visit =
+        stable && stable.latitude != null && stable.longitude != null
+          ? {
+              address: stable.address,
+              city: stable.city,
+              latitude: stable.latitude,
+              longitude: stable.longitude,
+            }
+          : {
+              address: b.customer.address,
+              city: b.customer.city,
+              latitude: b.customer.latitude,
+              longitude: b.customer.longitude,
+            }
+
+      return {
+        id: b.id,
+        startTime: b.startTime,
+        endTime: b.endTime,
+        serviceType: b.service.name,
+        ...visit,
+        customer: {
+          firstName: b.customer.firstName,
+          lastName: b.customer.lastName,
+        },
+        ...(stable?.name ? { stableName: stable.name } : {}),
+      }
+    })
 
     const startLocation =
       provider.latitude != null && provider.longitude != null

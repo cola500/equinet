@@ -41,6 +41,7 @@ interface DayRouteStop {
   latitude: number | null
   longitude: number | null
   customer: { firstName: string; lastName: string }
+  stableName?: string
 }
 
 /** Full address (street + city) for display, or null if neither is set. */
@@ -272,6 +273,11 @@ export default function TodayRoutePage() {
                         <p className="mt-0.5 font-medium text-gray-900">
                           {stop.customer.firstName} {stop.customer.lastName}
                         </p>
+                        {stop.stableName && (
+                          <p className="mt-0.5 text-xs font-medium text-gray-600">
+                            Stall: {stop.stableName}
+                          </p>
+                        )}
                         {address && (
                           <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
                             <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />

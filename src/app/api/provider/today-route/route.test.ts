@@ -196,4 +196,75 @@ describe('GET /api/provider/today-route', () => {
     const data = await response.json()
     expect(data.startLocation).toBeNull()
   })
+
+  // Stall → leverantörsnytta (B): when the booking's horse is stabled at a yard
+  // with coordinates, the visit location is the STABLE, not the customer's home.
+  it('uses the stable coordinates and address as the visit location when the horse has a stable with coordinates', async () => {
+    vi.mocked(prisma.booking.findMany).mockResolvedValue([
+      sampleBooking({
+        id: 'b1',
+        horse: {
+          stable: {
+            name: 'Stall Hagaby',
+            address: 'Hagabyvägen 3',
+            city: 'Kumla',
+            latitude: 59.13,
+            longitude: 15.14,
+          },
+        },
+      }),
+    ] as never)
+
+    const response = await GET(makeRequest('?date=2026-06-07'))
+    const data = await response.json()
+
+    expect(data.stops[0].latitude).toBe(59.13)
+    expect(data.stops[0].longitude).toBe(15.14)
+    expect(data.stops[0].address).toBe('Hagabyvägen 3')
+    expect(data.stops[0].city).toBe('Kumla')
+    // A: stable name surfaced for the provider.
+    expect(data.stops[0].stableName).toBe('Stall Hagaby')
+  })
+
+  // Fallback: stable exists but has no coordinates → keep the customer location
+  // for the map/Navigera, but still show the stable name (A).
+  it('falls back to the customer location when the stable has no coordinates, but still shows the stable name', async () => {
+    vi.mocked(prisma.booking.findMany).mockResolvedValue([
+      sampleBooking({
+        id: 'b1',
+        horse: {
+          stable: {
+            name: 'Stall Solbacken',
+            address: null,
+            city: 'Alingsås',
+            latitude: null,
+            longitude: null,
+          },
+        },
+      }),
+    ] as never)
+
+    const response = await GET(makeRequest('?date=2026-06-07'))
+    const data = await response.json()
+
+    // Customer coordinates retained (from sampleBooking).
+    expect(data.stops[0].latitude).toBe(57.7)
+    expect(data.stops[0].longitude).toBe(11.97)
+    expect(data.stops[0].address).toBe('Storgatan 1')
+    expect(data.stops[0].stableName).toBe('Stall Solbacken')
+  })
+
+  // Fallback: no stable at all → customer location, no stable name.
+  it('falls back to the customer location and omits the stable name when the horse has no stable', async () => {
+    vi.mocked(prisma.booking.findMany).mockResolvedValue([
+      sampleBooking({ id: 'b1', horse: { stable: null } }),
+    ] as never)
+
+    const response = await GET(makeRequest('?date=2026-06-07'))
+    const data = await response.json()
+
+    expect(data.stops[0].latitude).toBe(57.7)
+    expect(data.stops[0].longitude).toBe(11.97)
+    expect(data.stops[0].stableName).toBeUndefined()
+  })
 })
