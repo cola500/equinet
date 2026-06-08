@@ -62,6 +62,7 @@ interface Horse {
   name: string
   breed?: string | null
   gender?: string | null
+  stable?: { id: string; name: string } | null
 }
 
 interface Booking {
@@ -414,6 +415,12 @@ function ProviderBookingsContent() {
                               )}
                             </>
                           )}
+                        </div>
+                      )}
+                      {booking.horse?.stable?.name && (
+                        <div className="text-sm">
+                          <span className="text-gray-600">Stall:</span>{" "}
+                          <span className="font-medium">{booking.horse.stable.name}</span>
                         </div>
                       )}
                       <div className="text-sm">

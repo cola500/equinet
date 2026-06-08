@@ -59,6 +59,14 @@ const DEMO_CUSTOMER_EMAILS = [
 const STABLE_OWNER_EMAIL = "stall.solbacken@demo.equinet.se"
 const DEMO_STABLE_NAME = "Stall Solbacken"
 
+// Second demo stable WITH coordinates, in the Örebro demo region (a yard a few km
+// from Lisa's home). One demo horse (Lisa's Molly, who has a booking on the
+// curated "Dagens rutt" day) is linked here so the provider's day shows the visit
+// at the STABLE, not the customer's home — demonstrating stable-as-visit-location.
+const VISIT_STABLE_OWNER_EMAIL = "stall.hagaby@demo.equinet.se"
+const VISIT_STABLE_NAME = "Stall Hagaby"
+const VISIT_STABLE_HORSE_KEY = "Lisa Andersson/Molly"
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -203,13 +211,17 @@ async function resetDemoData(providerId: string) {
     console.log("  No demo customers found")
   }
 
-  // Delete the demo stable + its dedicated owner (independent of demo customers).
-  // Horse.stableId is SetNull, so any link is cleared automatically; no horse is
-  // auto-linked to this stable anyway.
-  const stablesDeleted = await prisma.stable.deleteMany({ where: { name: DEMO_STABLE_NAME } })
-  if (stablesDeleted.count > 0) console.log(`  Deleted ${stablesDeleted.count} demo stable`)
-  const stableOwnerDeleted = await prisma.user.deleteMany({ where: { email: STABLE_OWNER_EMAIL } })
-  if (stableOwnerDeleted.count > 0) console.log(`  Deleted ${stableOwnerDeleted.count} demo stable owner`)
+  // Delete the demo stables + their dedicated owners (independent of demo
+  // customers). Horse.stableId is SetNull, so any link is cleared automatically;
+  // the linked demo horse is itself removed in the horse cleanup above.
+  const stablesDeleted = await prisma.stable.deleteMany({
+    where: { name: { in: [DEMO_STABLE_NAME, VISIT_STABLE_NAME] } },
+  })
+  if (stablesDeleted.count > 0) console.log(`  Deleted ${stablesDeleted.count} demo stables`)
+  const stableOwnerDeleted = await prisma.user.deleteMany({
+    where: { email: { in: [STABLE_OWNER_EMAIL, VISIT_STABLE_OWNER_EMAIL] } },
+  })
+  if (stableOwnerDeleted.count > 0) console.log(`  Deleted ${stableOwnerDeleted.count} demo stable owners`)
 
   // Delete the provider's services LAST — after bookings + series (their FK
   // references) are gone. Without this, renaming a service would create a new
@@ -630,6 +642,56 @@ async function main() {
       },
     })
     console.log(`  Skapade stall: ${DEMO_STABLE_NAME} (Alingsås)`)
+  }
+
+  // 6c. Visit-location demo stable (Stall Hagaby) WITH coordinates, in the Örebro
+  //     region, linked to Lisa's Molly. Lets /provider/today show the visit at the
+  //     stable instead of the customer's home. Coordinates are a few km from
+  //     Lisa's address so the day's route stays coherent.
+  const visitStableOwner = await prisma.user.upsert({
+    where: { email: VISIT_STABLE_OWNER_EMAIL },
+    update: {},
+    create: {
+      email: VISIT_STABLE_OWNER_EMAIL,
+      firstName: "Stall",
+      lastName: "Hagaby",
+      userType: "customer",
+      city: "Örebro",
+      municipality: "Örebro",
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+    },
+  })
+
+  let visitStable = await prisma.stable.findFirst({ where: { name: VISIT_STABLE_NAME } })
+  if (visitStable) {
+    console.log(`  Stall finns: ${VISIT_STABLE_NAME}`)
+  } else {
+    visitStable = await prisma.stable.create({
+      data: {
+        userId: visitStableOwner.id,
+        name: VISIT_STABLE_NAME,
+        description: "Demostall i Örebro (DEMO-SEED)",
+        address: "Hagaby Gård 2",
+        city: "Örebro",
+        municipality: "Örebro",
+        latitude: 59.252,
+        longitude: 15.26,
+        isActive: true,
+      },
+    })
+    console.log(`  Skapade stall: ${VISIT_STABLE_NAME} (Örebro, med koordinater)`)
+  }
+
+  // Link Molly to Stall Hagaby (idempotent). Molly has a booking on the curated
+  // "Dagens rutt" day, so the visit shows the stable as location.
+  const visitHorseId = horses[VISIT_STABLE_HORSE_KEY]
+  if (visitHorseId) {
+    await prisma.horse.update({
+      where: { id: visitHorseId },
+      data: { stableId: visitStable.id },
+    })
+    console.log(`  Kopplade häst ${VISIT_STABLE_HORSE_KEY} -> ${VISIT_STABLE_NAME}`)
   }
   console.log("")
 
