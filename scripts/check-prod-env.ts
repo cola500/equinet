@@ -12,8 +12,23 @@ export const REQUIRED_PROD_VARS = [
   'UPSTASH_REDIS_REST_TOKEN',
 ]
 
+// Required ONLY when Stripe is the active payment provider (PAYMENT_PROVIDER=stripe).
+// Kept conditional so the Production Parity deploy (Stripe off) is not blocked by an
+// unused webhook secret, while still being enforced once Stripe Live is enabled.
+export const STRIPE_REQUIRED_VARS = ['STRIPE_WEBHOOK_SECRET']
+
+// A var counts as missing when it is undefined, empty, or whitespace-only.
+// (Trim guards against a var set to "   " silently passing as "present".)
+function isMissing(value: string | undefined): boolean {
+  return !value || value.trim() === ''
+}
+
 export function checkProdEnv(env: Record<string, string | undefined>): { missing: string[] } {
-  const missing = REQUIRED_PROD_VARS.filter(v => !env[v])
+  const required = [...REQUIRED_PROD_VARS]
+  if (env.PAYMENT_PROVIDER === 'stripe') {
+    required.push(...STRIPE_REQUIRED_VARS)
+  }
+  const missing = required.filter(v => isMissing(env[v]))
   return { missing }
 }
 

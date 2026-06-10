@@ -29,6 +29,14 @@ describe('checkProdEnv', () => {
     expect(missing).toContain('APP_URL')
   })
 
+  it('returns missing vars when value is whitespace-only', () => {
+    const env = { ...allVarsPresent, APP_URL: '   ' }
+
+    const { missing } = checkProdEnv(env)
+
+    expect(missing).toContain('APP_URL')
+  })
+
   it('passes when all required vars have non-empty values', () => {
     const { missing } = checkProdEnv(allVarsPresent)
     expect(missing).toHaveLength(0)
@@ -36,6 +44,44 @@ describe('checkProdEnv', () => {
 
   it('exports the full list of required vars', () => {
     expect(REQUIRED_PROD_VARS).toBeDefined()
+  })
+})
+
+describe('checkProdEnv — STRIPE_WEBHOOK_SECRET (conditional on active Stripe)', () => {
+  // Stripe vars are only required when Stripe is the active payment provider.
+  // This keeps the Production Parity deploy (Stripe off) from being blocked by an
+  // unused webhook secret, while enforcing it once Stripe Live is enabled (Post-Parity).
+  it('does NOT require STRIPE_WEBHOOK_SECRET when PAYMENT_PROVIDER is unset', () => {
+    const { missing } = checkProdEnv(allVarsPresent)
+    expect(missing).not.toContain('STRIPE_WEBHOOK_SECRET')
+  })
+
+  it('does NOT require STRIPE_WEBHOOK_SECRET when PAYMENT_PROVIDER=mock', () => {
+    const { missing } = checkProdEnv({ ...allVarsPresent, PAYMENT_PROVIDER: 'mock' })
+    expect(missing).not.toContain('STRIPE_WEBHOOK_SECRET')
+  })
+
+  it('REQUIRES STRIPE_WEBHOOK_SECRET when PAYMENT_PROVIDER=stripe and it is absent', () => {
+    const { missing } = checkProdEnv({ ...allVarsPresent, PAYMENT_PROVIDER: 'stripe' })
+    expect(missing).toContain('STRIPE_WEBHOOK_SECRET')
+  })
+
+  it('flags STRIPE_WEBHOOK_SECRET when PAYMENT_PROVIDER=stripe and value is whitespace-only', () => {
+    const { missing } = checkProdEnv({
+      ...allVarsPresent,
+      PAYMENT_PROVIDER: 'stripe',
+      STRIPE_WEBHOOK_SECRET: '   ',
+    })
+    expect(missing).toContain('STRIPE_WEBHOOK_SECRET')
+  })
+
+  it('passes when PAYMENT_PROVIDER=stripe and STRIPE_WEBHOOK_SECRET is set', () => {
+    const { missing } = checkProdEnv({
+      ...allVarsPresent,
+      PAYMENT_PROVIDER: 'stripe',
+      STRIPE_WEBHOOK_SECRET: 'whsec_test_x',
+    })
+    expect(missing).not.toContain('STRIPE_WEBHOOK_SECRET')
   })
 })
 
