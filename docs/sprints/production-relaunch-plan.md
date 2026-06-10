@@ -192,6 +192,9 @@ Checklista:
 
 ### C. Env guard / env docs
 
+> **Detaljerad körbar plan:** [production-env-guard-plan.md](production-env-guard-plan.md)
+> (NEXT_PUBLIC_DEMO_MODE-slutförande, check-prod-env-härdning, .env.example-fix, docs/kod vs prod-env, Go/No-Go).
+
 - [ ] Lägg till `STRIPE_WEBHOOK_SECRET` i `REQUIRED_PROD_VARS` (`scripts/check-prod-env.ts`)
 - [ ] Lägg till **non-empty-validering** (idag passerar tom sträng — S65-4)
 - [ ] Rätta `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` i `.env.example` (idag fel namn `STRIPE_PUBLISHABLE_KEY`)
