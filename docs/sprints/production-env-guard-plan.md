@@ -72,15 +72,26 @@ Två syften:
 
 ## 2. Vad som måste ändras
 
-### Grupp A — Kodändring i repo (via PR, levereras i Workstream E)
-1. **`check-prod-env.ts`: lägg till `STRIPE_WEBHOOK_SECRET`** i required.
-   - **Villkorligt:** gör den required **endast när Stripe är aktivt** (t.ex. `PAYMENT_PROVIDER === 'stripe'`
-     eller stripe_payments på). Annars blockerar guarden parity-deployen i onödan (Stripe är AV i parity, §B).
-   - Mönster: lägg `STRIPE_WEBHOOK_SECRET` i en separat `STRIPE_REQUIRED_VARS` som bara läggs till
-     `REQUIRED_PROD_VARS` om Stripe är på.
-2. **`check-prod-env.ts`: non-empty/trim-validering.** Ändra filtret till att även fånga
-   whitespace-only: `v => !env[v] || env[v]!.trim() === ''`. Gör intentionen explicit + täpper luckan.
-   - (Lägg gärna unit-test i `scripts/__tests__/` eller motsv. — TDD: RED för whitespace-fall, GREEN.)
+### Grupp A — Kodändring i repo (✅ LEVERERAD i PR #392, ej mergad)
+1. **`check-prod-env.ts`: `STRIPE_WEBHOOK_SECRET` villkorligt required** — endast när
+   `PAYMENT_PROVIDER === 'stripe'` (separat `STRIPE_REQUIRED_VARS`). Blockerar inte parity-deployen. ✅
+2. **`check-prod-env.ts`: non-empty/trim-validering** — whitespace-only fångas nu (`isMissing`-helper). ✅
+   - 6 nya unit-tester (RED→GREEN). `npm run check:all` 4/4 grön.
+
+> **⚠️ PARITY-DEPLOY-BLOCKER (öppet beslut — ej i PR #392):**
+> `STRIPE_SECRET_KEY` och `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` är fortfarande **ovillkorligt**
+> required i `REQUIRED_PROD_VARS`. Med **Stripe AV i parity** (PAYMENT_PROVIDER ≠ stripe) kan
+> `check-prod-env` då **blockera prod-deployen** (Workstream E) om prod saknar dessa nycklar.
+> PO måste välja:
+> - **A)** Gör `STRIPE_SECRET_KEY` + `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` **villkorliga** (flytta
+>   till `STRIPE_REQUIRED_VARS` så de bara krävs när `PAYMENT_PROVIDER=stripe`). Renast — ingen
+>   Stripe-config i prod förrän Stripe Live (Post-Parity). Kräver att den kanoniska-lista-testen
+>   uppdateras.
+> - **B)** Sätt **test-nycklar** (`sk_test_…`, `pk_test_…`) i prod-env även om stripe_payments är av,
+>   så guarden passerar. Snabbare men inför oanvänd Stripe-config i prod.
+>
+> **Rekommendation:** A (matchar parity-tanken — ingen betalningskonfig i prod förrän D). Beslutet
+> tas före Workstream E. Hör ihop med [Workstream E §blocker](production-relaunch-plan.md).
 
 ### Grupp B — Docs-ändring i repo (`.env.example`)
 3. **Rätta** rad 131: `STRIPE_PUBLISHABLE_KEY` → `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
@@ -139,19 +150,21 @@ Räknas KLAR när:
 
 ## 5. Docs/kod vs faktisk prod-env
 
-| # | Ändring | Typ | Var | Levereras |
-|---|---------|-----|-----|-----------|
-| 1 | check-prod-env: STRIPE_WEBHOOK_SECRET (villkorlig) | **Kodändring** | `scripts/check-prod-env.ts` | PR → Workstream E |
-| 2 | check-prod-env: non-empty/trim | **Kodändring** | `scripts/check-prod-env.ts` (+ test) | PR → Workstream E |
-| 3 | Rätta NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY | **Docs/repo** | `.env.example` | PR (kan följa med E) |
-| 4 | Lägg till NEXT_PUBLIC_DEMO_MODE | **Docs/repo** | `.env.example` | PR |
-| 5 | Lägg till övriga saknade vars | **Docs/repo** | `.env.example` | PR |
+| # | Ändring | Typ | Var | Status |
+|---|---------|-----|-----|--------|
+| 1 | check-prod-env: STRIPE_WEBHOOK_SECRET (villkorlig) | **Kodändring** | `scripts/check-prod-env.ts` | ✅ PR #392 (ej mergad) |
+| 2 | check-prod-env: non-empty/trim | **Kodändring** | `scripts/check-prod-env.ts` (+ test) | ✅ PR #392 (ej mergad) |
+| 3 | Rätta NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY | **Docs/repo** | `.env.example` | ✅ PR #392 (ej mergad) |
+| 4 | Lägg till NEXT_PUBLIC_DEMO_MODE | **Docs/repo** | `.env.example` | ✅ PR #392 (ej mergad) |
+| 5 | Lägg till övriga saknade vars | **Docs/repo** | `.env.example` | ✅ PR #392 (ej mergad) |
+| **B!** | **STRIPE_SECRET_KEY + publishable villkorliga (A) ELLER test-nycklar i prod (B)** | **Beslut + ev. kod** | `check-prod-env.ts` / Vercel | **⚠️ ÖPPEN parity-deploy-blocker** |
 | 6 | NEXT_PUBLIC_DEMO_MODE = false/borttagen | **Faktisk prod-env** | Vercel (REST API) | **[Johan-manuellt]** + rebuild E |
 | 7 | Verifiera/sätt required prod-vars icke-tomma | **Faktisk prod-env** | Vercel | **[Johan-manuellt]** |
 | 8 | Bekräfta DISABLE_CRONS ≠ true | **Faktisk prod-env** | Vercel | **[Johan-manuellt]** |
 
-**Sammanfattning:** punkt 1–5 är repo-ändringar (kod/docs, går via PR och Workstream E). Punkt 6–8 är
-faktiska prod-env-ändringar i Vercel som kräver Johans inloggning — ingen av dem görs nu.
+**Sammanfattning:** punkt 1–5 är repo-ändringar levererade i **PR #392** (ej mergad). Rad **B!** är en
+**öppen parity-deploy-blocker** (val A/B, se §2). Punkt 6–8 är faktiska prod-env-ändringar i Vercel som
+kräver Johans inloggning — ingen av dem görs nu.
 
 ### Johan-manuella kommandon (när Go ges)
 Kör via `!`-prefix i prompten så jag kan analysera utfallet (utan att värden skrivs till fil/historik

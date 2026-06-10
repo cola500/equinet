@@ -194,12 +194,18 @@ Checklista:
 
 > **Detaljerad körbar plan:** [production-env-guard-plan.md](production-env-guard-plan.md)
 > (NEXT_PUBLIC_DEMO_MODE-slutförande, check-prod-env-härdning, .env.example-fix, docs/kod vs prod-env, Go/No-Go).
+>
+> **Status 2026-06-10:** repo-delen (kod + .env.example) levererad i **PR #392** (ej mergad).
+> **⚠️ Öppen parity-deploy-blocker:** STRIPE_SECRET_KEY + publishable ovillkorligt required —
+> val A/B krävs före Workstream E (se §E + env-guard-planen §2).
 
-- [ ] Lägg till `STRIPE_WEBHOOK_SECRET` i `REQUIRED_PROD_VARS` (`scripts/check-prod-env.ts`)
-- [ ] Lägg till **non-empty-validering** (idag passerar tom sträng — S65-4)
-- [ ] Rätta `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` i `.env.example` (idag fel namn `STRIPE_PUBLISHABLE_KEY`)
-- [ ] Lägg till saknade env-vars i `.env.example`: `NEXTAUTH_SECRET`, `PAYMENT_PROVIDER`, `MODAL_API_URL`, `FORTNOX_CLIENT_ID/SECRET/REDIRECT_URI`, `EDGE_CONFIG`/`EDGE_CONFIG_ID`/`VERCEL_API_TOKEN`, `DISABLE_SW`, `DISABLE_CRONS`, `STAGING_PROJECT`, `NEXT_PUBLIC_DEMO_MODE`
-- [ ] Verifiera Vercel prod-env via `vercel env pull --environment=production` (särskilt efter pausen): Supabase-URL/keys, `APP_URL`, `DATABASE_URL`/`DIRECT_DATABASE_URL`, Upstash Redis
+- [x] Lägg till `STRIPE_WEBHOOK_SECRET` (villkorligt, `PAYMENT_PROVIDER=stripe`) — **PR #392**
+- [x] Lägg till **non-empty/trim-validering** (whitespace-only fångas nu) — **PR #392**
+- [x] Rätta `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` i `.env.example` — **PR #392**
+- [x] Lägg till saknade env-vars i `.env.example` (`NEXTAUTH_SECRET`, `PAYMENT_PROVIDER`, `MODAL_API_URL`, `FORTNOX_*`, `EDGE_CONFIG`/`EDGE_CONFIG_ID`/`VERCEL_API_TOKEN`, `DISABLE_SW`, `ANALYZE`, `DISABLE_CRONS`, `STAGING_PROJECT`, `NEXT_PUBLIC_DEMO_MODE`) — **PR #392**
+- [ ] **⚠️ Lös STRIPE_SECRET_KEY-blockern (val A eller B)** före E
+- [ ] Verifiera Vercel prod-env via `vercel env pull --environment=production` (särskilt efter pausen): Supabase-URL/keys, `APP_URL`, `DATABASE_URL`/`DIRECT_DATABASE_URL`, Upstash Redis — **[Johan-manuellt]**
+- [ ] Sätt `NEXT_PUBLIC_DEMO_MODE` = false/borttagen i prod-env (slutför demo_mode, kräver rebuild i E) — **[Johan-manuellt]**
 - [ ] Påminnelse: använd Vercel **REST API** för icke-triviala env-skrivningar (CLI `--value`/stdin sparar tyst tomt)
 
 ### D. Stripe / payment readiness — FUTURE SLICE / POST-PARITY
@@ -220,10 +226,17 @@ Checklista:
 
 > Får INTE starta förrän A (migrationer), B (flags), C (env-guard) är gröna.
 
+> **⚠️ PARITY-DEPLOY-BLOCKER (öppet beslut):** `STRIPE_SECRET_KEY` + `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+> är ovillkorligt required i `check-prod-env`. Med Stripe AV i parity kan guarden **blockera prod-deployen**
+> om prod saknar dessa. Välj före E: **A)** gör dem villkorliga (required bara när `PAYMENT_PROVIDER=stripe`)
+> eller **B)** sätt test-nycklar i prod-env. Detaljer + rekommendation (A) i
+> [env-guard-planen §2](production-env-guard-plan.md). PR #392 (Workstream C-repo) utökas **inte** för detta.
+
+- [ ] **Lös STRIPE_SECRET_KEY-blockern (val A eller B)** — annars failar `check-prod-env` vid prod-deploy
 - [ ] CI grön på staging-branchen (`check:all` + E2E mot main-PR)
 - [ ] Migrationer applicerade på prod-DB FÖRST (workstream A klar)
 - [ ] Feature flags reconcilade (workstream B klar)
-- [ ] Env-guard grön + Vercel prod-env verifierad (workstream C klar)
+- [ ] Env-guard grön + Vercel prod-env verifierad (workstream C klar) — inkl. PR #392 mergad
 - [ ] Merge `staging` → `main` (PR, CI grön)
 - [ ] Verifiera prod-deploy (rätt commit live, build OK, `check-prod-env` passerade)
 
