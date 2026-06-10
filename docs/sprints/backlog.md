@@ -293,6 +293,7 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Konsolidera meta-rules-filer | 2-4h | 5 filer (team-workflow, autonomous-sprint, tech-lead, parallel-sessions, auto-assign, ~1200 rader) dokumenterar samma tema. Ingen refereras från CLAUDE.md Snabbreferens. Slå ihop, arkivera resten till `docs/archive/rules/`. *(Process-beslut.)* |
 | MessagingDialog öppnar ej i headless Playwright (S50-0) | 30 min | `onClick` triggas men `open`-state flippar ej i headless. API-kedjan funkar → inte prod-blocker. Undersök `--headed` + verkliga browsers. |
 | iOS WebView login-bypass för mobile-mcp (S50-0) | 45 min | WKWebView `<input type=password>` = `SecureTextField`, XCUITest kan inte skriva. Utforska: pre-seed session via API + deep link, biometri-bypass, Keychain AutoFill. Utan detta kan iOS login-flöde inte E2E-testas. |
+| `npm run setup` auth-triggers-steget tyst trasigt | 15 min | `setup`-scriptet kör `npx prisma db execute --file supabase/auth-triggers.sql` **utan** `--schema`/`--url` → "Either --url or --schema must be provided", felet ignoreras (exit 0). Lokala auth-triggers appliceras aldrig → lokal E2E-seed kan faila (GoTrue 500 "Database error creating new user") + orphan-rader ackumuleras. **Fix:** lägg `--schema prisma/schema.prisma` på det steget. Hittad 2026-06-10 vid 5 Whys på auth-E2E-discovery. |
 
 ---
 
