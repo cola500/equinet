@@ -56,6 +56,7 @@
     "release:major": "standard-version --release-as major",
     "release:first": "standard-version --first-release",
     "env:status": "bash scripts/env-status.sh",
+    "audit:prod-env:safe": "tsx scripts/audit-prod-env-safe.mjs",
     "migrate:check": "bash scripts/migrate-check.sh",
     "migrate:status": "bash scripts/migrate-status.sh",
     "db:backup": "bash scripts/db-backup.sh",

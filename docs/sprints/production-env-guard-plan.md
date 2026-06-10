@@ -108,8 +108,8 @@ Två syften:
 ## 3. Verifiering före/efter
 
 **Före (read-only):**
-- [ ] **[Johan-manuellt]** `vercel env pull --environment=production` → granska: är `NEXT_PUBLIC_DEMO_MODE` satt? till vad?
-- [ ] **[Johan-manuellt]** Bekräfta de 11 required vars finns med icke-tomma värden (DB-URLs, Supabase-keys, APP_URL, Redis, Resend)
+- [ ] **[Johan-manuellt]** `npm run audit:prod-env:safe` → läs statusrapporten: är `NEXT_PUBLIC_DEMO_MODE` `TRUE`/`FALSE`/`UNSET`? några required `MISSING`/`EMPTY`?
+- [ ] **[Johan-manuellt]** Bekräfta de 9 required vars = `SET` (DB-URLs, Supabase-keys, APP_URL, Redis, Resend); Stripe-vars endast om `PAYMENT_PROVIDER=stripe`
 - [ ] Bekräfta `check-prod-env.ts` + `.env.example` nuläge (denna plan, §1) oförändrat före ändring
 
 **Efter (kod, grupp A+B):**
@@ -118,7 +118,7 @@ Två syften:
 - [ ] `.env.example`: korrekt Stripe-namn + nya vars närvarande; `npm run docs`/lint grönt
 
 **Efter (prod-env, grupp C) [Johan-manuellt]:**
-- [ ] `vercel env pull --environment=production` → `NEXT_PUBLIC_DEMO_MODE` = false/saknas
+- [ ] `npm run audit:prod-env:safe` → `NEXT_PUBLIC_DEMO_MODE` = `FALSE`/`UNSET`
 - [ ] Alla required vars icke-tomma
 - [ ] `DISABLE_CRONS` ej `true`
 - [ ] (Effekt på demo_mode i klient verifieras efter rebuild i Workstream E + smoke F)
@@ -159,11 +159,17 @@ tidigare parity-deploy-blockern (löst via val A). Punkt 6–8 är faktiska prod
 kräver Johans inloggning — ingen av dem görs nu.
 
 ### Johan-manuella kommandon (när Go ges)
-Kör via `!`-prefix i prompten så jag kan analysera utfallet (utan att värden skrivs till fil/historik
-mer än nödvändigt — granska att inga secrets klistras i chatten):
+
+**Verifiering — använd det säkra audit-scriptet** (`scripts/audit-prod-env-safe.mjs`):
 ```
-vercel link            # om projektet inte är länkat lokalt
-vercel env pull --environment=production .env.prod.audit   # läs nuläge (radera filen efteråt)
+npm run audit:prod-env:safe
 ```
+Scriptet kör `vercel env pull --environment=production .env.prod.audit`, skriver ut **endast status**
+per variabel (`SET` / `MISSING` / `EMPTY` / `WHITESPACE_ONLY`), visar icke-hemliga beslutsvariabler
+(`NEXT_PUBLIC_DEMO_MODE`, `PAYMENT_PROVIDER`, `DISABLE_CRONS`, `STAGING_PROJECT`) som `TRUE`/`FALSE`/
+status, och **raderar audit-filen efteråt**. Inga secret-värden skrivs ut — utskriften är säker att
+klistra in i chatten. Kräver `vercel login` + `vercel link` (prod-projektet); annars tydligt felmeddelande.
+Var-listorna importeras från `check-prod-env.ts` så de aldrig driftar isär.
+
 Skrivningar (`NEXT_PUBLIC_DEMO_MODE`, ev. saknade vars) görs av Johan via Vercel REST API eller
 dashboard — jag tar fram exakta anrop/värden på begäran, men kör dem inte.
