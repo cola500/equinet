@@ -117,6 +117,9 @@ Projekt-referenser:
 
 ### A. Prod DB migration sync
 
+> **Detaljerad körbar apply-plan:** [production-migration-apply-plan.md](production-migration-apply-plan.md)
+> (apply-ordning, verifierings-SQL före/efter, backup, risker per migration, rollback, egen Go/No-Go).
+
 **De exakt 7 saknade migrationerna** (finns i repo, ej applicerade på prod; apply-ordning = kronologisk):
 
 | # | Migration | Vad den gör | Kritikalitet |
