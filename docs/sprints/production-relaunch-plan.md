@@ -230,6 +230,10 @@ Checklista:
 
 ### E. Deploy staging → main/prod
 
+> **Detaljerad deploy-plan:** [production-deploy-plan.md](production-deploy-plan.md)
+> (pre-checks, exakta merge/deploy-steg, rollback, smoke-test, Go/No-Go, risker).
+> **Förutsättningar A+B+C är nu gröna** → E är tekniskt avblockerad, men kräver eget PO-Go.
+
 > Får INTE starta förrän A (migrationer), B (flags), C (env-guard) är gröna.
 
 > **✅ PARITY-DEPLOY-BLOCKER LÖST (val A, PR #392):** `STRIPE_SECRET_KEY` + `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
