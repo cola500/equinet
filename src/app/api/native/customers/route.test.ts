@@ -25,9 +25,18 @@ vi.mock("@/lib/rate-limit", () => ({
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
   RateLimitServiceError: class RateLimitServiceError extends Error {},
 }))
-vi.mock("@/lib/ghost-user", () => ({
-  createGhostUser: vi.fn().mockResolvedValue("ghost-user-1"),
-}))
+vi.mock("@/lib/ghost-user", () => {
+  class GhostUserError extends Error {
+    constructor(public readonly code: 'EMAIL_BELONGS_TO_REGISTERED_USER') {
+      super('E-postadressen tillhör en registrerad användare')
+      this.name = 'GhostUserError'
+    }
+  }
+  return {
+    createGhostUser: vi.fn().mockResolvedValue("ghost-user-1"),
+    GhostUserError,
+  }
+})
 vi.mock("@/lib/sanitize", () => ({
   sanitizeString: vi.fn((s: string) => s),
   sanitizePhone: vi.fn((s: string) => s),
@@ -258,5 +267,24 @@ describe("POST /api/native/customers", () => {
     mockCreateGhostUser.mockRejectedValue(new Error("DB error"))
     const res = await POST(createPostRequest({ firstName: "Test" }))
     expect(res.status).toBe(500)
+  })
+
+  // C1 invariant: when createGhostUser refuses to reuse a registered
+  // account (fixes.txt C1) the native route must surface 409, not 500.
+  it("returns 409 when email belongs to a registered user", async () => {
+    const { GhostUserError } = await import("@/lib/ghost-user")
+    mockCreateGhostUser.mockRejectedValueOnce(
+      new GhostUserError("EMAIL_BELONGS_TO_REGISTERED_USER")
+    )
+
+    const res = await POST(createPostRequest({
+      firstName: "Anna",
+      email: "registered@user.com",
+    }))
+    const body = await res.json()
+
+    expect(res.status).toBe(409)
+    expect(body.error).toMatch(/registrerad/i)
+    expect(mockProviderCustomerCreate).not.toHaveBeenCalled()
   })
 })

@@ -7,8 +7,8 @@ test.describe('Authentication Flow', () => {
   });
 
   test('should register a new customer', async ({ page }) => {
-    // Klicka på "Kom igång" (desktop) / "Börja" (mobil)
-    await page.getByRole('link', { name: /kom igång|börja/i }).click();
+    // Gå direkt till registreringssidan (landing-CTA heter numera "Registrera dig gratis")
+    await page.goto('/register');
 
     // Välj "Hästägare" (customer)
     await page.click('[data-testid="user-type-customer"]');
@@ -37,8 +37,8 @@ test.describe('Authentication Flow', () => {
   });
 
   test('should register a new provider', async ({ page }) => {
-    // Klicka på "Kom igång" (desktop) / "Börja" (mobil)
-    await page.getByRole('link', { name: /kom igång|börja/i }).click();
+    // Gå direkt till registreringssidan (landing-CTA heter numera "Registrera dig gratis")
+    await page.goto('/register');
 
     // Fyll i grundläggande info FÖRST (innan vi väljer provider-typ)
     await page.getByLabel(/förnamn/i).fill('Leverantör');
@@ -83,12 +83,12 @@ test.describe('Authentication Flow', () => {
     // Submitta
     await page.getByRole('button', { name: /logga in/i }).click();
 
-    // Verifiera redirect - kunder går först till /dashboard som redirectar till /providers
-    await expect(page).toHaveURL(/\/(dashboard|providers)/, { timeout: 10000 });
+    // Verifiera redirect - kunder går först till /dashboard som redirectar till /hem
+    await expect(page).toHaveURL(/\/(dashboard|hem)/, { timeout: 10000 });
 
-    // Om vi är på /dashboard, vänta på redirect till /providers
+    // Om vi är på /dashboard, vänta på redirect till /hem
     if (page.url().includes('/dashboard')) {
-      await expect(page).toHaveURL(/\/providers/, { timeout: 10000 });
+      await expect(page).toHaveURL(/\/hem/, { timeout: 10000 });
     }
   });
 
@@ -113,8 +113,8 @@ test.describe('Authentication Flow', () => {
     await page.getByLabel('Lösenord', { exact: true }).fill('TestPassword123!');
     await page.getByRole('button', { name: /logga in/i }).click();
 
-    // Vänta på providers page
-    await expect(page).toHaveURL(/\/providers/, { timeout: 10000 });
+    // Vänta på kundhem (kunder routas till /hem)
+    await expect(page).toHaveURL(/\/hem/, { timeout: 10000 });
 
     // Öppna användar-dropdown (klicka på användarnamn/email eller dropdown-trigger)
     await page.getByRole('button', { name: /test@example\.com|test testsson/i }).click();

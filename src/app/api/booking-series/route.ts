@@ -34,6 +34,7 @@ function mapSeriesErrorToStatus(error: SeriesError): number {
   switch (error.type) {
     case 'RECURRING_DISABLED':
     case 'NOT_OWNER':
+    case 'CUSTOMER_NOT_LINKED':
       return 403
     case 'INVALID_INTERVAL':
     case 'INVALID_OCCURRENCES':
@@ -60,6 +61,8 @@ function mapSeriesErrorToMessage(error: SeriesError): string {
       return 'Bokningsserien hittades inte'
     case 'NOT_OWNER':
       return 'Åtkomst nekad'
+    case 'CUSTOMER_NOT_LINKED':
+      return 'Kunden är inte registrerad hos dig. Lägg till kunden först.'
     default:
       return 'Internt serverfel'
   }

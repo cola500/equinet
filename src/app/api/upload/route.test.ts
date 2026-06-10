@@ -36,7 +36,7 @@ const mockProviderSession = {
     id: "provider-user-1",
     email: "magnus@test.se",
     userType: "provider",
-    providerId: "provider-1",
+    providerId: "a0000000-0000-4000-a000-000000000002",
   },
 } as never
 
@@ -77,7 +77,7 @@ describe("POST /api/upload", () => {
   it("should upload a horse photo", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
     vi.mocked(prisma.horse.findFirst).mockResolvedValue({
-      id: "horse-1",
+      id: "a0000000-0000-4000-a000-000000000001",
       ownerId: "customer-1",
     } as never)
     vi.mocked(prisma.horse.update).mockResolvedValue({} as never)
@@ -88,7 +88,7 @@ describe("POST /api/upload", () => {
     } as never)
 
     const request = createMockUploadRequest(
-      { bucket: "horses", entityId: "horse-1" },
+      { bucket: "horses", entityId: "a0000000-0000-4000-a000-000000000001" },
       { name: "photo.jpg", type: "image/jpeg", size: 1024 }
     )
 
@@ -102,7 +102,7 @@ describe("POST /api/upload", () => {
   it("should upload a provider avatar", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSession)
     vi.mocked(prisma.provider.findUnique).mockResolvedValue({
-      id: "provider-1",
+      id: "a0000000-0000-4000-a000-000000000002",
       userId: "provider-user-1",
     } as never)
     vi.mocked(prisma.provider.update).mockResolvedValue({} as never)
@@ -113,7 +113,7 @@ describe("POST /api/upload", () => {
     } as never)
 
     const request = createMockUploadRequest(
-      { bucket: "avatars", entityId: "provider-1" },
+      { bucket: "avatars", entityId: "a0000000-0000-4000-a000-000000000002" },
       { name: "avatar.jpg", type: "image/jpeg", size: 2048 }
     )
 
@@ -125,7 +125,7 @@ describe("POST /api/upload", () => {
   it("should return 400 when no file is uploaded", async () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
 
-    const request = createMockUploadRequest({ bucket: "horses", entityId: "horse-1" })
+    const request = createMockUploadRequest({ bucket: "horses", entityId: "a0000000-0000-4000-a000-000000000001" })
     const response = await POST(request)
     const data = await response.json()
 
@@ -137,7 +137,7 @@ describe("POST /api/upload", () => {
     vi.mocked(auth).mockResolvedValue(mockSession)
 
     const request = createMockUploadRequest(
-      { bucket: "invalid", entityId: "horse-1" },
+      { bucket: "invalid", entityId: "a0000000-0000-4000-a000-000000000001" },
       { name: "photo.jpg", type: "image/jpeg", size: 1024 }
     )
     const response = await POST(request)
@@ -150,7 +150,7 @@ describe("POST /api/upload", () => {
     vi.mocked(prisma.horse.findFirst).mockResolvedValue(null)
 
     const request = createMockUploadRequest(
-      { bucket: "horses", entityId: "other-horse" },
+      { bucket: "horses", entityId: "a0000000-0000-4000-a000-000000000004" },
       { name: "photo.jpg", type: "image/jpeg", size: 1024 }
     )
     const response = await POST(request)
@@ -161,8 +161,8 @@ describe("POST /api/upload", () => {
   it("should upload a verification image", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSession)
     vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue({
-      id: "ver-1",
-      providerId: "provider-1",
+      id: "a0000000-0000-4000-a000-000000000003",
+      providerId: "a0000000-0000-4000-a000-000000000002",
       status: "pending",
     } as never)
     vi.mocked(prisma.upload.count).mockResolvedValue(0)
@@ -173,7 +173,7 @@ describe("POST /api/upload", () => {
     } as never)
 
     const request = createMockUploadRequest(
-      { bucket: "verifications", entityId: "ver-1" },
+      { bucket: "verifications", entityId: "a0000000-0000-4000-a000-000000000003" },
       { name: "cert.jpg", type: "image/jpeg", size: 2048 }
     )
 
@@ -187,7 +187,7 @@ describe("POST /api/upload", () => {
     vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(null)
 
     const request = createMockUploadRequest(
-      { bucket: "verifications", entityId: "other-ver" },
+      { bucket: "verifications", entityId: "a0000000-0000-4000-a000-000000000005" },
       { name: "cert.jpg", type: "image/jpeg", size: 1024 }
     )
 
@@ -202,7 +202,7 @@ describe("POST /api/upload", () => {
     vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue(null)
 
     const request = createMockUploadRequest(
-      { bucket: "verifications", entityId: "ver-approved" },
+      { bucket: "verifications", entityId: "a0000000-0000-4000-a000-000000000006" },
       { name: "cert.jpg", type: "image/jpeg", size: 1024 }
     )
 
@@ -214,14 +214,14 @@ describe("POST /api/upload", () => {
   it("should reject when max 5 images per verification reached", async () => {
     vi.mocked(auth).mockResolvedValue(mockProviderSession)
     vi.mocked(prisma.providerVerification.findFirst).mockResolvedValue({
-      id: "ver-1",
-      providerId: "provider-1",
+      id: "a0000000-0000-4000-a000-000000000003",
+      providerId: "a0000000-0000-4000-a000-000000000002",
       status: "pending",
     } as never)
     vi.mocked(prisma.upload.count).mockResolvedValue(5)
 
     const request = createMockUploadRequest(
-      { bucket: "verifications", entityId: "ver-1" },
+      { bucket: "verifications", entityId: "a0000000-0000-4000-a000-000000000003" },
       { name: "cert6.jpg", type: "image/jpeg", size: 1024 }
     )
 
@@ -241,7 +241,7 @@ describe("POST /api/upload", () => {
     )
 
     const request = createMockUploadRequest(
-      { bucket: "horses", entityId: "horse-1" },
+      { bucket: "horses", entityId: "a0000000-0000-4000-a000-000000000001" },
       { name: "photo.jpg", type: "image/jpeg", size: 1024 }
     )
     const response = await POST(request)
@@ -252,10 +252,166 @@ describe("POST /api/upload", () => {
   it("returns 401 when session is null", async () => {
     vi.mocked(auth).mockResolvedValue(null as never)
     const request = createMockUploadRequest(
-      { bucket: "horses", entityId: "horse-1" },
+      { bucket: "horses", entityId: "a0000000-0000-4000-a000-000000000001" },
       { name: "photo.jpg", type: "image/jpeg", size: 1024 }
     )
     const response = await POST(request)
     expect(response.status).toBe(401)
+  })
+
+  // C3: path traversal regression tests
+  describe("C3 path traversal hardening", () => {
+    it("T1: traversal in file.name does not leak into storage path; ext derived from MIME", async () => {
+      vi.mocked(auth).mockResolvedValue(mockSession)
+      vi.mocked(prisma.horse.findFirst).mockResolvedValue({
+        id: "a0000000-0000-4000-a000-000000000001",
+        ownerId: "customer-1",
+      } as never)
+      vi.mocked(prisma.horse.update).mockResolvedValue({} as never)
+      vi.mocked(prisma.upload.create).mockResolvedValue({
+        id: "upload-1",
+        url: "https://storage.example.com/horses/test.jpg",
+        path: "horses/test.jpg",
+      } as never)
+
+      const { uploadFile } = await import("@/lib/supabase-storage")
+
+      const request = createMockUploadRequest(
+        { bucket: "horses", entityId: "a0000000-0000-4000-a000-000000000001" },
+        { name: "evil.png/../../../etc/passwd", type: "image/png", size: 1024 }
+      )
+
+      const response = await POST(request)
+      expect(response.status).toBe(201)
+
+      // The uploaded fileName must never include traversal sequences
+      const call = vi.mocked(uploadFile).mock.calls.at(-1)
+      expect(call).toBeDefined()
+      const fileNameArg = call![2]
+      expect(fileNameArg).not.toContain("/")
+      expect(fileNameArg).not.toContain("..")
+      expect(fileNameArg).not.toContain("\\")
+      expect(fileNameArg.endsWith(".png")).toBe(true)
+    })
+
+    it("T2: null byte in file.name does not propagate to storage path", async () => {
+      vi.mocked(auth).mockResolvedValue(mockSession)
+      vi.mocked(prisma.horse.findFirst).mockResolvedValue({
+        id: "a0000000-0000-4000-a000-000000000001",
+        ownerId: "customer-1",
+      } as never)
+      vi.mocked(prisma.horse.update).mockResolvedValue({} as never)
+      vi.mocked(prisma.upload.create).mockResolvedValue({ id: "upload-1" } as never)
+
+      const { uploadFile } = await import("@/lib/supabase-storage")
+
+      const request = createMockUploadRequest(
+        { bucket: "horses", entityId: "a0000000-0000-4000-a000-000000000001" },
+        { name: "image\x00.png", type: "image/png", size: 1024 }
+      )
+
+      const response = await POST(request)
+      expect(response.status).toBe(201)
+
+      const fileNameArg = vi.mocked(uploadFile).mock.calls.at(-1)![2]
+      expect(fileNameArg).not.toContain("\x00")
+    })
+
+    it("T3: ext is derived from MIME, not from file extension", async () => {
+      vi.mocked(auth).mockResolvedValue(mockSession)
+      vi.mocked(prisma.horse.findFirst).mockResolvedValue({
+        id: "a0000000-0000-4000-a000-000000000001",
+        ownerId: "customer-1",
+      } as never)
+      vi.mocked(prisma.horse.update).mockResolvedValue({} as never)
+      vi.mocked(prisma.upload.create).mockResolvedValue({ id: "upload-1" } as never)
+
+      const { uploadFile } = await import("@/lib/supabase-storage")
+
+      const request = createMockUploadRequest(
+        { bucket: "horses", entityId: "a0000000-0000-4000-a000-000000000001" },
+        { name: "weird.shouldNotMatter", type: "image/jpeg", size: 1024 }
+      )
+
+      const response = await POST(request)
+      expect(response.status).toBe(201)
+
+      const fileNameArg = vi.mocked(uploadFile).mock.calls.at(-1)![2]
+      expect(fileNameArg.endsWith(".jpg")).toBe(true)
+      expect(fileNameArg).not.toContain("shouldNotMatter")
+    })
+
+    it("T4: traversal in entityId is rejected with 400", async () => {
+      vi.mocked(auth).mockResolvedValue(mockSession)
+
+      const request = createMockUploadRequest(
+        { bucket: "horses", entityId: "../../something" },
+        { name: "photo.jpg", type: "image/jpeg", size: 1024 }
+      )
+
+      const response = await POST(request)
+      expect(response.status).toBe(400)
+    })
+
+    it("T5: non-UUID entityId is rejected with 400", async () => {
+      vi.mocked(auth).mockResolvedValue(mockSession)
+
+      const request = createMockUploadRequest(
+        { bucket: "horses", entityId: "not-a-uuid" },
+        { name: "photo.jpg", type: "image/jpeg", size: 1024 }
+      )
+
+      const response = await POST(request)
+      expect(response.status).toBe(400)
+    })
+  })
+
+  // 3B.3: services bucket ownership (entityId must match session.providerId)
+  describe("3B.3 services bucket ownership", () => {
+    it("T6: services upload with another provider's UUID is rejected with 403", async () => {
+      vi.mocked(auth).mockResolvedValue(mockProviderSession)
+      vi.mocked(prisma.upload.create).mockResolvedValue({ id: "upload-x" } as never)
+
+      const otherProviderId = "a0000000-0000-4000-a000-000000000099"
+      const request = createMockUploadRequest(
+        { bucket: "services", entityId: otherProviderId },
+        { name: "photo.jpg", type: "image/jpeg", size: 1024 }
+      )
+
+      const response = await POST(request)
+      expect(response.status).toBe(403)
+      const data = await response.json()
+      expect(data.error).toBe("Åtkomst nekad")
+    })
+
+    it("T7: services upload with provider's own providerId returns 201", async () => {
+      vi.mocked(auth).mockResolvedValue(mockProviderSession)
+      vi.mocked(prisma.upload.create).mockResolvedValue({
+        id: "upload-services-1",
+        url: "https://storage.example.com/services/test.jpg",
+        path: "services/test.jpg",
+      } as never)
+
+      const request = createMockUploadRequest(
+        { bucket: "services", entityId: "a0000000-0000-4000-a000-000000000002" },
+        { name: "photo.jpg", type: "image/jpeg", size: 1024 }
+      )
+
+      const response = await POST(request)
+      expect(response.status).toBe(201)
+    })
+
+    it("T8: services upload from customer session (no providerId) is rejected with 403", async () => {
+      vi.mocked(auth).mockResolvedValue(mockSession)
+
+      const someProviderId = "a0000000-0000-4000-a000-000000000002"
+      const request = createMockUploadRequest(
+        { bucket: "services", entityId: someProviderId },
+        { name: "photo.jpg", type: "image/jpeg", size: 1024 }
+      )
+
+      const response = await POST(request)
+      expect(response.status).toBe(403)
+    })
   })
 })

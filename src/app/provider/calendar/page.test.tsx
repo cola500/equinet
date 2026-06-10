@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, it, expect, beforeEach, vi } from "vitest"
 
@@ -15,9 +15,10 @@ vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({ isLoading: false, isProvider: true }),
 }))
 
-// Mock media query
+// Mock media query (mutable per test)
+const { mockIsMobileRef } = vi.hoisted(() => ({ mockIsMobileRef: { current: false } }))
 vi.mock("@/hooks/useMediaQuery", () => ({
-  useIsMobile: () => false,
+  useIsMobile: () => mockIsMobileRef.current,
 }))
 
 // Mock bookings
@@ -47,6 +48,7 @@ vi.mock("@/hooks/useProviderProfile", () => ({
 // Mock feature flags
 vi.mock("@/components/providers/FeatureFlagProvider", () => ({
   useFeatureFlag: () => false,
+  useFeatureFlags: () => ({}),
 }))
 
 // Mock offline guard (mutable per test)
@@ -69,12 +71,16 @@ vi.mock("@/components/calendar/CalendarHeader", () => ({
   CalendarHeader: () => null,
 }))
 
+const { mockWeekCalendar } = vi.hoisted(() => ({ mockWeekCalendar: { viewMode: undefined as string | undefined } }))
 vi.mock("@/components/calendar/WeekCalendar", () => ({
-  WeekCalendar: ({ onBookingClick, bookings }: { onBookingClick: (b: unknown) => void; bookings: unknown[] }) => (
-    <button data-testid="booking-click" onClick={() => onBookingClick(bookings?.[0] || { id: "booking-1" })}>
-      Klicka bokning
-    </button>
-  ),
+  WeekCalendar: ({ onBookingClick, bookings, viewMode }: { onBookingClick: (b: unknown) => void; bookings: unknown[]; viewMode?: string }) => {
+    mockWeekCalendar.viewMode = viewMode
+    return (
+      <button data-testid="booking-click" onClick={() => onBookingClick(bookings?.[0] || { id: "booking-1" })}>
+        Klicka bokning
+      </button>
+    )
+  },
 }))
 
 vi.mock("@/components/calendar/MonthCalendar", () => ({
@@ -114,6 +120,7 @@ describe("ProviderCalendarPage - offline booking dialog", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockIsOnline = true
+    mockIsMobileRef.current = false
     mockFetch.mockResolvedValue({ ok: true, json: async () => [] })
   })
 
@@ -182,5 +189,48 @@ describe("ProviderCalendarPage - offline booking dialog", () => {
       "/provider/calendar",
       { scroll: false }
     )
+  })
+})
+
+describe("ProviderCalendarPage - default view mode (Slice 3)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockIsOnline = true
+    mockIsMobileRef.current = false
+    mockWeekCalendar.viewMode = undefined
+    mockFetch.mockResolvedValue({ ok: true, json: async () => [] })
+  })
+
+  it("defaults to the week view on desktop", async () => {
+    mockIsMobileRef.current = false
+
+    render(<ProviderCalendarPage />)
+
+    await waitFor(() => {
+      expect(mockWeekCalendar.viewMode).toBe("week")
+    })
+  })
+
+  it("defaults to the 3-day view on mobile", async () => {
+    mockIsMobileRef.current = true
+
+    render(<ProviderCalendarPage />)
+
+    await waitFor(() => {
+      expect(mockWeekCalendar.viewMode).toBe("3-day")
+    })
+  })
+
+  it("restores the week view when returning from mobile to desktop", async () => {
+    mockIsMobileRef.current = true
+    const { rerender } = render(<ProviderCalendarPage />)
+    await waitFor(() => expect(mockWeekCalendar.viewMode).toBe("3-day"))
+
+    mockIsMobileRef.current = false
+    rerender(<ProviderCalendarPage />)
+
+    await waitFor(() => {
+      expect(mockWeekCalendar.viewMode).toBe("week")
+    })
   })
 })

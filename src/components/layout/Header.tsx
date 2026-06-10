@@ -110,7 +110,7 @@ export function Header({ hideSecondaryNav = false }: HeaderProps) {
         </div>
       </div>
     </header>
-    {isAuthenticated && isCustomer && !hideSecondaryNav && !demo && <CustomerNav />}
+    {isAuthenticated && isCustomer && !hideSecondaryNav && <CustomerNav />}
     </>
   )
 }

@@ -126,6 +126,7 @@ export type BookingError =
   | { type: 'BOOKING_NOT_FOUND' }
   | { type: 'INVALID_CUSTOMER_DATA'; message: string }
   | { type: 'GHOST_USER_CREATION_FAILED'; message: string }
+  | { type: 'CUSTOMER_NOT_LINKED' }
   | { type: 'PROVIDER_CLOSED'; message: string }
   | { type: 'NEW_CUSTOMER_NOT_ACCEPTED' }
   | { type: 'RESCHEDULE_DISABLED' }
@@ -181,6 +182,25 @@ export interface BookingServiceDeps {
   travelTimeService?: TravelTimeService
   /** Create ghost user for manual bookings (optional - only needed for manual booking flow) */
   createGhostUser?: (data: { name: string; phone?: string; email?: string }) => Promise<string>
+  /**
+   * C2: verify that a manual-booking customerId is legitimately reachable
+   * by the provider — either via providerCustomer link or via an existing
+   * isManualCustomer user. Returns the link row or null.
+   */
+  findProviderCustomerLink?: (providerId: string, customerId: string) => Promise<{ id: string } | null>
+  /**
+   * C2: lookup target user to check isManualCustomer when no link exists.
+   * Returns minimal user data or null if the user does not exist.
+   */
+  findUserForLink?: (id: string) => Promise<{ isManualCustomer: boolean } | null>
+  /**
+   * C2.3: check whether the customer has an existing booking relationship
+   * with this provider (status completed or no_show — matches the semantics
+   * of /api/provider/customers GET). Used as a third accept-criterion in
+   * isCustomerReachable so providers can manual-book for returning customers
+   * that lack an explicit providerCustomer row.
+   */
+  hasBookingRelationshipWith?: (providerId: string, customerId: string) => Promise<boolean>
   /** Check if customer has at least one completed booking with provider */
   hasCompletedBookingWith?: (providerId: string, customerId: string) => Promise<boolean>
   /** Get provider reschedule settings */
@@ -405,6 +425,31 @@ export class BookingService {
    * - Can create ghost user if no customerId provided
    * - Sets isManualBooking and createdByProviderId
    */
+  /**
+   * C2 helper: customer is "reachable" by a provider if any of:
+   *   (a) a providerCustomer link exists, OR
+   *   (b) the user row is an unlinked isManualCustomer ghost, OR
+   *   (c) the customer has an existing booking relationship with the
+   *       provider (completed or no_show — matches /api/provider/customers
+   *       GET semantics so the manual-booking flow keeps working for
+   *       returning customers without an explicit providerCustomer row).
+   * Fails closed when validation deps are missing — see fixes.txt C2.
+   */
+  private async isCustomerReachable(providerId: string, customerId: string): Promise<boolean> {
+    if (!this.deps.findProviderCustomerLink || !this.deps.findUserForLink) {
+      return false
+    }
+    const link = await this.deps.findProviderCustomerLink(providerId, customerId)
+    if (link) return true
+    const user = await this.deps.findUserForLink(customerId)
+    if (user?.isManualCustomer === true) return true
+    if (this.deps.hasBookingRelationshipWith) {
+      const hasRelationship = await this.deps.hasBookingRelationshipWith(providerId, customerId)
+      if (hasRelationship) return true
+    }
+    return false
+  }
+
   async createManualBooking(
     dto: CreateManualBookingDTO
   ): Promise<Result<BookingWithRelations, BookingError>> {
@@ -431,6 +476,7 @@ export class BookingService {
 
     // 5. Resolve customer ID (existing or ghost user)
     let customerId = dto.customerId
+    const isGhostUserPath = !customerId && !!dto.customerName
     if (!customerId && dto.customerName && this.deps.createGhostUser) {
       try {
         customerId = await this.deps.createGhostUser({
@@ -451,6 +497,17 @@ export class BookingService {
         type: 'INVALID_CUSTOMER_DATA',
         message: 'Kunde inte skapa kundprofil',
       })
+    }
+
+    // 5b. C2 invariant: when the caller supplied customerId directly (not the
+    // ghost-user path), verify that the customer is reachable by this provider:
+    // either via a providerCustomer link OR as an unlinked isManualCustomer
+    // user. Anything else is a takeover vector (fixes.txt C2).
+    if (!isGhostUserPath) {
+      const linkOk = await this.isCustomerReachable(dto.providerId, customerId)
+      if (!linkOk) {
+        return Result.fail({ type: 'CUSTOMER_NOT_LINKED' })
+      }
     }
 
     // 6. Calculate end time + validate time slot

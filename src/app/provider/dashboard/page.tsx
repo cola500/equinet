@@ -179,7 +179,7 @@ export default function ProviderDashboard() {
 
   return (
     <ProviderLayout>
-      <h1 className="text-3xl font-bold mb-8">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">
         {onboardingComplete ? "Välkommen tillbaka!" : "Välkommen till Equinet!"}
       </h1>
 
@@ -232,7 +232,7 @@ export default function ProviderDashboard() {
               </div>
             )}
 
-            <div className={`grid md:grid-cols-2 ${demo ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-6 mb-8`}>
+            <div className={`grid gap-6 mb-8 ${demo ? "sm:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-4"}`}>
           {/* Stats Cards */}
           <Link href="/provider/services">
             <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
@@ -249,6 +249,8 @@ export default function ProviderDashboard() {
             </Card>
           </Link>
 
+          {/* Counters hidden in demo -- already shown in Kalender/Bokningar + nav badge */}
+          {!demo && (
           <Link href="/provider/bookings">
             <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
               <CardHeader>
@@ -266,7 +268,9 @@ export default function ProviderDashboard() {
               </CardContent>
             </Card>
           </Link>
+          )}
 
+          {!demo && (
           <Link href="/provider/bookings">
             <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
               <CardHeader>
@@ -281,6 +285,26 @@ export default function ProviderDashboard() {
               </CardContent>
             </Card>
           </Link>
+          )}
+
+          {/* Demo: a clear path into the calendar (the primary workspace) */}
+          {demo && (
+          <Link href="/provider/calendar">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full border-primary/30 bg-primary/5">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-gray-600">
+                  Din arbetsyta
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 text-primary font-semibold">
+                  <CalendarRange className="h-5 w-5" />
+                  Öppna kalendern
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+          )}
 
           {!demo && (
           <Link href="/provider/reviews">

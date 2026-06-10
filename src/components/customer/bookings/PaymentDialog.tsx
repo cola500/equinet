@@ -1,7 +1,11 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { loadStripe } from "@stripe/stripe-js"
+// `/pure` defers loading the js.stripe.com script until loadStripe() is actually
+// called — the bare "@stripe/stripe-js" import loads it as a module side-effect,
+// which fired on /customer/bookings even in mock mode. Combined with the lazy
+// getStripePromise() below, Stripe.js now only loads in the real Stripe flow.
+import { loadStripe } from "@stripe/stripe-js/pure"
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,9 +18,18 @@ import {
 } from "@/components/ui/responsive-dialog"
 import { clientLogger } from "@/lib/client-logger"
 
-const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-  : null
+// Lazy singleton: loadStripe() (which injects the js.stripe.com script) only
+// fires the first time the dialog actually renders — i.e. the real Stripe flow
+// with a clientSecret. In mock mode the dialog never mounts, so Stripe.js is
+// never loaded. The Stripe test-mode path is unchanged, just deferred.
+let stripePromiseCache: ReturnType<typeof loadStripe> | null | undefined
+function getStripePromise() {
+  if (stripePromiseCache === undefined) {
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+    stripePromiseCache = key ? loadStripe(key) : null
+  }
+  return stripePromiseCache
+}
 
 interface PaymentDialogProps {
   open: boolean
@@ -104,13 +117,16 @@ export function PaymentDialog({
   onSuccess,
   onError,
 }: PaymentDialogProps) {
+  const stripePromise = getStripePromise()
   if (!stripePromise) {
     return null
   }
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent>
+      {/* max-h + overflow so the tall Stripe Element form scrolls and the pay
+          button stays reachable on desktop (mobile Drawer already scrolls). */}
+      <ResponsiveDialogContent className="max-h-[90vh] overflow-y-auto">
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>Betala {amount} {currency}</ResponsiveDialogTitle>
           <ResponsiveDialogDescription>

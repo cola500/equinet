@@ -45,14 +45,14 @@ describe("DemoLoginButton", () => {
     })
   })
 
-  it("redirects to provider dashboard on successful login", async () => {
+  it("redirects to provider calendar on successful login", async () => {
     mockSignInWithPassword.mockResolvedValue({ error: null })
     render(<DemoLoginButton />)
 
     fireEvent.click(screen.getByRole("button", { name: /se demo som leverantör/i }))
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/provider/dashboard")
+      expect(mockPush).toHaveBeenCalledWith("/provider/calendar")
     })
   })
 
@@ -77,6 +77,37 @@ describe("DemoLoginButton", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/kunde inte starta demo/i)).toBeInTheDocument()
+    })
+  })
+
+  describe("with custom props", () => {
+    it("renders the provided label", () => {
+      render(<DemoLoginButton label="Demo som hästägare" />)
+      expect(
+        screen.getByRole("button", { name: /demo som hästägare/i })
+      ).toBeInTheDocument()
+    })
+
+    it("signs in with provided credentials and redirects to provided path", async () => {
+      mockSignInWithPassword.mockResolvedValue({ error: null })
+      render(
+        <DemoLoginButton
+          label="Demo som hästägare"
+          email="lisa.andersson@gmail.com"
+          password="DemoOwner123!"
+          redirectTo="/dashboard"
+        />
+      )
+
+      fireEvent.click(screen.getByRole("button", { name: /demo som hästägare/i }))
+
+      await waitFor(() => {
+        expect(mockSignInWithPassword).toHaveBeenCalledWith({
+          email: "lisa.andersson@gmail.com",
+          password: "DemoOwner123!",
+        })
+        expect(mockPush).toHaveBeenCalledWith("/dashboard")
+      })
     })
   })
 })

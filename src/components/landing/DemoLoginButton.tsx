@@ -4,12 +4,28 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { Button } from "@/components/ui/button"
+import { DEMO_PERSONAS } from "./demo-personas"
 
-// Public demo credentials — intentionally hardcoded, not secret
-const DEMO_EMAIL = "erik.jarnfot@demo.equinet.se"
-const DEMO_PASSWORD = "DemoProvider123!"
+interface DemoLoginButtonProps {
+  /** Button text. Defaults to the provider demo wording. */
+  label?: string
+  /** Demo account email. Defaults to the provider demo account. */
+  email?: string
+  /** Demo account password. Defaults to the provider demo account. */
+  password?: string
+  /**
+   * Where to go after sign-in. Defaults to the provider calendar (landing
+   * page). Pass "/dashboard" to let it route per userType (e.g. customer → /hem).
+   */
+  redirectTo?: string
+}
 
-export function DemoLoginButton() {
+export function DemoLoginButton({
+  label = "Se demo som leverantör",
+  email = DEMO_PERSONAS.provider.email,
+  password = DEMO_PERSONAS.provider.password,
+  redirectTo = "/provider/calendar",
+}: DemoLoginButtonProps = {}) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -21,8 +37,8 @@ export function DemoLoginButton() {
     try {
       const supabase = createSupabaseBrowserClient()
       const { error: authError } = await supabase.auth.signInWithPassword({
-        email: DEMO_EMAIL,
-        password: DEMO_PASSWORD,
+        email,
+        password,
       })
 
       if (authError) {
@@ -30,7 +46,7 @@ export function DemoLoginButton() {
         return
       }
 
-      router.push("/provider/dashboard")
+      router.push(redirectTo)
       router.refresh()
     } finally {
       setIsLoading(false)
@@ -47,7 +63,7 @@ export function DemoLoginButton() {
         disabled={isLoading}
         type="button"
       >
-        {isLoading ? "Startar demo..." : "Se demo som leverantör"}
+        {isLoading ? "Startar demo..." : label}
       </Button>
       {error && (
         <p className="text-sm text-red-600">{error}</p>

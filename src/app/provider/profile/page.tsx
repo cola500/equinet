@@ -177,7 +177,7 @@ function ProviderProfilePageContent() {
 
   return (
     <ProviderLayout>
-      <h1 className="text-3xl font-bold mb-6">Min profil</h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Min profil</h1>
 
       {/* Tab navigation */}
       <div className="flex gap-1 mb-6 border-b">

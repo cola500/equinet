@@ -125,7 +125,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
               "img-src 'self' data: blob: https:", // blob: for image uploads
               "font-src 'self' data:", // Next.js Google Fonts self-hosting
-              `connect-src 'self' ${supabaseOrigin} https://*.sentry.io https://api.stripe.com${localSupabaseCsp}`, // API calls + Supabase + Sentry + Stripe (+ local Supabase in dev/E2E)
+              `connect-src 'self' ${supabaseOrigin} https://*.sentry.io https://api.stripe.com https://js.stripe.com${localSupabaseCsp}`, // API calls + Supabase + Sentry + Stripe API + Stripe.js (js.stripe.com needed in connect-src: the service worker re-fetches the Stripe.js script, which is governed by connect-src) (+ local Supabase in dev/E2E)
               "frame-src https://js.stripe.com", // Stripe Payment Element renders in iframe
               "worker-src 'self' blob:", // browser-image-compression uses Web Workers via blob URLs
               "frame-ancestors 'none'", // Clickjacking protection

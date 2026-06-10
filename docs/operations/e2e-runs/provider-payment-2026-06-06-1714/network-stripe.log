@@ -1,0 +1,4 @@
+/customer/bookings (mock-läge, FÄRSK browser-context utan cache):
+- GET https://js.stripe.com/dahlia/stripe.js => net::ERR_FAILED (injicerat script-tag i DOM)
+- window.Stripe: undefined (scriptet failade)
+- Slutsats: Stripe.js laddas FORTFARANDE vid sidladdning trots PR #360.

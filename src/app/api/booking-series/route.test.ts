@@ -271,6 +271,10 @@ describe("POST /api/booking-series", () => {
   })
 
   it("passes customerId from body for manual bookings with selected customer", async () => {
+    // C2: route still passes customerId from body through to service;
+    // the service is responsible for verifying ownership. This test asserts
+    // the route's pass-through contract — the actual ownership check is
+    // covered by BookingService tests (C2.1) and R2 below.
     vi.mocked(auth).mockResolvedValue(PROVIDER_SESSION)
     const customerId = "a0000000-0000-4000-a000-000000000099"
     const res = await POST(makeRequest({ ...validBody, providerId: "self", customerId }))
@@ -281,6 +285,27 @@ describe("POST /api/booking-series", () => {
         isManualBooking: true,
       })
     )
+  })
+
+  // C2 invariant: when the underlying service rejects an unlinked customerId
+  // the route must surface 403 (not 400 NO_BOOKINGS_CREATED). See fixes.txt C2.
+  it("returns 403 when service rejects customerId with CUSTOMER_NOT_LINKED", async () => {
+    vi.mocked(auth).mockResolvedValue(PROVIDER_SESSION)
+    mockCreateSeries.mockResolvedValue({
+      isSuccess: false,
+      isFailure: true,
+      error: { type: "CUSTOMER_NOT_LINKED" },
+    })
+
+    const res = await POST(makeRequest({
+      ...validBody,
+      providerId: "self",
+      customerId: "a0000000-0000-4000-a000-000000000099",
+    }))
+    const data = await res.json()
+
+    expect(res.status).toBe(403)
+    expect(data.error).toMatch(/inte registrerad/i)
   })
 
   it("returns 400 when 'self' providerId used by non-provider", async () => {

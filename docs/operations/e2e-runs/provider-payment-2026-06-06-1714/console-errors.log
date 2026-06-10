@@ -1,0 +1,3 @@
+[/customer/bookings, färsk context efter PR #360-deploy]
+- Failed to load resource: net::ERR_FAILED @ https://js.stripe.com/dahlia/stripe.js
+Kvarstår identiskt med körning 1640 -> fixen i PR #360 löste INTE fyndet.

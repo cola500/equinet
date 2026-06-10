@@ -1,11 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { GET } from "./route"
 import { NextRequest } from "next/server"
-import { isFeatureEnabled } from "@/lib/feature-flags"
-
-vi.mock("@/lib/feature-flags", () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
-}))
 
 vi.mock("@/lib/rate-limit", () => ({
   rateLimiters: {
@@ -13,8 +8,6 @@ vi.mock("@/lib/rate-limit", () => ({
   },
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
 }))
-
-const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 // Mock StableService
 const mockSearchPublic = vi.fn()
@@ -48,16 +41,12 @@ const mockStable = {
 describe("GET /api/stables", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockIsFeatureEnabled.mockResolvedValue(true)
     mockSearchPublic.mockResolvedValue([mockStable])
   })
 
-  it("returns 404 when feature flag is disabled", async () => {
-    mockIsFeatureEnabled.mockResolvedValueOnce(false)
-
+  it("is public (no feature gate) and returns 200", async () => {
     const res = await GET(makeRequest())
-    expect(res.status).toBe(404)
-    expect(mockIsFeatureEnabled).toHaveBeenCalledWith("stable_profiles")
+    expect(res.status).toBe(200)
   })
 
   it("returns 429 when rate limited", async () => {
@@ -77,6 +66,13 @@ describe("GET /api/stables", () => {
     expect(json.data[0].name).toBe("Testgården")
     expect(json.data[0]._count.availableSpots).toBe(2)
     expect(mockSearchPublic).toHaveBeenCalledWith({})
+  })
+
+  it("does not leak contact details (email/phone) in the search list", async () => {
+    const res = await GET(makeRequest())
+    const json = await res.json()
+    expect(json.data[0]).not.toHaveProperty("contactEmail")
+    expect(json.data[0]).not.toHaveProperty("contactPhone")
   })
 
   it("passes municipality filter to service", async () => {

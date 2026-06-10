@@ -22,6 +22,10 @@ sections:
 
 > **Status:** Block 2 implementerat och verifierat 2026-05-06. Staging är fullständigt isolerad från prod på alla lager (domain, Auth, DB). Plan-sektionerna nedan beskriver vägen dit.
 
+> **Var verifierar man vad?** Se [deployment-verification-guide.md](./deployment-verification-guide.md)
+> för beslutsguiden (demo-UX → staging; varför `equinet-staging-app` feature-branch-previews
+> blir "Canceled by Ignored Build Step" — förväntat).
+
 ## Resultat 2026-05-06 (Block 2 klart)
 
 | Lager | Production | Staging |
@@ -233,6 +237,11 @@ Branch-genererade preview-URL:er (`equinet-en0jro9dh-...`) ändras vid varje pus
    npm run db:seed:demo:reset       # demo-data
    ```
 2. Logga in på Supabase Dashboard för staging → Authentication → Users → verifiera att `provider@example.com` finns och `email_confirmed_at` är satt.
+
+> **För leverantördemon (Erik Järnfot):** använd det säkra helper-scriptet istället för manuell
+> `export DATABASE_URL=…` — det validerar staging-project-ref (`zzdamokfeenencuggjjp`), vägrar
+> prod, och skriver aldrig connection-stringen till disk. Se
+> [staging-demo-seed.md](./staging-demo-seed.md) (`npm run db:seed:staging-demo:safe`).
 
 ### Steg F: Sätt APP_URL för Preview
 

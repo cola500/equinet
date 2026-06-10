@@ -37,3 +37,25 @@ export function jsChunkMatcher({
 }): boolean {
   return sameOrigin && pathname.startsWith("/_next/static/") && pathname.endsWith(".js")
 }
+
+/**
+ * Match cross-origin Stripe requests (Stripe.js CDN, API, 3DS/iframe hosts).
+ *
+ * These must bypass the service worker entirely: a cross-origin opaque `.js`
+ * response otherwise falls into defaultCache's static-js rule (CacheFirst),
+ * which can't handle opaque responses and fails with "no-response" — breaking
+ * Stripe Elements. Same cross-origin pitfall as the Supabase Storage images rule.
+ */
+export function stripeMatcher({
+  url,
+}: {
+  url: { hostname: string }
+}): boolean {
+  const host = url.hostname
+  return (
+    host === "stripe.com" ||
+    host.endsWith(".stripe.com") ||
+    host === "stripe.network" ||
+    host.endsWith(".stripe.network")
+  )
+}

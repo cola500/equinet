@@ -15,6 +15,8 @@ import { ErrorState } from "@/components/ui/error-state"
 import { useRetry } from "@/hooks/useRetry"
 import { clientLogger } from "@/lib/client-logger"
 import { isDemoMode } from "@/lib/demo-mode"
+import { DemoLoginButton } from "@/components/landing/DemoLoginButton"
+import { DEMO_PERSONAS } from "@/components/landing/demo-personas"
 
 function LoginForm() {
   const router = useRouter()
@@ -65,9 +67,12 @@ function LoginForm() {
     // Request mobile token for iOS widget (fire-and-forget)
     requestMobileTokenForNative().catch(() => {})
 
-    // Redirect to callbackUrl if provided (must start with / to prevent open redirect)
+    // Redirect to callbackUrl if provided (must start with / to prevent open redirect).
+    // Otherwise route via /dashboard, which redirects per userType (provider →
+    // calendar/dashboard, customer → /hem). Login stays role-agnostic.
     const callbackUrl = searchParams.get("callbackUrl")
-    const redirectTo = callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard"
+    const redirectTo =
+      callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard"
     router.push(redirectTo)
     router.refresh()
   }
@@ -199,6 +204,16 @@ function LoginForm() {
             </div>
             )}
           </form>
+          )}
+
+          {demo && (
+            <div className="mt-6 border-t pt-6 space-y-3">
+              <p className="text-center text-sm text-gray-500">
+                Eller utforska demon direkt
+              </p>
+              <DemoLoginButton {...DEMO_PERSONAS.customer} />
+              <DemoLoginButton {...DEMO_PERSONAS.provider} />
+            </div>
           )}
         </CardContent>
       </Card>

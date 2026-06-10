@@ -3,7 +3,7 @@ title: Demo Seed
 description: Beskrivning av demo-data, hur den skapas, och hur man aterstaller
 category: operations
 status: active
-last_updated: 2026-03-26
+last_updated: 2026-06-07
 sections:
   - Oversikt
   - Data som skapas
@@ -13,9 +13,19 @@ sections:
 
 # Demo Seed
 
+> **Kanonisk demo-seed = `scripts/seed-demo-provider.ts`** (lokal + staging, kors
+> via `npm run db:seed:demo-provider`, och pa staging via `seed-staging-demo.sh`).
+> Den skapar demo-personerna bakom inloggningsknapparna (provider
+> `erik.jarnfot@demo.equinet.se`, kund `lisa.andersson@gmail.com`) **och**
+> demo-stallet Stall Solbacken. Lagg ny demo-grunddata DAR — pa ett stalle.
+>
+> Dokumentet nedan beskriver **`prisma/seed-demo.ts`**, som ar **legacy/local-only**
+> och seedar andra personer (provider@example.com + anna/erik/sofia). Anvands
+> inte pa staging.
+
 ## Oversikt
 
-`prisma/seed-demo.ts` skapar realistisk data for demolaget. Den:
+`prisma/seed-demo.ts` (legacy/local-only) skapar realistisk data for demolaget. Den:
 
 1. Uppdaterar befintlig provider (provider@example.com) med realistiskt namn och foretagsinfo
 2. Tar bort E2E-testtjanster och deras bokningar

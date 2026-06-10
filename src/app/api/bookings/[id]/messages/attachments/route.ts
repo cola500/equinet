@@ -3,10 +3,13 @@
  * POST /api/bookings/[id]/messages/attachments — upload an image attachment
  */
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { getAuthUser } from '@/lib/auth-dual'
 import { rateLimiters, RateLimitServiceError } from '@/lib/rate-limit'
 import { isFeatureEnabled } from '@/lib/feature-flags'
 import { logger } from '@/lib/logger'
+
+const bookingIdSchema = z.string().uuid()
 import { loadBookingForMessaging } from '@/domain/conversation/loadBookingForMessaging'
 import { PrismaConversationRepository } from '@/infrastructure/persistence/conversation/PrismaConversationRepository'
 import { createMessageNotifier } from '@/domain/notification/MessageNotifierFactory'
@@ -33,6 +36,11 @@ export async function POST(
     // 2. Feature flag
     if (!(await isFeatureEnabled('messaging'))) {
       return NextResponse.json({ error: 'Ej tillgänglig' }, { status: 404 })
+    }
+
+    // 3B.2: reject non-UUID bookingId before DB/storage/service work
+    if (!bookingIdSchema.safeParse(bookingId).success) {
+      return NextResponse.json({ error: 'Ogiltigt bookingId' }, { status: 400 })
     }
 
     // 3. Rate limiting (before body parse)

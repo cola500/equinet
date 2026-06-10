@@ -4,7 +4,7 @@ description: "Arbetsprocesser, patterns, arkitektur och key learnings för utvec
 category: root
 tags: [development, workflow, architecture, patterns]
 status: active
-last_updated: 2026-03-20
+last_updated: 2026-06-07
 related:
   - README.md
   - NFR.md
@@ -52,6 +52,7 @@ sections:
 | Kodkarta (domän -> filer) | [.claude/rules/code-map.md](.claude/rules/code-map.md) |
 | Commit-strategi (PR vs direkt) | [.claude/rules/commit-strategy.md](.claude/rules/commit-strategy.md) |
 | Deploy | [docs/operations/deployment.md](docs/operations/deployment.md) |
+| **Var verifiera demo/staging?** | [docs/operations/deployment-verification-guide.md](docs/operations/deployment-verification-guide.md) (kolla FÖRE demo-UX-verifiering) |
 | Bokningsflöde | [docs/architecture/booking-flow.md](docs/architecture/booking-flow.md) |
 | **Refactor triggers** | [docs/architecture/refactor-triggers.md](docs/architecture/refactor-triggers.md) (kolla FÖRE varje refactor) |
 | Retros | [docs/retrospectives/](docs/retrospectives/) |
@@ -148,6 +149,20 @@ src/app/api/ (routes) -> src/domain/ (services) -> src/infrastructure/ (repos) |
 
 ---
 
+## Demo Verification Rules
+
+Innan du verifierar en demo-UX-ändring:
+
+1. **Läs:** [docs/operations/deployment-verification-guide.md](docs/operations/deployment-verification-guide.md)
+2. **Kom ihåg:**
+   - staging == demomiljön (`equinet-staging.johanlindengard.com`)
+   - `equinet-staging-app` bygger endast `staging`-branchen
+   - en CANCELED feature-branch-preview på staging-projektet är **förväntat** ("Ignored Build Step")
+   - demo-UX får **inte** valideras i `equinet-app`-previews (demo_mode är inte aktivt där)
+   - pre-merge: lokal `NEXT_PUBLIC_DEMO_MODE=true`, eller merge till `staging`
+
+---
+
 ## Definition of Done
 
 - [ ] Inga TypeScript-fel, inga console errors
@@ -193,7 +208,7 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **NODE_ENV opålitlig på Vercel**: Använd explicita env-variabler (`ALLOW_TEST_ENDPOINTS`) istället.
 - **Stripe webhook event-ID dedup**: `createMany` + `skipDuplicates` = atomisk INSERT ON CONFLICT DO NOTHING.
 - **Staging-arkitektur (2026-05-06)**: Custom domain `equinet-staging.johanlindengard.com` (separat från prod `equinet.johanlindengard.com`). Egen Supabase-projekt `zzdamokfeenencuggjjp` (Frankfurt) — separat från prod `xybyzflfxnqqyxnvjklv` (Zurich). Egen `DATABASE_URL`/`DIRECT_DATABASE_URL`/`APP_URL` per environment via Vercel env-rader. Custom Access Token Hook installerad i båda. Se `docs/operations/staging-environment-setup.md`.
-- **Vercel sensitive Production-vars-fällor**: (1) UI Edit visar alltid tomt fält — paste landar inte i input → save sparar tomt. (2) CLI `vercel env add --value "$X" --yes` (52.2.1 + 53.1.1) sparar tomt tyst trots success-rapport. (3) CLI `rm <var> <env> --yes` på **delad rad** raderar variabeln för **alla** environments, inte bara den specificerade. **Regel:** Använd Vercel REST API (`DELETE` + `POST`) för sensitive Production-skrivningar. Verifiera ALLTID via `vercel env pull --environment=production` efter skrivning. Splitta delade rader via UI Edit, inte CLI rm. Se retro 2026-05-06.
+- **Vercel sensitive Production-vars-fällor**: (1) UI Edit visar alltid tomt fält — paste landar inte i input → save sparar tomt. (2) CLI `vercel env add --value "$X" --yes` (52.2.1 + 53.1.1) sparar tomt tyst trots success-rapport. (3) CLI `rm <var> <env> --yes` på **delad rad** raderar variabeln för **alla** environments, inte bara den specificerade. (4) CLI `env add` via **stdin-pipe** (`printf 'val' | vercel env add VAR production`, 54.x) sparar **tomt** värde OCH sätter typ `sensitive` — gäller alltså inte bara `--value`. Tom flagg-env (t.ex. `FEATURE_X=""`) tolkas som `false` och tvingar flaggan AV. **Regel:** Använd Vercel REST API (`DELETE` + `POST` med `type: "plain"` för config, `encrypted` för secrets) för ALLA icke-triviala env-skrivningar — inte bara sensitive. Verifiera ALLTID via `vercel env pull --environment=production` efter skrivning. Splitta delade rader via UI Edit, inte CLI rm. Se retro 2026-05-06 + Slice 2 payment-config 2026-06-06.
 - **Pre-build-guard fångar inte tomma env**: `scripts/check-prod-env.ts` (S64-4) verifierar att vars **finns** men inte att de **har värde**. Tom string passerar. Båda 2026-05-06-incidenterna (DATABASE_URL + APP_URL Production tomma) skulle ha fångats av en non-empty-check.
 
 ### Domain Patterns
@@ -204,6 +219,11 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Supabase Auth**: Custom Access Token Hook (PL/pgSQL). JWT claims: `providerId`, `userType`, `isAdmin`.
 - **Publik vs skyddad URL-konvention**: `/api/stable/*` = auth-skyddad, `/api/stables/*` = publik.
 - **Demo-läge — filtrera ALDRIG data**: `isDemoMode()` styr synlighet för nav/paths, INTE datainnehåll. Filtrera aldrig bort poster (t.ex. inaktiva tjänster) baserat på demo-läge — det gömmer realistisk data och ger en missvisande demo. Se `src/lib/demo-mode.ts` och `docs/operations/demo-setup.md`.
+- **Ny persona → granska ALLA demo-mode-villkor**: När en ny persona introduceras (t.ex. inloggningsbar demokund), audita varje `demo`/`isDemoMode()`-villkor som tidigare antog en enda persona — login-routing, nav-rendering, seed-data. 2026-06-06 hade två buggar samma rotorsak: demo-antaganden från när demon bara var leverantörsbara (login hårdkodade `/provider/calendar`; `Header.tsx` gömde `CustomerNav` bakom `!demo`). Se retro 2026-06-06.
+- **Routa via /dashboard, hårdkoda ALDRIG roll-redirect**: Efter login → `router.push("/dashboard")`; `/dashboard` (server) redirectar per `userType` (kund → `/hem`, provider → calendar/dashboard). Duplicera aldrig roll-routing i login eller demo-knappar.
+- **Demo-personer i delad modul**: Demo-credentials bor på ETT ställe (`src/components/landing/demo-personas.ts`), används av både login och landning. `DemoLoginButton` tar props med defaults därifrån. Ingen credential-duplicering.
+- **resetDemoData() måste rensa tjänster vid namnbyte**: Seeden gör `findFirst by name` → byter du tjänstenamn skapas nya rader och gamla blir föräldralösa. Rensa providerns `Service` sist i reset (efter bokningar + serier). Implicit M2M (RouteOrder) rensas av Prisma. Se `scripts/seed-demo-provider.ts`.
+- **Demo-UX verifieras bara på staging (efter merge) eller lokalt**: Staging bygger endast `staging`-branchen. Pre-merge: kör lokal demo-server (`NEXT_PUBLIC_DEMO_MODE=true PORT=3100 npx next dev`) mot lokal Supabase med demo-seed och Playwright-verifiera. Staging-seeden är interaktiv (manuell `DATABASE_URL`) — kan inte köras autonomt.
 - **Transaktionellt upload-mönster**: För filuppladdning — validera → upload till Storage → skapa DB-row med URL. Om DB-create failar efter upload: rollback via `storage.delete()` i try/catch + `logger.error()`. Orphaned files är bättre än orphaned rows. Pattern i `attachments/route.ts` (S46).
 - **Magic bytes-validering, fail-closed**: Lita ALDRIG på `Content-Type` eller filsuffix vid upload. Använd `file-type`-paketet för att läsa faktiska bytes. För typer `file-type` inte detekterar (t.ex. HEIC): egen heuristik (ftyp-box-check). Om varken detection eller heuristik matchar → avvisa. Centralisera whitelist i konstant-fil. Pattern i `supabase-storage.ts` (S46).
 
@@ -246,7 +266,7 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 - **Pre-commit:** `check:swedish` + `typecheck` (om .ts/.tsx staged) + plan-commit-gate (varning om story in_progress utan plan) + sprint-avslut-gate (varning om alla stories done utan retro)
 - **Pre-push:** `check:swedish` + `test:run` + `typecheck` + `lint` + multi-commit-gate (varning om <2 commits på feature branch)
 - **Allt-i-ett:** `npm run check:all` (alla 4 gates)
-- **CI:** Unit tests + coverage, E2E, Offline E2E smoke, TypeScript, Build
+- **CI:** Unit tests + coverage, E2E, Offline E2E smoke, TypeScript, Build, Lint, Security Audit, Migration From Scratch. Körs på PR mot **både `main` och `staging`** (2026-06-07). Tunga Playwright-jobb (E2E + Offline smoke) körs **bara mot `main`**, skippas på staging-PR. `type-check`/`lint` kör utan postgres-service.
 - **Hooks:** 10 Claude Code hooks i `.claude/hooks/` (API-check, TDD-reminder, DoD, etc)
 
 ---
@@ -280,4 +300,4 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
-**Senast uppdaterad**: 2026-04-23
+**Senast uppdaterad**: 2026-06-07

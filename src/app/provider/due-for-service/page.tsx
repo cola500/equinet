@@ -1,9 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import useSWR from "swr"
 import { useAuth } from "@/hooks/useAuth"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 import { OfflineErrorState } from "@/components/ui/OfflineErrorState"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -53,7 +56,16 @@ const statusConfig = {
 }
 
 export default function DueForServicePage() {
+  const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
+  const demoFlag = useFeatureFlag("demo_mode")
+  const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
+
+  useEffect(() => {
+    if (demo) {
+      router.replace("/provider/profile")
+    }
+  }, [demo, router])
   const isOnline = useOnlineStatus()
   const [filter, setFilter] = useState<Filter>("all")
   const [editingKey, setEditingKey] = useState<string | null>(null)
@@ -121,6 +133,8 @@ export default function DueForServicePage() {
     if (days === 0) return "Idag"
     return `om ${days} ${days === 1 ? "dag" : "dagar"}`
   }
+
+  if (demo) return null
 
   if (authLoading || !isProvider) {
     return (

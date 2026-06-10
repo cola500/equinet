@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { createStableService } from "@/domain/stable/StableServiceFactory"
 import { sanitizeSearchQuery } from "@/lib/sanitize"
 import { logger } from "@/lib/logger"
 import type { StableFilters, StableWithCounts } from "@/infrastructure/persistence/stable/IStableRepository"
 
-// Public select: strip sensitive fields before returning
+// Public select: strip sensitive fields before returning.
+// Contact details (email/phone) are intentionally NOT included in the search
+// list — they belong on the single-stable profile (toPublicProfile in
+// /api/stables/[stableId], gated by stable_profiles). This list is public and
+// powers the horse→stable selector, so leaking every stable's contact PII here
+// would over-expose it.
 function toPublicStable(stable: StableWithCounts) {
   return {
     id: stable.id,
@@ -16,18 +20,15 @@ function toPublicStable(stable: StableWithCounts) {
     municipality: stable.municipality,
     latitude: stable.latitude,
     longitude: stable.longitude,
-    contactEmail: stable.contactEmail,
-    contactPhone: stable.contactPhone,
     profileImageUrl: stable.profileImageUrl,
     _count: stable._count,
   }
 }
 
 export async function GET(request: NextRequest) {
-  if (!(await isFeatureEnabled("stable_profiles"))) {
-    return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-  }
-
+  // Public stable search. Powers the always-on horse→stable selector as well as
+  // the stable-owner browse (gated separately at page level by stable_profiles).
+  // No feature gate here — the search itself is public.
   const clientIp = getClientIP(request)
   const isAllowed = await rateLimiters.api(clientIp)
   if (!isAllowed) {

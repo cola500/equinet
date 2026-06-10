@@ -17,18 +17,47 @@ export interface CreateGhostUserData {
 }
 
 /**
+ * Thrown when a provider attempts to add a customer with an email that
+ * belongs to a registered user. Reusing such an account would let the
+ * provider rewrite the victim's profile and intercept password resets.
+ * See fixes.txt finding C1.
+ */
+export class GhostUserError extends Error {
+  constructor(public readonly code: 'EMAIL_BELONGS_TO_REGISTERED_USER') {
+    super('E-postadressen tillhör en registrerad användare')
+    this.name = 'GhostUserError'
+  }
+}
+
+/**
  * Create a ghost user or return existing user ID if email matches.
  *
- * @returns The user ID (new or existing)
+ * Reuse is only permitted when the existing row is itself a manual customer
+ * (isManualCustomer === true). Registered users are off-limits — see
+ * GhostUserError above.
+ *
+ * @returns The user ID (new or existing manual customer)
+ * @throws {GhostUserError} when email belongs to a registered (non-manual) user
  */
 export async function createGhostUser(data: CreateGhostUserData): Promise<string> {
   const { randomUUID } = await import('crypto')
 
   const email = data.email || `manual-${randomUUID()}@ghost.equinet.se`
 
-  const existing = await prisma.user.findUnique({ where: { email } })
+  const existing = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, isManualCustomer: true },
+  })
   if (existing) {
-    logger.info("Reusing existing user for manual customer", {
+    if (!existing.isManualCustomer) {
+      logger.security(
+        'Ghost user creation blocked: email belongs to registered user',
+        'high',
+        { existingUserId: existing.id }
+      )
+      throw new GhostUserError('EMAIL_BELONGS_TO_REGISTERED_USER')
+    }
+    logger.info("Reusing existing manual customer", {
       existingUserId: existing.id,
     })
     return existing.id

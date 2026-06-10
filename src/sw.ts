@@ -1,7 +1,7 @@
 import { defaultCache, PAGES_CACHE_NAME } from "@serwist/next/worker"
 import type { PrecacheEntry, RuntimeCaching } from "serwist"
-import { Serwist, NetworkFirst, CacheFirst, ExpirationPlugin } from "serwist"
-import { authSessionMatcher, apiCacheMatcher, jsChunkMatcher } from "./sw-matchers"
+import { Serwist, NetworkFirst, CacheFirst, NetworkOnly, ExpirationPlugin } from "serwist"
+import { authSessionMatcher, apiCacheMatcher, jsChunkMatcher, stripeMatcher } from "./sw-matchers"
 
 declare const self: ServiceWorkerGlobalScope & {
   __SW_MANIFEST: (PrecacheEntry | string)[]
@@ -41,6 +41,14 @@ const PAGE_TIMEOUT = 3
  * continue to match from defaultCache further down the list.
  */
 const navigationCaching: RuntimeCaching[] = [
+  // Stripe: pass straight to the network, never intercept/cache.
+  // Must come FIRST (first-match-wins): a cross-origin opaque Stripe.js response
+  // otherwise falls into defaultCache's static-js rule (CacheFirst), which fails
+  // with "no-response" and breaks Stripe Elements. NetworkOnly = pure passthrough.
+  {
+    matcher: stripeMatcher,
+    handler: new NetworkOnly(),
+  },
   // Auth session: cache so useSession() works offline
   {
     matcher: authSessionMatcher,

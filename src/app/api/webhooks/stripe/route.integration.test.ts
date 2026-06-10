@@ -18,12 +18,14 @@ vi.mock("@/lib/prisma", () => ({
   },
 }))
 
-// Mock subscription gateway (for signature verification)
-const mockVerifyWebhookSignature = vi.fn()
-vi.mock("@/domain/subscription/SubscriptionGateway", () => ({
-  getSubscriptionGateway: () => ({
-    verifyWebhookSignature: mockVerifyWebhookSignature,
-  }),
+// Mock the Stripe webhook verifier (signature verification is decoupled from
+// subscription provider config — see StripeWebhookVerifier).
+// vi.hoisted: the var must exist when the hoisted vi.mock factory runs.
+const { mockVerifyStripeWebhook } = vi.hoisted(() => ({
+  mockVerifyStripeWebhook: vi.fn(),
+}))
+vi.mock("@/domain/payment/StripeWebhookVerifier", () => ({
+  verifyStripeWebhook: mockVerifyStripeWebhook,
 }))
 
 // Mock subscription service (not under test, but needed by route)
@@ -79,7 +81,7 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
           metadata: { bookingId: "booking-42" },
         },
       }
-      mockVerifyWebhookSignature.mockReturnValue(event)
+      mockVerifyStripeWebhook.mockReturnValue(event)
 
       // Simulate existing pending payment in DB
       vi.mocked(prisma.payment.findFirst).mockResolvedValue({
@@ -116,7 +118,7 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
         type: "payment_intent.succeeded",
         data: { id: "pi_already_done", metadata: {} },
       }
-      mockVerifyWebhookSignature.mockReturnValue(event)
+      mockVerifyStripeWebhook.mockReturnValue(event)
 
       vi.mocked(prisma.payment.findFirst).mockResolvedValue({
         id: "pay-99",
@@ -136,7 +138,7 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
         type: "payment_intent.succeeded",
         data: { id: "pi_orphan", metadata: {} },
       }
-      mockVerifyWebhookSignature.mockReturnValue(event)
+      mockVerifyStripeWebhook.mockReturnValue(event)
       vi.mocked(prisma.payment.findFirst).mockResolvedValue(null as never)
 
       const res = await POST(createWebhookRequest(JSON.stringify(event)))
@@ -154,7 +156,7 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
         type: "payment_intent.payment_failed",
         data: { id: "pi_test_fail", metadata: {} },
       }
-      mockVerifyWebhookSignature.mockReturnValue(event)
+      mockVerifyStripeWebhook.mockReturnValue(event)
 
       vi.mocked(prisma.payment.findFirst).mockResolvedValue({
         id: "pay-fail",
@@ -181,7 +183,7 @@ describe("POST /api/webhooks/stripe -- payment integration", () => {
         type: "payment_intent.payment_failed",
         data: { id: "pi_late_fail", metadata: {} },
       }
-      mockVerifyWebhookSignature.mockReturnValue(event)
+      mockVerifyStripeWebhook.mockReturnValue(event)
 
       vi.mocked(prisma.payment.findFirst).mockResolvedValue({
         id: "pay-ok",

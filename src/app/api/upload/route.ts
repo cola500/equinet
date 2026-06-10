@@ -1,14 +1,27 @@
 import { NextRequest, NextResponse } from "next/server"
+import { z } from "zod"
 import { auth } from "@/lib/auth-server"
 import { prisma } from "@/lib/prisma"
 import { rateLimiters, getClientIP } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { validateFile, uploadFile } from "@/lib/supabase-storage"
+import { sanitizeOriginalName } from "@/lib/sanitize"
 
 const VALID_BUCKETS = ["avatars", "horses", "services", "verifications"] as const
 type UploadBucket = (typeof VALID_BUCKETS)[number]
 
 const MAX_IMAGES_PER_VERIFICATION = 5
+
+const entityIdSchema = z.string().uuid()
+
+// C3: derive extension from MIME type, never from user-controlled file.name
+// to prevent path traversal via crafted filenames.
+const MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "application/pdf": "pdf",
+}
 
 // POST /api/upload - Upload a file
 export async function POST(request: NextRequest) {
@@ -60,6 +73,15 @@ export async function POST(request: NextRequest) {
     if (!entityId) {
       return NextResponse.json(
         { error: "entityId krävs" },
+        { status: 400 }
+      )
+    }
+
+    // C3: reject non-UUID entityIds early — defense-in-depth before
+    // entityId is interpolated into the storage path.
+    if (!entityIdSchema.safeParse(entityId).success) {
+      return NextResponse.json(
+        { error: "Ogiltigt entityId" },
         { status: 400 }
       )
     }
@@ -124,11 +146,21 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
+    } else if (bucket === "services") {
+      // 3B.3: providerId namespace — entityId MUST equal session's own providerId.
+      // Customers (no providerId) and other providers (different providerId) → 403.
+      const sessionProviderId = session.user.providerId
+      if (!sessionProviderId || entityId !== sessionProviderId) {
+        return NextResponse.json(
+          { error: "Åtkomst nekad" },
+          { status: 403 }
+        )
+      }
     }
-    // "services" bucket - provider ownership checked via providerId
 
-    // Generate unique filename
-    const ext = file.name.split(".").pop() || "jpg"
+    // Generate unique filename — extension is derived from validated MIME
+    // type, NOT from file.name, to prevent path traversal.
+    const ext = MIME_TO_EXT[file.type] ?? "bin"
     const fileName = `${entityId}-${Date.now()}.${ext}`
 
     // Upload to Supabase Storage (pass File object directly)
@@ -156,7 +188,7 @@ export async function POST(request: NextRequest) {
         path,
         url,
         mimeType: file.type,
-        originalName: file.name || null,
+        originalName: sanitizeOriginalName(file.name),
         sizeBytes: file.size,
         ...(bucket === "verifications" ? { verificationId: entityId } : {}),
       },

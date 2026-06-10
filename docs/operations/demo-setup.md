@@ -3,7 +3,7 @@ title: "Demo Setup — Erik Järnfot (leverantörsdemo)"
 description: "Inloggning och instruktioner för att köra leverantörsdemon för Erik Järnfot"
 category: operations
 status: active
-last_updated: 2026-04-25
+last_updated: 2026-06-07
 sections:
   - Inloggning
   - Köra demon
@@ -17,6 +17,10 @@ sections:
 
 Instruktioner för att sätta upp och köra leverantörsdemon som visar Equinet för en
 potentiell pilot-leverantör.
+
+> **Var verifieras demo-UX?** Endast på staging (`equinet-staging.johanlindengard.com`).
+> Se [deployment-verification-guide.md](./deployment-verification-guide.md) — demo-läget är
+> inte aktivt i prod eller i feature-branch-previews.
 
 ## Inloggning
 
@@ -90,6 +94,10 @@ npm run db:seed:demo-provider:reset
 skapade av demo-scriptet, och återskapar dem från grunden. **Leverantörskontot (Erik Järnfot)
 och dennes tjänster berörs inte av reset.**
 
+> **Mot staging:** kör ALDRIG kommandot ovan direkt mot staging. Använd det säkra
+> helper-scriptet med project-ref-guard — se [staging-demo-seed.md](./staging-demo-seed.md)
+> (`npm run db:seed:staging-demo:safe`).
+
 ### Identifiera demo-data
 
 Demo-data är märkt på följande sätt:
@@ -110,15 +118,17 @@ Demo-data är märkt på följande sätt:
 - Verifierad (`isVerified: true`)
 - Tillgänglighet: Mån–Fre 07:00–16:00
 
-### Tjänster (5 st)
+### Tjänster (7 st)
 
 | Tjänst | Pris | Tid | Interval |
 |--------|------|-----|---------|
-| Omskoning | 1 400 kr | 75 min | 8 veckor |
-| Verkning (barfota) | 750 kr | 45 min | 6 veckor |
-| Akutbesök | 2 500 kr | 60 min | — |
-| Ungdomsverkning | 600 kr | 40 min | 6 veckor |
-| Hovslagarbedömning | 800 kr | 30 min | — |
+| Helskoning | 1 450 kr | 75 min | 8 veckor |
+| Skoning fram | 1 000 kr | 60 min | 8 veckor |
+| Verkning | 700 kr | 45 min | 6 veckor |
+| Verkning unghäst | 600 kr | 40 min | 6 veckor |
+| Tappsko | 400 kr | 30 min | — |
+| Akut hovslagarbesök | 1 200 kr | 60 min | — |
+| Hovstatuskontroll | 600 kr | 30 min | — |
 
 ### Kunder (9 st) med hästar (14 st)
 
@@ -140,11 +150,25 @@ Demo-data är märkt på följande sätt:
 - **2 väntande** (4–8 dagar framåt)
 - **8 genomförda** (4–70 dagar bakåt) + **2 serie-bokningar** (8 och 16 veckor bakåt)
 - **2 avbokade**
-- **1 manuell bokning** (skapad av leverantören, 14 dagar framåt)
+- **1 manuell bokning** (skapad av leverantören)
+
+### Dagens rutt-demodag (3 stopp)
+
+Alla 9 kunder har **realistiska koordinater** i Örebro-regionen (gata + ort), så **Dagens rutt** (`/provider/today`) kan rita stoppen på karta och beräkna riktig körsträcka.
+
+Seeden lägger 3 bekräftade bokningar på **samma dag** (dag 2 efter seed-körning) i en trovärdig sydlig kördag:
+
+| Tid | Kund | Ort | Tjänst |
+|-----|------|-----|--------|
+| 08:00 | Lisa Andersson | Örebro | Helskoning |
+| 10:30 | Peter Svensson | Kumla | Verkning |
+| 13:00 | Johan Nilsson | Hallsberg | Helskoning (manuell) |
+
+> **Demo-tips:** öppna Dagens rutt och välj **seed-körningsdatum + 2 dagar** (inte "2 dagar från idag"). Ett enstaka stopp på avlägsen adress = du har landat på dag 3 (Anders i Västerås). Se [dagens-rutt-verifiering-2026-06.md](../discovery/dagens-rutt-verifiering-2026-06.md).
 
 ### Återkommande bokning (1 serie)
 
-- **Omskoning Molly** (Lisa Andersson) — 8-veckorsintervall, 6 tillfällen totalt, 3 skapade
+- **Helskoning Molly** (Lisa Andersson) — 8-veckorsintervall, 6 tillfällen totalt, 3 skapade
 - Visar serie-badge på bokningsdetalj och kalender
 - Den kommande bekräftade bokningen är länkad till serien
 
@@ -169,6 +193,7 @@ Rekommenderad ordning för att visa plattformen för en pilot-leverantör:
 
 1. **Dashboard** (`/provider/dashboard`) — översikt bokningar, kunder, aktuella händelser
 2. **Kalender** (`/provider/calendar`) — veckovy, klicka på Lisa Andersson/Molly-bokningen
+   - **Dagens rutt** — klicka "Dagens rutt"-knappen i kalender-headern och välj 3-stoppsdagen (seed-datum + 2 dagar): dagens bokningar som rutt på karta, körsträcka och Navigera-länk per stopp
 3. **Bokningsdetalj** — serie-badge ("Del av återkommande serie"), kundinfo, tidslinje
 4. **Bokningslista** (`/provider/bookings`) — filtrera per status, se historik
 5. **Kundlista** (`/provider/customers`) — klicka på Anders Bergman
@@ -194,6 +219,6 @@ Rekommenderad ordning för att visa plattformen för en pilot-leverantör:
 
 ## Relaterade filer
 
-- Seed-script: `scripts/seed-demo-provider.ts`
+- **Kanonisk demo-seed (source of truth, lokal + staging):** `scripts/seed-demo-provider.ts` — all demo-grunddata (personer, hästar, **Stall Solbacken**, bokningar) definieras här på ett ställe. `prisma/seed-demo.ts` är legacy/local-only och ska inte få ny demo-grunddata.
 - Demo-mode logic: `src/lib/demo-mode.ts`
 - Tillåtna demo-paths: `src/lib/demo-mode.ts → DEMO_ALLOWED_PATHS`

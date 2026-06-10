@@ -1,0 +1,17 @@
+Stripe test-mode E2E — FULLT GRÖN (deploy kvc8bu299, PAYMENT_PROVIDER=stripe, SUBSCRIPTION_PROVIDER=stripe)
+
+Fixar som krävdes (3 st):
+1. SW NetworkOnly-passthrough för Stripe (#362) — SW intercepterade js.stripe.com
+2. CSP connect-src += js.stripe.com (#363) — SW:ns re-fetch av Stripe.js blockerades av connect-src
+3. SUBSCRIPTION_PROVIDER=stripe (config) — webhook-routen verifierade via mock-subscription-gateway
+   som returnerade fel data-form (parsed.data ist.f. parsed.data.object) -> betalning markerades aldrig succeeded
+
+Verifierat:
+- Stripe Elements renderade (window.Stripe definierad, 7 iframes)
+- js.stripe.com via SW: OK type=opaque
+- Testkort 4242 4242 4242 4242 / 12/34 / 123 / Sverige -> confirmPayment OK
+- PaymentIntent succeeded hos Stripe (test-mode)
+- Webhook payment_intent.succeeded -> Payment.status=succeeded inom ~3s
+- Booking fb2ec6a0, invoice EQ-202606-1QEBBB
+- Receipt: GET /receipt -> 200 text/html, KVITTO + invoiceNumber
+- Ingen live, ingen prod, inga secrets i logg.

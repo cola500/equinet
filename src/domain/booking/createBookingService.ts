@@ -108,5 +108,31 @@ export function createBookingService(): BookingService {
         email: data.email,
       })
     },
+    // C2: dependencies for customer-ownership validation in createManualBooking
+    findProviderCustomerLink: async (providerId, customerId) => {
+      return prisma.providerCustomer.findUnique({
+        where: { providerId_customerId: { providerId, customerId } },
+        select: { id: true },
+      })
+    },
+    findUserForLink: async (id) => {
+      return prisma.user.findUnique({
+        where: { id },
+        select: { isManualCustomer: true },
+      })
+    },
+    // C2.3: existing booking relationship (completed or no_show) — same
+    // status filter as /api/provider/customers GET so manual-booking matches
+    // what the provider sees as "my customers".
+    hasBookingRelationshipWith: async (providerId, customerId) => {
+      const count = await prisma.booking.count({
+        where: {
+          providerId,
+          customerId,
+          status: { in: ['completed', 'no_show'] },
+        },
+      })
+      return count > 0
+    },
   })
 }

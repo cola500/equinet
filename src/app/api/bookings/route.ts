@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
           isManualBooking, createdByProviderId,
           customer:User!customerId(firstName, lastName, email, phone),
           service:Service!serviceId(name, price, durationMinutes),
-          horse:Horse!horseId(id, name, breed),
+          horse:Horse!horseId(id, name, breed, stable:Stable!stableId(id, name)),
           payment:Payment(id, status, amount, currency, paidAt, invoiceNumber),
           customerReview:CustomerReview(id, rating, comment)
         `)

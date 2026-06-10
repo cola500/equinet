@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { logger } from "@/lib/logger"
-import { getSubscriptionGateway } from "@/domain/subscription/SubscriptionGateway"
 import { createSubscriptionService } from "@/domain/subscription/SubscriptionServiceFactory"
 import { createPaymentWebhookService } from "@/domain/payment"
+import { verifyStripeWebhook } from "@/domain/payment/StripeWebhookVerifier"
 import { stripeWebhookEventRepository } from "@/infrastructure/persistence/stripe/stripeWebhookEventRepository"
 
 export async function POST(request: NextRequest) {
@@ -10,8 +10,9 @@ export async function POST(request: NextRequest) {
     const body = await request.text()
     const signature = request.headers.get("stripe-signature") ?? ""
 
-    const gateway = getSubscriptionGateway()
-    const event = gateway.verifyWebhookSignature(body, signature)
+    // Verify the Stripe signature independently of PAYMENT_PROVIDER /
+    // SUBSCRIPTION_PROVIDER — payment webhooks must not depend on that config.
+    const event = verifyStripeWebhook(body, signature)
 
     if (!event) {
       return NextResponse.json(

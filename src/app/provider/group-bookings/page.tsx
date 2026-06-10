@@ -2,7 +2,10 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { Button } from "@/components/ui/button"
 import {
@@ -54,7 +57,16 @@ function formatDate(dateStr: string): string {
 }
 
 export default function ProviderGroupBookingsPage() {
+  const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
+  const demoFlag = useFeatureFlag("demo_mode")
+  const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
+
+  useEffect(() => {
+    if (demo) {
+      router.replace("/provider/profile")
+    }
+  }, [demo, router])
   const isOnline = useOnlineStatus()
   const [groupBookings, setGroupBookings] = useState<GroupBookingRequest[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -176,6 +188,8 @@ export default function ProviderGroupBookingsPage() {
       return calculateDistance(userLocation.lat, userLocation.lng, gb.latitude, gb.longitude) <= radiusKm
     })
   }, [groupBookings, userLocation, radiusKm])
+
+  if (demo) return null
 
   if (authLoading || !isProvider) {
     return (

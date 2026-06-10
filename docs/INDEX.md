@@ -3,7 +3,7 @@ title: "Equinet -- Dokumentationsindex"
 description: "Centralt navigeringsdokument for all projektdokumentation"
 category: root
 status: active
-last_updated: 2026-03-26
+last_updated: 2026-06-07
 sections:
   - Arkitektur
   - Operations
@@ -116,6 +116,14 @@ sections:
 | [product-audit/technical-risks.md](product-audit/technical-risks.md) | Tekniska risker för demo/MVP |
 | [product-audit/recent-changes.md](product-audit/recent-changes.md) | Förändringsinventering jan-mar 2026 |
 
+### Discovery (2026-06)
+
+| Dokument | Beskrivning |
+|----------|-------------|
+| [discovery/route-planning-audit-2026-06.md](discovery/route-planning-audit-2026-06.md) | Read-only inventering av befintliga ruttplanerings-capabilities |
+| [discovery/dagens-rutt-slice-2026-06.md](discovery/dagens-rutt-slice-2026-06.md) | Dagens rutt -- MVP-slice (user stories + wireframe) |
+| [discovery/dagens-rutt-verifiering-2026-06.md](discovery/dagens-rutt-verifiering-2026-06.md) | Dagens rutt -- implementation, verifiering, demo-seed, körsträcka, Navigera |
+
 ## Planer (aktiva)
 
 | Dokument | Beskrivning |
@@ -132,6 +140,7 @@ Se [retrospectives/README.md](retrospectives/README.md) for konsoliderade samman
 
 | Dokument | Beskrivning |
 |----------|-------------|
+| [2026-06-06-payment-hardening-wrapup.md](retrospectives/2026-06-06-payment-hardening-wrapup.md) | Betalnings-hardening: Stripe test-mode verifierad, webhook-decouple, production readiness-backlog |
 | [2026-ios-dashboard-pilot-retro.md](retrospectives/2026-ios-dashboard-pilot-retro.md) | DashboardViewModel-pilot: lärdomar och stopping point |
 | [2026-03-29-ios-review-ci-optimization.md](retrospectives/2026-03-29-ios-review-ci-optimization.md) | iOS-review, teststrategi och CI-optimering |
 

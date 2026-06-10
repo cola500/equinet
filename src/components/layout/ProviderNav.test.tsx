@@ -24,9 +24,15 @@ vi.mock("@/components/providers/FeatureFlagProvider", () => ({
   useFeatureFlags: vi.fn(() => ({})),
 }))
 
-// Mock BottomTabBar since it's tested separately
+// Mock BottomTabBar since it's tested separately — capture props to assert mobile nav
+const { mockBottomTabBar } = vi.hoisted(() => ({
+  mockBottomTabBar: { props: null as { tabs: { href: string }[]; moreItems: { href: string }[] } | null },
+}))
 vi.mock("./BottomTabBar", () => ({
-  BottomTabBar: () => null,
+  BottomTabBar: (props: { tabs: { href: string }[]; moreItems: { href: string }[] }) => {
+    mockBottomTabBar.props = props
+    return null
+  },
 }))
 
 import { usePathname } from "next/navigation"
@@ -207,5 +213,49 @@ describe("ProviderNav", () => {
     // Give useEffect time to fire (it shouldn't fetch again)
     await new Promise((r) => setTimeout(r, 50))
     expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  describe("mobile bottom tab bar (Slice 1)", () => {
+    it("demo mode: shows exactly 4 primary tabs (Kalender, Kunder, Tjänster, Meddelanden)", () => {
+      vi.mocked(useFeatureFlags).mockReturnValue({ demo_mode: true, messaging: true })
+
+      render(<ProviderNav />)
+
+      // Shared DEMO_PRIMARY_PATHS — same set/order as desktop top-nav.
+      expect(mockBottomTabBar.props?.tabs.map((t) => t.href)).toEqual([
+        "/provider/calendar",
+        "/provider/customers",
+        "/provider/services",
+        "/provider/messages",
+      ])
+    })
+
+    it("demo mode: Mer drawer holds the 5 moved items (Översikt, Bokningar, Insikter, Profil, Hjälp)", () => {
+      vi.mocked(useFeatureFlags).mockReturnValue({ demo_mode: true, messaging: true, help_center: true })
+
+      render(<ProviderNav />)
+
+      // Shared DEMO_MORE_PATHS — same set/order as desktop "Mer".
+      expect(mockBottomTabBar.props?.moreItems.map((i) => i.href)).toEqual([
+        "/provider/dashboard",
+        "/provider/bookings",
+        "/provider/insights",
+        "/provider/profile",
+        "/provider/help",
+      ])
+    })
+
+    it("non-demo mode: mobile tabs unchanged (providerTabs)", () => {
+      vi.mocked(useFeatureFlags).mockReturnValue({ messaging: true })
+
+      render(<ProviderNav />)
+
+      expect(mockBottomTabBar.props?.tabs.map((t) => t.href)).toEqual([
+        "/provider/dashboard",
+        "/provider/calendar",
+        "/provider/bookings",
+        "/provider/messages",
+      ])
+    })
   })
 })

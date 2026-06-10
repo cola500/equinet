@@ -13,6 +13,7 @@
 import { createClient } from "@supabase/supabase-js"
 import { PrismaClient } from "@prisma/client"
 import { config } from "dotenv"
+import { assertSeedSafe } from "./seed-guard"
 
 // Load env files (Next.js priority: .env.local > .env)
 config({ path: ".env.local" })
@@ -30,6 +31,11 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   )
   process.exit(1)
 }
+
+assertSeedSafe({
+  supabaseUrl: SUPABASE_URL,
+  allowProd: process.env.ALLOW_SEED_PROD === "true",
+})
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },

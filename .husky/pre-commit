@@ -1,13 +1,20 @@
 . "$HOME/.nvm/nvm.sh" 2>/dev/null
 
-# 1. Svenska tecken-check (snabb, ~0.5s)
+# 1. Secret-scan på staged innehåll (snabb, ~0.1s)
+echo "Söker efter läckta hemligheter..."
+bash scripts/check-no-secrets.sh || {
+  echo "Hemlighet hittad i staged innehåll! Flytta värdet till .env."
+  exit 1
+}
+
+# 2. Svenska tecken-check (snabb, ~0.5s)
 echo "Kontrollerar svenska tecken..."
 npm run check:swedish --silent || {
   echo "Svenska tecken-problem hittade! Fix innan commit."
   exit 1
 }
 
-# 2. TypeScript-check BARA om .ts/.tsx-filer är staged
+# 3. TypeScript-check BARA om .ts/.tsx-filer är staged
 STAGED=$(git diff --cached --name-only --diff-filter=d | grep -E '\.(ts|tsx)$' || true)
 if [ -n "$STAGED" ]; then
   echo "TypeScript-check (staged .ts/.tsx hittade)..."
@@ -17,5 +24,5 @@ if [ -n "$STAGED" ]; then
   }
 fi
 
-# 3. Branch-check (BLOCKER om kod-commit på main under aktiv story)
+# 4. Branch-check (BLOCKER om kod-commit på main under aktiv story)
 bash scripts/check-branch-for-story.sh || exit 1

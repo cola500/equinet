@@ -21,39 +21,40 @@ import { HorseIcon } from "@/components/icons/HorseIcon"
 import { AnnouncementPreview } from "@/components/AnnouncementPreview"
 import { isDemoMode } from "@/lib/demo-mode"
 import { DemoLoginButton } from "@/components/landing/DemoLoginButton"
+import { DEMO_PERSONAS } from "@/components/landing/demo-personas"
 
 // --- Data ---
 
 const features = [
   {
     icon: Search,
-    title: "Sök och boka direkt",
-    description: "Hitta leverantörer i ditt område, se lediga tider och boka online.",
+    title: "Hitta nån som kan komma ut",
+    description: "Hovslagare, veterinärer, terapeuter — se vad som är ledigt och boka direkt.",
   },
   {
     icon: HorseIcon,
-    title: "Hästprofil med vårdhistorik",
-    description: "Samla besök, anteckningar och vårdscheman per häst -- delbar med din veterinär.",
+    title: "Hästjournal — samlat på ett ställe",
+    description: "Besök, anteckningar och nästa-datum samlade per häst. Visa veterinären med en länk när det behövs.",
   },
   {
     icon: Bell,
-    title: "Besökspåminnelser",
-    description: "Equinet räknar ut när hästen behöver nästa besök och påminner dig.",
+    title: "Påminnelse i god tid",
+    description: "Vi säger till när det börjar närma sig — så du hinner boka i lugn och ro.",
   },
   {
     icon: Heart,
-    title: "Följ din leverantör",
-    description: "Få notis direkt när din hovslagare eller terapeut annonserar besök i ditt område.",
+    title: "Följ din hovslagare",
+    description: "Få veta när din hovslagare eller terapeut kör i ditt område.",
   },
   {
     icon: Route,
-    title: "Ruttplanering och annonser",
-    description: "Leverantörer planerar rutter på karta och annonserar besök till intresserade kunder.",
+    title: "Planera dagen, säg till i området",
+    description: "Hovslagare och veterinärer planerar dagens stopp på karta och låter folk i området veta att de kör.",
   },
   {
     icon: Users,
-    title: "Kundregister med hästkoppling",
-    description: "Samla kunder, deras hästar och besökshistorik. Anteckningar och sökbart register -- byggt för leverantörer.",
+    title: "Dina kunder och deras hästar",
+    description: "Alla dina kunder, deras hästar och vad du gjort senast. Sökbart, med plats för anteckningar.",
   },
 ]
 
@@ -79,7 +80,7 @@ const providerBenefits = [
   {
     icon: MessageSquare,
     title: "Samla alla dina kunder",
-    description: "Kundregister med hästar, anteckningar och besökshistorik. Kunder bokar direkt i din kalender -- färre SMS, mer koll.",
+    description: "Kundregister med hästar, anteckningar och besökshistorik. Kunder bokar direkt i din kalender — färre SMS, mer koll.",
   },
   {
     icon: Route,
@@ -97,17 +98,17 @@ const steps = [
   {
     step: "1",
     title: "Skapa konto",
-    description: "Registrera dig gratis som hästägare eller leverantör. Tar under en minut.",
+    description: "Hoppa in gratis. Som hästägare eller som hovslagare/veterinär. Tar en minut.",
   },
   {
     step: "2",
     title: "Hitta och boka",
-    description: "Sök på tjänst och område. Se tillgängliga tider och boka direkt.",
+    description: "Sök där du bor. Se vad som är ledigt och boka direkt — inga SMS.",
   },
   {
     step: "3",
     title: "Håll koll",
-    description: "Få bekräftelser, påminnelser och en samlad vårdhistorik för varje häst.",
+    description: "Bekräftelse direkt. Påminnelse i god tid. Allt om hästen samlat på ett ställe.",
   },
 ]
 
@@ -144,18 +145,50 @@ export default function Home() {
         {/* A) Hero */}
         <section className="py-12 md:py-20 text-center max-w-4xl mx-auto">
           <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 md:mb-6">
-            Boka hästtjänster -- utan krångel
+            Bokning som funkar — också för hovslagaren
           </h1>
           <p className="text-base md:text-xl text-gray-600 mb-6 md:mb-8 px-2 max-w-2xl mx-auto">
-            Hitta hovslagare, veterinärer och terapeuter.
-            Boka direkt. Få påminnelser. Allt på ett ställe -- för dig och hästen.
+            Hitta hovslagare, veterinär eller terapeut.
+            Boka direkt. Få en påminnelse innan det är dags igen.
           </p>
           {demoMode ? (
-            <div className="flex flex-col items-center gap-4 px-4 sm:px-0">
-              <p className="text-sm text-gray-500 font-medium uppercase tracking-wider">
-                Demomiljö
-              </p>
-              <DemoLoginButton />
+            <div className="flex flex-col items-center gap-6 px-4 sm:px-0">
+              <div className="text-center">
+                <p className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
+                  Utforska appen
+                </p>
+                <p className="text-gray-600">
+                  Välj vilken typ av användare du vill prova Equinet som.
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 w-full max-w-2xl">
+                <div className="bg-white rounded-xl border p-6 flex flex-col gap-4 text-left">
+                  <div>
+                    <p className="font-heading text-lg font-bold mb-2">🐴 Hästägare</p>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>Se hästar</li>
+                      <li>Kommande bokningar</li>
+                      <li>Vårdhistorik</li>
+                    </ul>
+                  </div>
+                  <div className="mt-auto">
+                    <DemoLoginButton {...DEMO_PERSONAS.customer} />
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl border p-6 flex flex-col gap-4 text-left">
+                  <div>
+                    <p className="font-heading text-lg font-bold mb-2">🔨 Leverantör</p>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>Kalender</li>
+                      <li>Kunder</li>
+                      <li>Tjänster</li>
+                    </ul>
+                  </div>
+                  <div className="mt-auto">
+                    <DemoLoginButton {...DEMO_PERSONAS.provider} />
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center px-4 sm:px-0">
@@ -244,10 +277,10 @@ export default function Home() {
         {/* C) Features */}
         <section className="py-12 md:py-16">
           <h2 className="font-heading text-2xl md:text-3xl font-bold text-center mb-4">
-            Allt du behöver -- samlat
+            Allt du behöver — på ett ställe
           </h2>
           <p className="text-gray-600 text-center mb-10 max-w-xl mx-auto">
-            Equinet är byggt specifikt för hästbranschen, inte anpassat från en generisk bokningsapp.
+            Equinet är byggt för hur hästvardagen funkar — inte en allmän bokningsapp som råkar passa.
           </p>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {features.map((feature) => {
@@ -347,7 +380,7 @@ export default function Home() {
                 <HorseIcon className="w-6 h-6 text-primary" />
               </div>
               <h3 className="font-semibold mb-2">Equinet</h3>
-              <p className="text-sm text-gray-600">Bokning, ruttplanering, vårdhistorik, påminnelser och kundhantering -- allt på ett ställe.</p>
+              <p className="text-sm text-gray-600">Bokning, ruttplanering, vårdhistorik, påminnelser och kundhantering — allt på ett ställe.</p>
             </div>
           </div>
         </section>
@@ -358,8 +391,8 @@ export default function Home() {
             Vanliga frågor
           </h2>
           <div className="w-full">
-            {faqItems.map((item) => (
-              <details key={item.question} className="group border-b last:border-b-0">
+            {faqItems.map((item, idx) => (
+              <details key={item.question} open={idx === 0} className="group border-b last:border-b-0">
                 <summary className="flex cursor-pointer list-none items-start justify-between gap-4 py-4 text-left text-sm font-medium hover:underline [&::-webkit-details-marker]:hidden">
                   {item.question}
                   <ChevronDown className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
@@ -377,17 +410,17 @@ export default function Home() {
               Redo att testa?
             </h2>
             <p className="text-base md:text-lg mb-6 opacity-85 max-w-lg mx-auto">
-              Skapa konto gratis och se varför hästmänniskor byter från SMS till Equinet.
+              Hoppa in gratis och prova själv. Hästmänniskor har redan börjat byta från SMS.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/register">
                 <Button size="lg" variant="secondary" className="text-lg px-8">
-                  Kom igång gratis
+                  Skapa konto
                 </Button>
               </Link>
               <Link href="/register?role=provider">
                 <Button size="lg" variant="ghost" className="text-lg px-8 border border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
-                  Registrera som leverantör
+                  Jag är hovslagare / veterinär
                 </Button>
               </Link>
             </div>

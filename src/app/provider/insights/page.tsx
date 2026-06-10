@@ -106,9 +106,9 @@ export default function ProviderInsightsPage() {
 
   return (
     <ProviderLayout>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 md:mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Affärsinsikter</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Affärsinsikter</h1>
           <p className="text-gray-600 mt-1">
             Analysera dina bokningar, tjänster och kunder
           </p>
@@ -123,7 +123,7 @@ export default function ProviderInsightsPage() {
               aria-pressed={period === p}
               className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                 period === p
-                  ? "bg-green-600 text-white"
+                  ? "bg-gray-900 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >

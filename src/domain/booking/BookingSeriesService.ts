@@ -68,6 +68,7 @@ export type SeriesError =
   | { type: 'NO_BOOKINGS_CREATED'; message: string }
   | { type: 'SERIES_NOT_FOUND' }
   | { type: 'NOT_OWNER' }
+  | { type: 'CUSTOMER_NOT_LINKED' }
 
 // --- Provider info for recurring settings ---
 
@@ -208,6 +209,17 @@ export class BookingSeriesService {
 
         if (result.isSuccess) {
           createdBookings.push(result.value)
+        } else if (result.error.type === 'CUSTOMER_NOT_LINKED') {
+          // C2: bookable-link check is a series-wide invariant. As soon as
+          // it fails for the first date, abort the loop and surface 403 to
+          // the caller — looping 52 times with the same error would only
+          // produce a misleading NO_BOOKINGS_CREATED.
+          for (const booking of createdBookings) {
+            await this.deps.bookingRepository.delete(booking.id).catch((cleanupErr) => {
+              logger.error(`Booking series: failed to cleanup booking ${booking.id}`, { cleanupErr })
+            })
+          }
+          return Result.fail({ type: 'CUSTOMER_NOT_LINKED' })
         } else {
           if (SKIPPABLE_ERRORS.includes(result.error.type)) {
             const message = 'message' in result.error ? result.error.message : result.error.type

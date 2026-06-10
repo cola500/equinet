@@ -32,10 +32,10 @@ export default function ProviderCustomersPage() {
 
   return (
     <ProviderLayout>
-      <div className="mb-8">
+      <div className="mb-6 md:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Kunder</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">Kunder</h1>
             <p className="text-gray-600 mt-1">
               Översikt över dina kunder och deras hästar
             </p>

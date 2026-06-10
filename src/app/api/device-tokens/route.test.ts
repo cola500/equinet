@@ -9,6 +9,7 @@ vi.mock("@/lib/prisma", () => ({
       upsert: vi.fn(),
       deleteMany: vi.fn(),
       count: vi.fn().mockResolvedValue(0),
+      findUnique: vi.fn().mockResolvedValue(null),
     },
   },
 }))
@@ -165,6 +166,62 @@ describe("POST /api/device-tokens", () => {
     )
     const res = await POST(makeRequest({ token: "abc123hex" }))
     expect(res.status).toBe(503)
+  })
+
+  // C4 invariant: token ownership cannot be hijacked via upsert.
+  // If the token already belongs to another user, the request must fail
+  // closed (409) instead of silently re-pointing the row.
+  describe("C4 token-ownership invariant", () => {
+    it("user A registering a fresh token succeeds (200)", async () => {
+      vi.mocked(prisma.deviceToken.findUnique).mockResolvedValueOnce(null)
+      vi.mocked(prisma.deviceToken.upsert).mockResolvedValueOnce({} as never)
+
+      const res = await POST(makeRequest({ token: "shared-token", platform: "ios" }))
+      expect(res.status).toBe(200)
+      expect(prisma.deviceToken.upsert).toHaveBeenCalled()
+    })
+
+    it("user B registering a token already owned by user A fails (409)", async () => {
+      vi.mocked(prisma.deviceToken.findUnique).mockResolvedValueOnce({
+        id: "dt-1",
+        userId: "user-A",
+        token: "shared-token",
+        platform: "ios",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      // user-1 is the auth-mocked default; treat as "user B" trying to take user A's token
+      mockGetAuthUser.mockResolvedValueOnce({
+        id: "user-B",
+        email: "b@test.se",
+        userType: "provider",
+        isAdmin: false,
+        providerId: null,
+        stableId: null,
+        authMethod: "supabase",
+      })
+
+      const res = await POST(makeRequest({ token: "shared-token", platform: "ios" }))
+      expect(res.status).toBe(409)
+      expect(prisma.deviceToken.upsert).not.toHaveBeenCalled()
+    })
+
+    it("user A re-registering their own token succeeds (idempotent refresh, 200)", async () => {
+      vi.mocked(prisma.deviceToken.findUnique).mockResolvedValueOnce({
+        id: "dt-1",
+        userId: "user-1",
+        token: "shared-token",
+        platform: "ios",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      vi.mocked(prisma.deviceToken.upsert).mockResolvedValueOnce({} as never)
+
+      const res = await POST(makeRequest({ token: "shared-token", platform: "ios" }))
+      expect(res.status).toBe(200)
+      expect(prisma.deviceToken.upsert).toHaveBeenCalled()
+    })
   })
 })
 

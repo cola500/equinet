@@ -119,6 +119,25 @@ export function sanitizeFileName(fileName: string): string {
 }
 
 /**
+ * Sanitize an upload's original filename metadata for safe storage and display.
+ *
+ * 3A.fu.4 — defense-in-depth for Upload.originalName.
+ * Used at write-time before persisting to DB. Returns null for empty/whitespace
+ * input so DB rows reflect "no name provided" rather than "".
+ *
+ * - trims whitespace
+ * - strips control chars / newlines (no log or Content-Disposition pollution)
+ * - removes path separators and `..` sequences
+ * - clamps to 255 chars
+ * - preserves unicode (Swedish å/ä/ö, CJK, etc.)
+ */
+export function sanitizeOriginalName(input: string | null | undefined): string | null {
+  if (!input || typeof input !== "string") return null
+  const sanitized = sanitizeFileName(input).trim()
+  return sanitized.length > 0 ? sanitized : null
+}
+
+/**
  * Sanitize numeric input
  */
 export function sanitizeNumber(input: unknown): number | null {

@@ -82,7 +82,7 @@ export function handleAuthorization(
   }
 
   // Customer-only routes
-  const customerOnlyPaths = ["/api/route-orders/my-orders", "/customer"]
+  const customerOnlyPaths = ["/api/route-orders/my-orders", "/customer", "/hem"]
   if (customerOnlyPaths.some((p) => path.startsWith(p))) {
     if (user.userType !== "customer") {
       if (path.startsWith("/api/")) {

@@ -1,3 +1,4 @@
+// Always required in production, regardless of payment provider.
 export const REQUIRED_PROD_VARS = [
   'APP_URL',
   'DATABASE_URL',
@@ -6,14 +7,31 @@ export const REQUIRED_PROD_VARS = [
   'SUPABASE_SERVICE_ROLE_KEY',
   'RESEND_API_KEY',
   'FROM_EMAIL',
-  'STRIPE_SECRET_KEY',
-  'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
   'UPSTASH_REDIS_REST_URL',
   'UPSTASH_REDIS_REST_TOKEN',
 ]
 
+// Required ONLY when Stripe is the active payment provider (PAYMENT_PROVIDER=stripe).
+// Kept conditional so the Production Parity deploy (Stripe off) is not blocked by
+// unused Stripe config, while still being enforced once Stripe Live is enabled.
+export const STRIPE_REQUIRED_VARS = [
+  'STRIPE_SECRET_KEY',
+  'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
+  'STRIPE_WEBHOOK_SECRET',
+]
+
+// A var counts as missing when it is undefined, empty, or whitespace-only.
+// (Trim guards against a var set to "   " silently passing as "present".)
+function isMissing(value: string | undefined): boolean {
+  return !value || value.trim() === ''
+}
+
 export function checkProdEnv(env: Record<string, string | undefined>): { missing: string[] } {
-  const missing = REQUIRED_PROD_VARS.filter(v => !env[v])
+  const required = [...REQUIRED_PROD_VARS]
+  if (env.PAYMENT_PROVIDER === 'stripe') {
+    required.push(...STRIPE_REQUIRED_VARS)
+  }
+  const missing = required.filter(v => isMissing(env[v]))
   return { missing }
 }
 

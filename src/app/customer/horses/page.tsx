@@ -35,12 +35,10 @@ import { CustomerLayout } from "@/components/layout/CustomerLayout"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { HorseCardSkeleton } from "@/components/loading/HorseCardSkeleton"
 import { EmptyState } from "@/components/ui/empty-state"
-import { Badge } from "@/components/ui/badge"
 import { useDueForService } from "@/hooks/useDueForService"
-import { AlertTriangle, Clock } from "lucide-react"
 import { HorseIcon } from "@/components/icons/HorseIcon"
 import { clientLogger } from "@/lib/client-logger"
-import type { DueForServiceResult } from "@/domain/due-for-service/DueForServiceCalculator"
+import { DueStatusBadge } from "@/components/customer/DueStatusBadge"
 import { HorseForm, emptyHorseForm, type HorseFormData } from "@/components/horses/HorseForm"
 
 interface Horse {
@@ -55,6 +53,7 @@ interface Horse {
   microchipNumber: string | null
   photoUrl: string | null
   createdAt: string
+  stable: { id: string; name: string; municipality: string | null } | null
 }
 
 const GENDER_LABELS: Record<string, string> = {
@@ -214,6 +213,11 @@ export default function CustomerHorsesPage() {
                         .filter(Boolean)
                         .join(" · ") || "Ingen extra info"}
                     </CardDescription>
+                    {horse.stable && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        Stall: <span className="font-medium text-gray-700">{horse.stable.name}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -272,43 +276,5 @@ export default function CustomerHorsesPage() {
       )}
     </CustomerLayout>
   )
-}
-
-// --- Due Status Badge ---
-
-function DueStatusBadge({
-  dueItems,
-  horseId,
-}: {
-  dueItems: DueForServiceResult[]
-  horseId: string
-}) {
-  // Find the most urgent due item for this horse
-  const item = dueItems.find((i) => i.horseId === horseId)
-  if (!item) return null
-
-  if (item.status === "overdue") {
-    const days = Math.abs(item.daysUntilDue)
-    const label = days === 1 ? "1 dag" : `${days} dagar`
-    return (
-      <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100 gap-1">
-        <AlertTriangle className="h-3 w-3" />
-        <span>{item.serviceName}: {label} försenad</span>
-      </Badge>
-    )
-  }
-
-  if (item.status === "upcoming") {
-    const days = item.daysUntilDue
-    const label = days === 0 ? "Idag" : days === 1 ? "1 dag kvar" : `${days} dagar kvar`
-    return (
-      <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 gap-1">
-        <Clock className="h-3 w-3" />
-        <span>{item.serviceName}: {label}</span>
-      </Badge>
-    )
-  }
-
-  return null
 }
 

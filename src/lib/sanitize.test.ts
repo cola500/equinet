@@ -7,6 +7,7 @@ import {
   sanitizeSearchQuery,
   stripXss,
   sanitizeUrl,
+  sanitizeOriginalName,
 } from "./sanitize"
 
 describe("sanitizeString", () => {
@@ -294,5 +295,56 @@ describe("sanitizeUrl", () => {
 
   it("should handle relative URLs by blocking them", () => {
     expect(sanitizeUrl("/path/to/page")).toBeNull()
+  })
+})
+
+describe("sanitizeOriginalName (3A.fu.4)", () => {
+  it("O1: normal filenames pass through unchanged", () => {
+    expect(sanitizeOriginalName("photo.jpg")).toBe("photo.jpg")
+    expect(sanitizeOriginalName("my document.pdf")).toBe("my document.pdf")
+    expect(sanitizeOriginalName("report-2026-05.pdf")).toBe("report-2026-05.pdf")
+  })
+
+  it("O2: path traversal sequences are neutralised", () => {
+    expect(sanitizeOriginalName("../../evil.pdf")).toBe("evil.pdf")
+    expect(sanitizeOriginalName("..\\..\\windows.exe")).toBe("windows.exe")
+    expect(sanitizeOriginalName("subdir/file.jpg")).toBe("subdirfile.jpg")
+  })
+
+  it("O3: control characters and newlines are stripped (no log/header pollution)", () => {
+    expect(sanitizeOriginalName("evil\r\nname.jpg")).toBe("evilname.jpg")
+    expect(sanitizeOriginalName("photo\x00.jpg")).toBe("photo.jpg")
+    expect(sanitizeOriginalName("name\twith\ttabs.jpg")).toBe("namewithtabs.jpg")
+    expect(sanitizeOriginalName("a\x01\x02\x03b.jpg")).toBe("ab.jpg")
+  })
+
+  it("O4: extreme length is clamped to 255 chars", () => {
+    const long = "a".repeat(500) + ".jpg"
+    const sanitized = sanitizeOriginalName(long)
+    expect(sanitized).not.toBeNull()
+    expect(sanitized!.length).toBeLessThanOrEqual(255)
+    expect(sanitized!.startsWith("aaaa")).toBe(true)
+  })
+
+  it("O5: unicode and Swedish characters are preserved", () => {
+    expect(sanitizeOriginalName("räv.jpg")).toBe("räv.jpg")
+    expect(sanitizeOriginalName("hästbild_å_ä_ö.png")).toBe("hästbild_å_ä_ö.png")
+    expect(sanitizeOriginalName("文档.pdf")).toBe("文档.pdf")
+    expect(sanitizeOriginalName("café_menu.pdf")).toBe("café_menu.pdf")
+  })
+
+  it("O6: null/undefined/empty/whitespace-only returns null", () => {
+    expect(sanitizeOriginalName(null)).toBeNull()
+    expect(sanitizeOriginalName(undefined)).toBeNull()
+    expect(sanitizeOriginalName("")).toBeNull()
+    expect(sanitizeOriginalName("   ")).toBeNull()
+    // After stripping control chars, only whitespace remains → null
+    expect(sanitizeOriginalName("\r\n\t  ")).toBeNull()
+  })
+
+  it("O7: header-injection patterns are blocked", () => {
+    // Quote/semicolon/backslash patterns sometimes abused in Content-Disposition
+    expect(sanitizeOriginalName('evil"; rm -rf /.jpg')).toBe("evil; rm -rf .jpg")
+    expect(sanitizeOriginalName("name<script>.jpg")).toBe("namescript.jpg")
   })
 })

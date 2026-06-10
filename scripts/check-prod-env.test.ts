@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { checkProdEnv, checkCronsEnabled, REQUIRED_PROD_VARS } from './check-prod-env'
+import { checkProdEnv, checkCronsEnabled, REQUIRED_PROD_VARS, STRIPE_REQUIRED_VARS } from './check-prod-env'
 
 const allVarsPresent = Object.fromEntries(REQUIRED_PROD_VARS.map(v => [v, 'value']))
 
@@ -29,6 +29,14 @@ describe('checkProdEnv', () => {
     expect(missing).toContain('APP_URL')
   })
 
+  it('returns missing vars when value is whitespace-only', () => {
+    const env = { ...allVarsPresent, APP_URL: '   ' }
+
+    const { missing } = checkProdEnv(env)
+
+    expect(missing).toContain('APP_URL')
+  })
+
   it('passes when all required vars have non-empty values', () => {
     const { missing } = checkProdEnv(allVarsPresent)
     expect(missing).toHaveLength(0)
@@ -36,6 +44,55 @@ describe('checkProdEnv', () => {
 
   it('exports the full list of required vars', () => {
     expect(REQUIRED_PROD_VARS).toBeDefined()
+  })
+})
+
+describe('checkProdEnv — Stripe vars (conditional on active Stripe)', () => {
+  // STRIPE_SECRET_KEY, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY and STRIPE_WEBHOOK_SECRET are
+  // only required when Stripe is the active payment provider (PAYMENT_PROVIDER=stripe).
+  // This keeps the Production Parity deploy (Stripe off) from being blocked by unused
+  // Stripe config, while enforcing it once Stripe Live is enabled (Post-Parity).
+  const STRIPE_VARS = ['STRIPE_SECRET_KEY', 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', 'STRIPE_WEBHOOK_SECRET']
+  const allStripeVarsSet = {
+    STRIPE_SECRET_KEY: 'sk_test_x',
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_test_x',
+    STRIPE_WEBHOOK_SECRET: 'whsec_test_x',
+  }
+
+  it('does NOT require any Stripe var when PAYMENT_PROVIDER is unset', () => {
+    const { missing } = checkProdEnv(allVarsPresent)
+    for (const v of STRIPE_VARS) expect(missing).not.toContain(v)
+  })
+
+  it('does NOT require any Stripe var when PAYMENT_PROVIDER=mock', () => {
+    const { missing } = checkProdEnv({ ...allVarsPresent, PAYMENT_PROVIDER: 'mock' })
+    for (const v of STRIPE_VARS) expect(missing).not.toContain(v)
+  })
+
+  it('REQUIRES all three Stripe vars when PAYMENT_PROVIDER=stripe and they are absent', () => {
+    const { missing } = checkProdEnv({ ...allVarsPresent, PAYMENT_PROVIDER: 'stripe' })
+    expect(missing).toContain('STRIPE_SECRET_KEY')
+    expect(missing).toContain('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY')
+    expect(missing).toContain('STRIPE_WEBHOOK_SECRET')
+  })
+
+  it('flags STRIPE_SECRET_KEY when PAYMENT_PROVIDER=stripe and value is whitespace-only', () => {
+    const { missing } = checkProdEnv({
+      ...allVarsPresent,
+      ...allStripeVarsSet,
+      PAYMENT_PROVIDER: 'stripe',
+      STRIPE_SECRET_KEY: '   ',
+    })
+    expect(missing).toContain('STRIPE_SECRET_KEY')
+  })
+
+  it('passes when PAYMENT_PROVIDER=stripe and all three Stripe vars are set', () => {
+    const { missing } = checkProdEnv({
+      ...allVarsPresent,
+      ...allStripeVarsSet,
+      PAYMENT_PROVIDER: 'stripe',
+    })
+    expect(missing).toHaveLength(0)
   })
 })
 
@@ -99,7 +156,7 @@ describe('checkCronsEnabled', () => {
 })
 
 describe('REQUIRED_PROD_VARS', () => {
-  it('is the canonical list of required vars', () => {
+  it('is the canonical list of always-required vars (no Stripe)', () => {
     const expectedVars = [
       'APP_URL',
       'DATABASE_URL',
@@ -108,13 +165,25 @@ describe('REQUIRED_PROD_VARS', () => {
       'SUPABASE_SERVICE_ROLE_KEY',
       'RESEND_API_KEY',
       'FROM_EMAIL',
-      'STRIPE_SECRET_KEY',
-      'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
       'UPSTASH_REDIS_REST_URL',
       'UPSTASH_REDIS_REST_TOKEN',
     ]
     for (const v of expectedVars) {
       expect(REQUIRED_PROD_VARS).toContain(v)
     }
+  })
+
+  it('does NOT include Stripe vars (those are conditional)', () => {
+    expect(REQUIRED_PROD_VARS).not.toContain('STRIPE_SECRET_KEY')
+    expect(REQUIRED_PROD_VARS).not.toContain('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY')
+    expect(REQUIRED_PROD_VARS).not.toContain('STRIPE_WEBHOOK_SECRET')
+  })
+})
+
+describe('STRIPE_REQUIRED_VARS', () => {
+  it('lists the three Stripe vars required only when PAYMENT_PROVIDER=stripe', () => {
+    expect(STRIPE_REQUIRED_VARS).toContain('STRIPE_SECRET_KEY')
+    expect(STRIPE_REQUIRED_VARS).toContain('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY')
+    expect(STRIPE_REQUIRED_VARS).toContain('STRIPE_WEBHOOK_SECRET')
   })
 })

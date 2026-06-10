@@ -1,0 +1,5 @@
+/customer/bookings (mock, FÄRSK browser-context, deploy eslm1cj6z /pure):
+- js.stripe.com script-tag injicerat i DOM: NEJ
+- Network-requests mot stripe: 0 (filter "stripe" tomt)
+- Efter mock-betalning: js.stripe.com fortfarande EJ laddat
+- window.Stripe: undefined (aldrig laddat)

@@ -72,12 +72,14 @@ export function CalendarHeader({
         {/* Vy-toggle knappar - bara om callback finns */}
         {showViewToggle && (
           <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-1">
+            {/* Active view = neutral dark pill (not green) so it doesn't compete
+                with the green primary action; matches the other filter toggles. */}
             <Button
               type="button"
-              variant={viewMode === "day" ? "default" : "ghost"}
+              variant="ghost"
               size="sm"
               onClick={() => onViewModeChange?.("day")}
-              className="h-8 px-2"
+              className={`h-8 px-2 ${viewMode === "day" ? "bg-gray-900 text-white hover:bg-gray-900 hover:text-white" : ""}`}
               title="Dagvy"
             >
               <Calendar className="h-4 w-4" />
@@ -85,10 +87,10 @@ export function CalendarHeader({
             </Button>
             <Button
               type="button"
-              variant={viewMode === "3-day" ? "default" : "ghost"}
+              variant="ghost"
               size="sm"
               onClick={() => onViewModeChange?.("3-day")}
-              className="h-8 px-2"
+              className={`h-8 px-2 ${viewMode === "3-day" ? "bg-gray-900 text-white hover:bg-gray-900 hover:text-white" : ""}`}
               title="3-dagarsvy"
             >
               <CalendarRange className="h-4 w-4" />
@@ -96,10 +98,10 @@ export function CalendarHeader({
             </Button>
             <Button
               type="button"
-              variant={viewMode === "week" ? "default" : "ghost"}
+              variant="ghost"
               size="sm"
               onClick={() => onViewModeChange?.("week")}
-              className="h-8 px-2"
+              className={`h-8 px-2 ${viewMode === "week" ? "bg-gray-900 text-white hover:bg-gray-900 hover:text-white" : ""}`}
               title="Veckovy"
             >
               <CalendarDays className="h-4 w-4" />
@@ -107,10 +109,10 @@ export function CalendarHeader({
             </Button>
             <Button
               type="button"
-              variant={viewMode === "month" ? "default" : "ghost"}
+              variant="ghost"
               size="sm"
               onClick={() => onViewModeChange?.("month")}
-              className="h-8 px-2"
+              className={`h-8 px-2 ${viewMode === "month" ? "bg-gray-900 text-white hover:bg-gray-900 hover:text-white" : ""}`}
               title="Månadsvy"
               aria-label="Månadsvy"
             >

@@ -6,6 +6,7 @@
  */
 
 import { logger } from "@/lib/logger"
+import { isDemoMode } from "@/lib/demo-mode"
 
 interface EmailOptions {
   to: string
@@ -38,6 +39,22 @@ class EmailService {
   }
 
   async send(options: EmailOptions): Promise<SendResult> {
+    // Demo-mode guard: block all outbound email when the app runs as a public
+    // demo. Seed data uses realistic-looking addresses (gmail, hotmail, …) so
+    // sending would deliver to real MX records. Returns mock success so UI
+    // flows continue to look normal.
+    if (isDemoMode()) {
+      logger.info("[DEMO_EMAIL_BLOCKED]", {
+        to: options.to,
+        subject: options.subject,
+        from: this.fromEmail,
+      })
+      return {
+        success: true,
+        messageId: `demo-blocked-${Date.now()}`,
+      }
+    }
+
     // Log all emails in development or when not configured
     logger.info("=== EMAIL ===")
     logger.info("Email details", { to: options.to, subject: options.subject, from: this.fromEmail })

@@ -21,6 +21,8 @@ import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 import { clientLogger } from "@/lib/client-logger"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 
 interface RouteStop {
   id: string
@@ -53,15 +55,23 @@ interface Announcement {
 export default function ProviderAnnouncementsPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
+  const demoFlag = useFeatureFlag("demo_mode")
+  const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [cancelId, setCancelId] = useState<string | null>(null)
   const { guardMutation } = useOfflineGuard()
 
   useEffect(() => {
-    if (isProvider) {
+    if (demo) {
+      router.replace("/provider/profile")
+    }
+  }, [demo, router])
+
+  useEffect(() => {
+    if (isProvider && !demo) {
       fetchAnnouncements()
     }
-  }, [isProvider])
+  }, [isProvider, demo])
 
   const fetchAnnouncements = async () => {
     try {
@@ -137,6 +147,8 @@ export default function ProviderAnnouncementsPage() {
         return status
     }
   }
+
+  if (demo) return null
 
   if (isLoading || !isProvider) {
     return (

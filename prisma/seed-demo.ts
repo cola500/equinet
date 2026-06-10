@@ -1,5 +1,15 @@
 /**
- * Demo seed script -- creates realistic data for demo mode.
+ * LEGACY / LOCAL-ONLY demo seed.
+ *
+ * NOT the canonical demo source. The canonical demo data (local + staging) lives
+ * in `scripts/seed-demo-provider.ts` — it creates the demo personas used by the
+ * login buttons (provider erik.jarnfot@demo.equinet.se, customer
+ * lisa.andersson@gmail.com) and is what `seed-staging-demo.sh` runs on staging.
+ *
+ * This script seeds a DIFFERENT set of personas (provider@example.com +
+ * anna/erik/sofia@demo.equinet.se) and is kept only for older local flows.
+ * Do NOT add new demo base data here (e.g. stables) — add it to the canonical
+ * seed so it appears on staging and stays defined in exactly one place.
  *
  * This script:
  * 1. Updates the existing provider (provider@example.com) with realistic profile data

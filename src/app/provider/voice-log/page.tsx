@@ -1,8 +1,10 @@
 "use client"
 
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { useVoiceWorkLog } from "@/hooks/useVoiceWorkLog"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -33,6 +35,14 @@ export default function VoiceLogPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
   const helpEnabled = useFeatureFlag("help_center")
+  const demoFlag = useFeatureFlag("demo_mode")
+  const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
+
+  useEffect(() => {
+    if (demo) {
+      router.replace("/provider/profile")
+    }
+  }, [demo, router])
   const {
     transcript,
     setTranscript,
@@ -55,6 +65,8 @@ export default function VoiceLogPage() {
     handleConfirm,
     handleLogNext,
   } = useVoiceWorkLog()
+
+  if (demo) return null
 
   if (isLoading || !isProvider) {
     return (

@@ -16,10 +16,6 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }))
 
-vi.mock("@/lib/feature-flags", () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
-}))
-
 const mockHorseService = {
   setStable: vi.fn(),
 }
@@ -30,7 +26,6 @@ vi.mock("@/domain/horse/HorseService", () => ({
 
 import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { Result } from "@/domain/shared"
 
 const mockAuthUser = {
@@ -53,14 +48,6 @@ describe("PATCH /api/horses/[id]/stable", () => {
     vi.clearAllMocks()
     vi.mocked(getAuthUser).mockResolvedValue(mockAuthUser)
     vi.mocked(rateLimiters.api).mockResolvedValue(true)
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
-  })
-
-  it("returns 404 when feature flag is disabled", async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValueOnce(false)
-    const res = await PATCH(makeRequest({ stableId: "s1" }), routeContext)
-    expect(res.status).toBe(404)
-    expect(isFeatureEnabled).toHaveBeenCalledWith("stable_profiles")
   })
 
   it("returns 429 when rate limited", async () => {

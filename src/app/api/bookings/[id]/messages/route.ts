@@ -15,6 +15,8 @@ const sendMessageSchema = z.object({
   content: z.string().trim().min(1).max(2000),
 }).strict()
 
+const bookingIdSchema = z.string().uuid()
+
 const listQuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
@@ -40,6 +42,11 @@ export async function POST(
     // 2. Feature flag (before rate limiting to avoid consuming tokens when disabled)
     if (!(await isFeatureEnabled('messaging'))) {
       return NextResponse.json({ error: 'Ej tillgänglig' }, { status: 404 })
+    }
+
+    // 3B.2: reject non-UUID bookingId before DB/storage/service work
+    if (!bookingIdSchema.safeParse(bookingId).success) {
+      return NextResponse.json({ error: 'Ogiltigt bookingId' }, { status: 400 })
     }
 
     // 3. Rate limiting per user (before body parse)
@@ -156,6 +163,11 @@ export async function GET(
     // 2. Feature flag
     if (!(await isFeatureEnabled('messaging'))) {
       return NextResponse.json({ error: 'Ej tillgänglig' }, { status: 404 })
+    }
+
+    // 3B.2: reject non-UUID bookingId before DB/storage/service work
+    if (!bookingIdSchema.safeParse(bookingId).success) {
+      return NextResponse.json({ error: 'Ogiltigt bookingId' }, { status: 400 })
     }
 
     // 3. Rate limiting per user

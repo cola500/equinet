@@ -14,6 +14,7 @@ vi.mock("@/lib/prisma", () => ({
       upsert: vi.fn(),
       deleteMany: vi.fn(),
       count: vi.fn().mockResolvedValue(0),
+      findUnique: vi.fn().mockResolvedValue(null),
     },
   },
 }))
@@ -98,6 +99,74 @@ describe("POST /api/push-subscriptions", () => {
         where: { endpoint: validSubscription.endpoint },
       })
     )
+  })
+})
+
+// C4 invariant: endpoint ownership cannot be hijacked via upsert.
+// If the endpoint already belongs to another user, the request must fail
+// closed (409) instead of silently re-pointing the row.
+describe("POST /api/push-subscriptions — C4 endpoint-ownership invariant", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("user A registering a fresh endpoint succeeds (201)", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: "user-A", userType: "customer" },
+    } as never)
+    vi.mocked(prisma.pushSubscription.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.pushSubscription.upsert).mockResolvedValueOnce({
+      id: "ps-1",
+      endpoint: validSubscription.endpoint,
+      createdAt: new Date(),
+    } as never)
+
+    const response = await POST(makeRequest("POST", validSubscription))
+    expect(response.status).toBe(201)
+    expect(prisma.pushSubscription.upsert).toHaveBeenCalled()
+  })
+
+  it("user B registering an endpoint already owned by user A fails (409)", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: "user-B", userType: "customer" },
+    } as never)
+    vi.mocked(prisma.pushSubscription.findUnique).mockResolvedValueOnce({
+      id: "ps-1",
+      userId: "user-A",
+      endpoint: validSubscription.endpoint,
+      p256dh: "x",
+      auth: "y",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as never)
+
+    const response = await POST(makeRequest("POST", validSubscription))
+    expect(response.status).toBe(409)
+    expect(prisma.pushSubscription.upsert).not.toHaveBeenCalled()
+  })
+
+  it("user A re-registering their own endpoint succeeds (idempotent refresh, 201)", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: "user-A", userType: "customer" },
+    } as never)
+    vi.mocked(prisma.pushSubscription.findUnique).mockResolvedValueOnce({
+      id: "ps-1",
+      userId: "user-A",
+      endpoint: validSubscription.endpoint,
+      p256dh: "old",
+      auth: "old",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as never)
+    vi.mocked(prisma.pushSubscription.upsert).mockResolvedValueOnce({
+      id: "ps-1",
+      endpoint: validSubscription.endpoint,
+      createdAt: new Date(),
+    } as never)
+
+    const response = await POST(makeRequest("POST", validSubscription))
+    expect(response.status).toBe(201)
+    expect(prisma.pushSubscription.upsert).toHaveBeenCalled()
   })
 })
 

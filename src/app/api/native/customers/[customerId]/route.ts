@@ -10,6 +10,7 @@ import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
+import { isDemoMode } from "@/lib/demo-mode"
 
 const updateCustomerSchema = z.object({
   firstName: z.string().min(1).max(100),
@@ -91,7 +92,20 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       )
     }
 
-    // 7. Update
+    // 7. C1 defense-in-depth: refuse to mutate registered users even if a
+    // stale ProviderCustomer link was created before C1.1. See fixes.txt C1.
+    const target = await prisma.user.findUnique({
+      where: { id: customerId },
+      select: { isManualCustomer: true },
+    })
+    if (!target?.isManualCustomer) {
+      return NextResponse.json(
+        { error: "Registrerade användare kan inte ändras härifrån" },
+        { status: 403 }
+      )
+    }
+
+    // 8. Update
     const validated = parseResult.data
     const updated = await prisma.user.update({
       where: { id: customerId },
@@ -135,7 +149,21 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
-    // 2. Rate limiting
+    // 2. Demo-mode guard: block destructive operations on seed data
+    if (isDemoMode()) {
+      const { customerId } = await context.params
+      logger.info("[DEMO_DELETE_BLOCKED]", {
+        userId: authUser.id,
+        customerId,
+        action: "delete-customer",
+      })
+      return NextResponse.json(
+        { error: "Borttagning är inaktiverad i demoläge" },
+        { status: 403 }
+      )
+    }
+
+    // 3. Rate limiting
     try {
       const clientIP = getClientIP(request)
       const isAllowed = await rateLimiters.api(clientIP)

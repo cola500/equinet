@@ -8,6 +8,8 @@ import { MessageSquare } from "lucide-react"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
+import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
+import { isDemoModeWithFlags } from "@/lib/demo-mode"
 
 function formatMessageTime(dateStr: string): string {
   const date = new Date(dateStr)
@@ -37,13 +39,14 @@ export default function ProviderMessagesPage() {
     "/api/provider/conversations",
     { refreshInterval: 30000 }
   )
+  const demo = isDemoModeWithFlags(useFeatureFlags())
 
   const items = data?.items ?? []
 
   return (
     <ProviderLayout>
-      <div className="container mx-auto px-4 py-6 max-w-2xl">
-        <h1 className="text-2xl font-bold mb-6">Meddelanden</h1>
+      <div className="max-w-2xl">
+        <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Meddelanden</h1>
 
         {error && (
           <p className="text-sm text-red-600 mb-4">
@@ -59,7 +62,9 @@ export default function ProviderMessagesPage() {
           <EmptyState
             icon={MessageSquare}
             title="Inga meddelanden"
-            description="Inga aktiva konversationer just nu."
+            description={demo
+              ? "Inga aktiva konversationer just nu — kundmeddelanden om en bokning dyker upp här."
+              : "Inga aktiva konversationer just nu."}
           />
         )}
 

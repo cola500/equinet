@@ -35,6 +35,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     booking: {
       findMany: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
     },
     service: {
       findUnique: vi.fn(),
@@ -42,6 +43,9 @@ vi.mock('@/lib/prisma', () => ({
     user: {
       findUnique: vi.fn(),
       create: vi.fn(),
+    },
+    providerCustomer: {
+      findUnique: vi.fn().mockResolvedValue({ id: 'link-1' }),
     },
     notification: {
       create: vi.fn(),
@@ -456,5 +460,71 @@ describe('POST /api/bookings/manual', () => {
     expect(response.status).toBe(503)
     const data = await response.json()
     expect(data.error).toContain('tillfälligt')
+  })
+
+  // C2 invariants: customerId must belong to a providerCustomer link OR an
+  // isManualCustomer user. The default test mock returns a link, so most
+  // existing happy-path tests keep passing. These two cases pin the rejection
+  // path explicitly. See fixes.txt C2.
+  describe('C2 customer-link invariant', () => {
+    it('M1: returns 403 when customerId is not linked and not isManualCustomer', async () => {
+      // Override default mocks so customer is neither linked nor manual
+      vi.mocked(prisma.providerCustomer.findUnique).mockResolvedValueOnce(null)
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+        id: TEST_UUIDS.customer,
+        isManualCustomer: false,
+      } as never)
+
+      const request = makeRequest({
+        serviceId: TEST_UUIDS.service,
+        bookingDate: FUTURE_DATE_STR,
+        startTime: '10:00',
+        customerId: TEST_UUIDS.customer,
+      })
+
+      const response = await POST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(403)
+      expect(data.error).toMatch(/inte registrerad/i)
+    })
+
+    it('M2: allows manual booking when customerId belongs to an isManualCustomer user (no link required)', async () => {
+      // No link, but user is isManualCustomer — should still succeed
+      vi.mocked(prisma.providerCustomer.findUnique).mockResolvedValueOnce(null)
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+        id: TEST_UUIDS.customer,
+        isManualCustomer: true,
+      } as never)
+      const mockBooking = {
+        id: TEST_UUIDS.booking,
+        customerId: TEST_UUIDS.customer,
+        providerId: TEST_UUIDS.provider,
+        status: 'confirmed',
+        isManualBooking: true,
+        customer: { firstName: 'Anna', lastName: 'Manual' },
+        service: { name: 'X', price: 100, durationMinutes: 60 },
+      }
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+        const tx = {
+          booking: {
+            findFirst: vi.fn().mockResolvedValue(null),
+            findMany: vi.fn().mockResolvedValue([]),
+            create: vi.fn().mockResolvedValue(mockBooking),
+          },
+        }
+        return await callback(tx)
+      })
+
+      const request = makeRequest({
+        serviceId: TEST_UUIDS.service,
+        bookingDate: FUTURE_DATE_STR,
+        startTime: '10:00',
+        customerId: TEST_UUIDS.customer,
+      })
+
+      const response = await POST(request)
+      expect(response.status).toBe(201)
+    })
   })
 })

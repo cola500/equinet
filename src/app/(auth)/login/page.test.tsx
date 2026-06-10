@@ -85,6 +85,29 @@ describe("Login Page", () => {
       expect(screen.queryByText("Registrera dig här")).not.toBeInTheDocument()
       expect(screen.queryByText("Glömt lösenord?")).not.toBeInTheDocument()
     })
+
+    it("shows both demo login buttons in demo mode", () => {
+      mockIsDemoMode.mockReturnValue(true)
+      renderLogin()
+
+      expect(
+        screen.getByRole("button", { name: /demo som hästägare/i })
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole("button", { name: /demo som leverantör/i })
+      ).toBeInTheDocument()
+    })
+
+    it("hides demo login buttons when not in demo mode", () => {
+      renderLogin()
+
+      expect(
+        screen.queryByRole("button", { name: /demo som hästägare/i })
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole("button", { name: /demo som leverantör/i })
+      ).not.toBeInTheDocument()
+    })
   })
 
   describe("Successful login", () => {
@@ -145,6 +168,47 @@ describe("Login Page", () => {
 
       await waitFor(() => {
         expect(mockPush).toHaveBeenCalledWith("/provider/calendar")
+      })
+    })
+
+    it("redirects to /dashboard in demo mode when no callbackUrl", async () => {
+      // Login must not hardcode a role-specific demo redirect. /dashboard
+      // routes per userType (demo provider → calendar, customer → /hem).
+      mockIsDemoMode.mockReturnValue(true)
+      mockSignInWithPassword.mockResolvedValue({
+        data: { user: { id: "u1" }, session: { access_token: "tok" } },
+        error: null,
+      })
+
+      renderLogin()
+      const user = userEvent.setup()
+
+      await user.type(screen.getByLabelText("Email"), "erik.jarnfot@demo.equinet.se")
+      await user.type(screen.getByLabelText("Lösenord"), "DemoProvider123!")
+      await user.click(screen.getByRole("button", { name: "Logga in" }))
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith("/dashboard")
+      })
+    })
+
+    it("demo mode still honors a valid callbackUrl over the dashboard default", async () => {
+      mockIsDemoMode.mockReturnValue(true)
+      mockSearchParams = new URLSearchParams("callbackUrl=/provider/bookings")
+      mockSignInWithPassword.mockResolvedValue({
+        data: { user: { id: "u1" }, session: { access_token: "tok" } },
+        error: null,
+      })
+
+      renderLogin()
+      const user = userEvent.setup()
+
+      await user.type(screen.getByLabelText("Email"), "erik.jarnfot@demo.equinet.se")
+      await user.type(screen.getByLabelText("Lösenord"), "DemoProvider123!")
+      await user.click(screen.getByRole("button", { name: "Logga in" }))
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith("/provider/bookings")
       })
     })
 

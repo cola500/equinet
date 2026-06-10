@@ -16,7 +16,7 @@ const setStableSchema = z
 // PATCH - Set or remove stable link for a horse
 export async function PATCH(request: NextRequest, context: RouteContext) {
   return withApiHandler(
-    { auth: "any", schema: setStableSchema, featureFlag: "stable_profiles" },
+    { auth: "any", schema: setStableSchema },
     async ({ user, body }) => {
       const { id } = await context.params
 

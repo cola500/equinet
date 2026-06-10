@@ -29,6 +29,34 @@ interface UploadError {
 
 let supabaseClient: SupabaseClient | null = null
 
+// Test-only: reset the module-level Supabase client cache so unit tests
+// can exercise getSupabase() with different env configurations.
+// Production code never calls this.
+export function _resetSupabaseClientForTesting(): void {
+  supabaseClient = null
+}
+
+/**
+ * Defense-in-depth guard against path traversal in storage paths.
+ * Callers should always derive `fileName` from server-controlled data
+ * (entity IDs, timestamps, MIME-mapped extensions), but this helper
+ * provides a fail-loud check in case a user-controlled value slips through.
+ */
+export function assertSafeStorageFileName(fileName: string): void {
+  if (
+    typeof fileName !== "string" ||
+    fileName.length === 0 ||
+    fileName.length > 255 ||
+    fileName.startsWith(".") ||
+    fileName.includes("/") ||
+    fileName.includes("\\") ||
+    fileName.includes("..") ||
+    fileName.includes("\x00")
+  ) {
+    throw new Error("INVALID_FILENAME")
+  }
+}
+
 function getSupabase(): SupabaseClient | null {
   if (supabaseClient) return supabaseClient
 
@@ -36,6 +64,18 @@ function getSupabase(): SupabaseClient | null {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!url || !key) {
+    // 3A.fu.6: serverless filesystem is ephemeral and the dev fallback silently
+    // loses data. Fail loud in production-like environments so deploy misconfig
+    // surfaces immediately instead of as silent 200 with broken URLs.
+    const isProdLike =
+      process.env.NODE_ENV === "production" ||
+      process.env.VERCEL_ENV === "production" ||
+      process.env.VERCEL_ENV === "preview"
+    if (isProdLike) {
+      throw new Error(
+        "Supabase storage not configured. Required env vars: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY."
+      )
+    }
     return null
   }
 
@@ -77,6 +117,7 @@ export async function uploadFile(
   fileName: string,
   mimeType: string
 ): Promise<{ data?: UploadResult; error?: UploadError }> {
+  assertSafeStorageFileName(fileName)
   const supabase = getSupabase()
 
   if (!supabase) {
@@ -260,7 +301,9 @@ export async function uploadMessageAttachment(
   mimeType: string
 ): Promise<string> {
   const ext = MIME_TO_EXT[mimeType] ?? 'jpg'
-  const path = `${bookingId}/${messageId}.${ext}`
+  const leaf = `${messageId}.${ext}`
+  assertSafeStorageFileName(leaf)
+  const path = `${bookingId}/${leaf}`
   const supabase = getSupabase()
 
   if (!supabase) {

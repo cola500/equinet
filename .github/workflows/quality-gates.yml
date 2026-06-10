@@ -2,9 +2,9 @@ name: Quality Gates
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, staging]
   push:
-    branches: [main]
+    branches: [main, staging]
 
 jobs:
   # Unit tests with coverage enforcement
@@ -49,8 +49,11 @@ jobs:
         run: npx vitest run --coverage
 
   # E2E tests -- uses Supabase local dev for real auth
+  # Tungt Playwright-jobb: kör bara mot main. Hoppas över på staging-PR:er för
+  # snabb feedback (unit/typecheck/lint/build räcker som gate på staging).
   e2e-tests:
     name: E2E Tests
+    if: github.base_ref == 'main' || github.ref_name == 'main'
     runs-on: ubuntu-latest
     env:
       # Dummy URL for prisma generate during npm ci (overridden after supabase start)
@@ -136,8 +139,10 @@ jobs:
         run: npx supabase stop
 
   # Offline E2E smoke -- production build with Service Worker on port 3001
+  # Tungt Playwright-jobb: kör bara mot main, hoppas över på staging-PR:er.
   offline-smoke:
     name: Offline E2E Smoke
+    if: github.base_ref == 'main' || github.ref_name == 'main'
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:54322/postgres
@@ -226,20 +231,9 @@ jobs:
   type-check:
     name: TypeScript Check
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: equinet_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    # No postgres service: tsc and `prisma generate` never connect to a database
+    # (generate only reads the schema). DATABASE_URL is kept so the env-backed
+    # datasource resolves during generate.
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
       DIRECT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
@@ -267,20 +261,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: equinet_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    # No postgres service: eslint + check:swedish never connect to a database.
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
       DIRECT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/equinet_test
@@ -430,11 +411,12 @@ jobs:
             echo "❌ Unit tests failed"
             exit 1
           fi
-          if [[ "${{ needs.e2e-tests.result }}" != "success" ]]; then
+          # E2E + offline-smoke hoppas över på staging-PR:er (skipped = OK där).
+          if [[ "${{ needs.e2e-tests.result }}" != "success" && "${{ needs.e2e-tests.result }}" != "skipped" ]]; then
             echo "❌ E2E tests failed"
             exit 1
           fi
-          if [[ "${{ needs.offline-smoke.result }}" != "success" ]]; then
+          if [[ "${{ needs.offline-smoke.result }}" != "success" && "${{ needs.offline-smoke.result }}" != "skipped" ]]; then
             echo "❌ Offline E2E smoke failed"
             exit 1
           fi

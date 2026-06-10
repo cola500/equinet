@@ -140,6 +140,8 @@ npm run dev              # Starta utvecklingsserver
 - **Kund**: test@example.com / TestPassword123!
 - **Provider**: provider@example.com / ProviderPass123!
 
+**Demo-leverantör (för demo-läge):** kör `npm run db:seed:demo-provider` (eller `:reset`) för att skapa Erik Järnfot — `erik.jarnfot@demo.equinet.se` / `DemoProvider123!` med 9 kunder, koordinater och en flerstopps-dag för Dagens rutt. Se [docs/operations/demo-setup.md](docs/operations/demo-setup.md).
+
 ## Viktiga Kommandon
 
 Se `package.json` för alla tillgängliga scripts. De vanligaste:
@@ -174,12 +176,10 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - Pre-commit: Swedish character check + TypeScript (om .ts/.tsx staged)
 - Pre-push: Swedish character check + Unit tests + TypeScript + Lint
 
-**CI Gate (GitHub Actions):**
-- Unit Tests & Coverage
-- E2E Tests
-- Offline E2E Smoke (prod-build + Serwist SW)
-- TypeScript Check
-- Build Check
+**CI Gate (GitHub Actions, `quality-gates.yml`):** körs på PR mot **både `main` och `staging`**.
+- Unit Tests & Coverage, TypeScript Check, Lint, Build Check, Security Audit, Migration From Scratch -- på alla PR
+- **E2E Tests + Offline E2E Smoke** (prod-build + Serwist SW) -- körs **bara mot `main`**, hoppas över på staging-PR:er för snabb feedback
+- `type-check` och `lint` kör utan postgres-service (de ansluter aldrig till en databas)
 
 **Branch Protection:** Kräver PR för merge till main, CI måste passera. Ingen force push tillåten.
 
@@ -192,7 +192,7 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - **Databas**: PostgreSQL (Supabase) via Prisma ORM
 - **Autentisering**: Supabase Auth (managed, med Custom Access Token Hook)
 - **Validering**: Zod + React Hook Form
-- **Testning**: Vitest (4327 unit/integration) + Playwright (22 E2E-specs) + 312 iOS XCTest = 70% coverage
+- **Testning**: Vitest (~4612 unit/integration) + Playwright (22 E2E-specs) + 312 iOS XCTest = 70% coverage
 - **CI/CD**: GitHub Actions (quality gates, E2E tests)
 - **Caching/Flaggor**: Upstash Redis (feature flags, rate limiting)
 - **Grafer**: Recharts (dashboard- och insiktsgrafer)
@@ -278,6 +278,7 @@ Se [CLAUDE.md](./CLAUDE.md) för fullständiga arkitekturriktlinjer.
 - Snabbsvar i leverantörens meddelande-tråd (feature flag `smart_replies`, default off)
 
 ### Leverantörsverktyg
+- Dagens rutt (`/provider/today`) -- dagens bokningar som en rutt på karta, riktig körsträcka (OSRM), full adress och Navigera-länk per stopp
 - Ruttplanering med kartvy, optimering, Google Maps-navigation och geolokalisering
 - Ruttannonsering med kundvy (tjänstefilter, datumavgränsning, HorseSelect, "Via rutt"-badge)
 - Kundregister med manuell kundregistrering, inbjudan och kontoslagning, och privata anteckningar (CRUD)
@@ -341,7 +342,7 @@ Se [docs/guides/feature-docs.md](docs/guides/feature-docs.md) för detaljerade b
 
 ## Testning
 
-**4661+ tester** (4327 Vitest unit/integration + 312 iOS XCTest + 22 E2E-specs) med **70% coverage**.
+**~4946 tester** (~4612 Vitest unit/integration + 312 iOS XCTest + 22 E2E-specs) med **70% coverage**.
 
 ### Kör Tester
 
