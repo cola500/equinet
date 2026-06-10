@@ -27,9 +27,9 @@ sections:
 > **PLAN — ingen prod-env ändras, ingen deploy, ingen seed, ingen flaggändring** förrän §4
 > Go/No-Go är grön och Johan ger explicit klartecken. Förutsätter A (klar) + B (klar).
 >
-> **2026-06-10:** prod-env auditerad via `npm run audit:prod-env:safe`. **3 blockerare hittade**
-> (DATABASE_URL EMPTY, PAYMENT_PROVIDER=stripe, DIRECT_DATABASE_URL EMPTY) + 1 hygien. Se
-> [§6 audit](#6-c-env-audit-2026-06-10) + [§7 åtgärdsrunbook](#7-rest-api-åtgärdsrunbook). Inga ändringar gjorda.
+> **2026-06-10:** prod-env auditerad + **åtgärdad** (hybrid: Johan skrev i Vercel, agent verifierade).
+> 3 blockerare lösta (DATABASE_URL/DIRECT_DATABASE_URL satta, PAYMENT_PROVIDER→mock via split) + demo-hygien.
+> Se [§6 audit + utfall](#6-c-env-audit-2026-06-10). Kvar: rebuild i Workstream E för full demo-av i klienten.
 
 ## Scope och status
 
@@ -123,25 +123,25 @@ Två syften:
 - [ ] `check-prod-env.ts` flaggar nu whitespace-only; STRIPE_WEBHOOK_SECRET villkorligt required
 - [ ] `.env.example`: korrekt Stripe-namn + nya vars närvarande; `npm run docs`/lint grönt
 
-**Efter (prod-env, grupp C) [Johan-manuellt]:**
-- [ ] `npm run audit:prod-env:safe` → `NEXT_PUBLIC_DEMO_MODE` = `FALSE`/`UNSET`
-- [ ] Alla required vars icke-tomma
-- [ ] `DISABLE_CRONS` ej `true`
+**Efter (prod-env, grupp C) [klart 2026-06-10]:**
+- [x] `npm run audit:prod-env:safe` → `NEXT_PUBLIC_DEMO_MODE` = `FALSE`
+- [x] Alla required vars icke-tomma (9/9 `SET`)
+- [x] `DISABLE_CRONS` ej `true` (UNSET)
 - [ ] (Effekt på demo_mode i klient verifieras efter rebuild i Workstream E + smoke F)
 
 ## 4. Go/No-Go — Workstream C
 
-Får STARTA när:
-- [ ] §2-ändringarna godkända av PO (kod + docs + prod-env-lista)
-- [ ] **[Johan-manuellt]** prod-env utläst (`vercel env pull`) så nuläget för `NEXT_PUBLIC_DEMO_MODE` + required vars är känt
-- [ ] Metod för prod-env-skrivning bekräftad (Vercel REST API)
-- [ ] Johan ger explicit klartecken
+Får STARTA när (uppfyllt 2026-06-10):
+- [x] §2-ändringarna godkända av PO (kod + docs + prod-env-lista)
+- [x] **[Johan-manuellt]** prod-env utläst (`npm run audit:prod-env:safe`) så nuläget för `NEXT_PUBLIC_DEMO_MODE` + required vars är känt
+- [x] Metod för prod-env-skrivning bekräftad (hybrid: UI-split + interaktiv CLI)
+- [x] Johan gav explicit klartecken
 
 Räknas KLAR när:
-- [ ] Grupp A (check-prod-env härdning) mergad (i Workstream E:s PR eller egen)
-- [ ] Grupp B (.env.example) uppdaterad
-- [ ] Grupp C: `NEXT_PUBLIC_DEMO_MODE` av i prod + required vars verifierade icke-tomma
-- [ ] Inget annat env rört av misstag; staging oförändrad
+- [x] Grupp A (check-prod-env härdning) mergad (PR #392)
+- [x] Grupp B (.env.example) uppdaterad (PR #392)
+- [x] Grupp C: `NEXT_PUBLIC_DEMO_MODE` = false i prod + required vars verifierade icke-tomma
+- [x] Inget annat env rört av misstag; dev/preview/staging-rader oförändrade
 
 > **Beroende-not:** demo_mode blir **helt** av först när C (env av) + E (rebuild bakar ut värdet) +
 > F (smoke bekräftar) är klara. C ensam är nödvändig men inte tillräcklig.
@@ -209,6 +209,36 @@ Resultat från `npm run audit:prod-env:safe` mot prod (status, **inga värden**)
 
 > **Kodtolkning verifierad:** `src/lib/demo-mode.ts` (`=== "true"`) + `src/domain/payment/PaymentGateway.ts`
 > (switch på `PAYMENT_PROVIDER`).
+
+### ✅ Utfall — åtgärder körda 2026-06-10 (hybrid: Johan skrev, agent verifierade)
+
+Alla 3 blockerare lösta + hygien klar. Verifierat per ändring via `npm run audit:prod-env:safe`.
+
+| Variabel | Före | Efter | Metod |
+|----------|------|-------|-------|
+| `PAYMENT_PROVIDER` (prod) | stripe (delad rad Dev/Preview/Prod) | **mock** | UI-split: krympte delad rad till Dev/Preview (= stripe, omtypat) + ny Production-only rad = mock |
+| `DATABASE_URL` (prod) | EMPTY | **SET** (129 tkn, pooler, `connection_limit=1`) | interaktiv CLI (`vercel env rm/add`) — UI-paste landade tomt |
+| `DIRECT_DATABASE_URL` (prod) | EMPTY | **SET** (87 tkn, direct, utan pgbouncer) | interaktiv CLI |
+| `NEXT_PUBLIC_DEMO_MODE` (prod) | OTHER | **FALSE** | interaktiv CLI |
+
+**Verifierat oförändrat:** Dev/Preview `PAYMENT_PROVIDER` = stripe; Preview/staging `DATABASE_URL`/
+`DIRECT_DATABASE_URL`-rader; "Preview (staging)" `NEXT_PUBLIC_DEMO_MODE` = true.
+
+**Slutverifiering:** alla 9 required = `SET`, `PAYMENT_PROVIDER` = mock (Stripe-block hoppas över →
+bygget ej längre blockerat), `NEXT_PUBLIC_DEMO_MODE` = FALSE, `DISABLE_CRONS`/`STAGING_PROJECT` = UNSET.
+
+**Lärdomar:**
+- **UI-paste-buggen är reell** för krypterade/sensitive vars i Vercel UI (53.1.1) — även "Add New",
+  inte bara "Edit". `DATABASE_URL` sparades tomt via UI; **interaktiv `vercel env add` löste det**
+  (till skillnad från `--value`/stdin som också sparar tomt). Detta är troligen varför DB-URL:erna
+  var tomma från början.
+- **Delad rad-split:** `PAYMENT_PROVIDER` krävde split via UI (omtypat icke-hemligt värde `stripe`
+  för att inte blanka Dev/Preview). Fungerade.
+- **`vercel env rm <var> production`** på Production-only-rader tog bara Production (inte de separata
+  Preview-/staging-raderna) — rm-delad-rad-faran gäller bara genuint delade rader.
+
+**Kvarstår för full demo-av i klienten:** `NEXT_PUBLIC_DEMO_MODE` är build-time → bakas in vid nästa
+**rebuild/redeploy (Workstream E)**. Env är nu korrekt (`false`); effekten syns efter E.
 
 ## 7. REST API-åtgärdsrunbook
 

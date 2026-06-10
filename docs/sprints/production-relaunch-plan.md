@@ -200,8 +200,10 @@ Checklista:
 > **Detaljerad körbar plan:** [production-env-guard-plan.md](production-env-guard-plan.md)
 > (NEXT_PUBLIC_DEMO_MODE-slutförande, check-prod-env-härdning, .env.example-fix, docs/kod vs prod-env, Go/No-Go).
 >
-> **Status 2026-06-10:** repo-delen (kod + .env.example) levererad i **PR #392** (ej mergad),
-> inkl. **löst parity-deploy-blocker** (val A: STRIPE_SECRET_KEY + publishable villkorliga).
+> **✅ GENOMFÖRD OCH GRÖN 2026-06-10:** repo-delen mergad (PR #392, inkl. löst Stripe-blocker, val A).
+> Prod-env åtgärdad (hybrid): `DATABASE_URL`/`DIRECT_DATABASE_URL` satta, `PAYMENT_PROVIDER`→mock (split,
+> dev/preview oförändrade), `NEXT_PUBLIC_DEMO_MODE`→false. Alla 9 required `SET`. Utfall i
+> [env-guard-planen §6 Utfall](production-env-guard-plan.md#6-c-env-audit-2026-06-10). Kvar: rebuild i E för full demo-av.
 
 - [x] Lägg till `STRIPE_WEBHOOK_SECRET` (villkorligt, `PAYMENT_PROVIDER=stripe`) — **PR #392**
 - [x] Lägg till **non-empty/trim-validering** (whitespace-only fångas nu) — **PR #392**
