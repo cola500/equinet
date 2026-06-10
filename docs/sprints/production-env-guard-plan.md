@@ -17,13 +17,19 @@ sections:
   - 3. Verifiering före/efter
   - 4. Go/No-Go — Workstream C
   - 5. Docs/kod vs faktisk prod-env
+  - 6. C-env audit 2026-06-10
+  - 7. REST API-åtgärdsrunbook
 ---
 
 # Production Env Guard / Env Docs-plan (Workstream C)
 
 > Detaljering av **Workstream C** i [Production Parity-planen](production-relaunch-plan.md).
 > **PLAN — ingen prod-env ändras, ingen deploy, ingen seed, ingen flaggändring** förrän §4
-> Go/No-Go är grön och Johan ger explicit klartecken. Förutsätter A (klar) + B (planerad).
+> Go/No-Go är grön och Johan ger explicit klartecken. Förutsätter A (klar) + B (klar).
+>
+> **2026-06-10:** prod-env auditerad via `npm run audit:prod-env:safe`. **3 blockerare hittade**
+> (DATABASE_URL EMPTY, PAYMENT_PROVIDER=stripe, DIRECT_DATABASE_URL EMPTY) + 1 hygien. Se
+> [§6 audit](#6-c-env-audit-2026-06-10) + [§7 åtgärdsrunbook](#7-rest-api-åtgärdsrunbook). Inga ändringar gjorda.
 
 ## Scope och status
 
@@ -173,3 +179,97 @@ Var-listorna importeras från `check-prod-env.ts` så de aldrig driftar isär.
 
 Skrivningar (`NEXT_PUBLIC_DEMO_MODE`, ev. saknade vars) görs av Johan via Vercel REST API eller
 dashboard — jag tar fram exakta anrop/värden på begäran, men kör dem inte.
+
+## 6. C-env audit 2026-06-10
+
+Resultat från `npm run audit:prod-env:safe` mot prod (status, **inga värden**):
+
+### 🔴 Blockerare för parity-deploy
+
+| # | Variabel | Status | Konsekvens | Åtgärd |
+|---|----------|--------|-----------|--------|
+| 1 | `DATABASE_URL` | **EMPTY** | Prod-app kan **inte ansluta till DB** vid runtime; hardenade guarden failar bygget (tom = saknad) | Sätt prod-pooler-sträng (secret) |
+| 2 | `PAYMENT_PROVIDER` | **stripe** | (a) Riktig Stripe-gateway aktiv (emot parity); (b) guarden kräver då `STRIPE_WEBHOOK_SECRET` = **MISSING** → bygget failar | Sätt **`mock`** (löser båda) |
+| 3 | `DIRECT_DATABASE_URL` | **EMPTY** | Behövs för Prisma-migrationer mot prod | Sätt prod direct-sträng (secret) |
+
+### 🟡 Hygien (ej blocker)
+
+| # | Variabel | Status | Not | Åtgärd |
+|---|----------|--------|-----|--------|
+| 4 | `NEXT_PUBLIC_DEMO_MODE` | **OTHER** | Demo är **redan av** — `isDemoMode()` = `NEXT_PUBLIC_DEMO_MODE === "true"` (strikt), och DB-flaggan är false | Sätt `false` eller ta bort (tydlighet) |
+
+### 🟢 Ingen åtgärd
+`STRIPE_WEBHOOK_SECRET` = MISSING krävs **endast** för att `PAYMENT_PROVIDER=stripe`. När #2 → `mock`
+är den inte längre required (hör till Workstream D / Stripe Live).
+
+### ✅ OK
+`APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
+`RESEND_API_KEY`, `FROM_EMAIL`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` = `SET`.
+`DISABLE_CRONS` = UNSET (bra). `STAGING_PROJECT` = UNSET (korrekt — prod är inte staging).
+
+> **Kodtolkning verifierad:** `src/lib/demo-mode.ts` (`=== "true"`) + `src/domain/payment/PaymentGateway.ts`
+> (switch på `PAYMENT_PROVIDER`).
+
+## 7. REST API-åtgärdsrunbook
+
+> **Instruktioner — körs av Johan, INTE nu. Paus före varje riktig ändring.** Inga secrets i detta
+> dokument. Per projektregel: Vercel **REST API** (`type:"plain"` config / `"encrypted"` secret),
+> aldrig CLI `--value`/stdin; **delade rader splittas via UI**, inte API-delete.
+> Variabler: `$VERCEL_TOKEN` (Vercel-token), `$PID` = prod-projektet (`equinet-app`, eller dess ID).
+
+### Steg 0 — Discovery (read-only, inga värden)
+Identifiera varje vars `id`, `type` och `target` (avslöjar **delade rader**):
+```bash
+curl -s "https://api.vercel.com/v9/projects/$PID/env" -H "Authorization: Bearer $VERCEL_TOKEN" \
+ | jq -r '.envs[] | select(.key|IN("PAYMENT_PROVIDER","DATABASE_URL","DIRECT_DATABASE_URL","NEXT_PUBLIC_DEMO_MODE"))
+          | "\(.key)\t\(.id)\t\(.type)\t\(.target|join(","))"'
+```
+- Om `target` för en rad innehåller fler än `production` (t.ex. `production,preview,development`) =
+  **DELAD RAD** → ändra **inte** via API (det påverkar alla miljöer). **Splitta via UI Edit först**
+  (sätt prod-specifikt värde där). Detta gäller särskilt `DATABASE_URL`/`DIRECT_DATABASE_URL` (2026-05-06-incidenten).
+- Spara varje `id` (kallas `$ENV_ID` nedan).
+
+### Steg 1 — `PAYMENT_PROVIDER` → `mock` (plain, non-secret) — VIKTIGAST
+```bash
+curl -s -X PATCH "https://api.vercel.com/v9/projects/$PID/env/$ENV_ID_PAYMENT_PROVIDER" \
+  -H "Authorization: Bearer $VERCEL_TOKEN" -H "Content-Type: application/json" \
+  -d '{"value":"mock","type":"plain"}'
+```
+(Om raden inte finns: `POST "https://api.vercel.com/v10/projects/$PID/env?upsert=true"` med
+`{"key":"PAYMENT_PROVIDER","value":"mock","type":"plain","target":["production"]}`.)
+
+### Steg 2 — `DATABASE_URL` (encrypted, secret) — endast prod-target
+> Om Steg 0 visade delad rad: splitta via UI först, sätt prod-värdet där, hoppa över API-anropet.
+> Klistra **aldrig** connection-strängen i chatten. Hämta från Supabase Dashboard → Database →
+> Connection string (pooler, `&connection_limit=1`).
+```bash
+# Kör i ditt terminal — strängen syns bara där, inte i chatten:
+read -rsp 'DATABASE_URL (pooler): ' DBURL; echo
+curl -s -X PATCH "https://api.vercel.com/v9/projects/$PID/env/$ENV_ID_DATABASE_URL" \
+  -H "Authorization: Bearer $VERCEL_TOKEN" -H "Content-Type: application/json" \
+  -d "$(jq -nc --arg v "$DBURL" '{value:$v,type:"encrypted"}')"; unset DBURL
+```
+
+### Steg 3 — `DIRECT_DATABASE_URL` (encrypted, secret) — direct connection, utan pgbouncer
+Samma mönster som Steg 2 (`read -rsp` + PATCH med `$ENV_ID_DIRECT_DATABASE_URL`). Splitta delad rad via UI vid behov.
+
+### Steg 4 — `NEXT_PUBLIC_DEMO_MODE` → `false` (plain) eller ta bort (hygien)
+```bash
+# Sätt false:
+curl -s -X PATCH "https://api.vercel.com/v9/projects/$PID/env/$ENV_ID_DEMO_MODE" \
+  -H "Authorization: Bearer $VERCEL_TOKEN" -H "Content-Type: application/json" \
+  -d '{"value":"false","type":"plain"}'
+# ELLER ta bort helt:
+# curl -s -X DELETE "https://api.vercel.com/v9/projects/$PID/env/$ENV_ID_DEMO_MODE" -H "Authorization: Bearer $VERCEL_TOKEN"
+```
+
+### Efter ändringarna — verifiera (read-only)
+```bash
+npm run audit:prod-env:safe
+```
+Förvänta: `DATABASE_URL`/`DIRECT_DATABASE_URL` = `SET`, `PAYMENT_PROVIDER` = `mock`,
+`NEXT_PUBLIC_DEMO_MODE` = `FALSE`/`UNSET`, Stripe-blocket **hoppas över**. Full klient-effekt på
+demo-läget syns först efter **rebuild/redeploy (Workstream E)**.
+
+> **Paus-regel:** kör ett steg i taget, verifiera med audit-scriptet mellan, och rapportera
+> status (inte värden) — inget annat env rörs, ingen deploy.
