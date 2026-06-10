@@ -1,15 +1,17 @@
 ---
-title: Production Relaunch / Parity-plan
-description: Handlingsbar sprintplan/checklista för att lyfta production till staging-paritet kontrollerat, baserad på Production Gap Audit 2026-06-09. Ingen implementation förrän PO-godkännande.
+title: Production Parity-plan (tidigare "Relaunch")
+description: Handlingsbar sprintplan/checklista för att lyfta production till staging-paritet (deploybar, schema/kod/feature/env-paritet, smoke-testad) — INTE publik lansering. Baserad på Production Gap Audit 2026-06-09, PO-beslut 2026-06-10.
 category: sprint
 status: draft
-last_updated: 2026-06-09
-tags: [production, relaunch, parity, migration, feature-flags, stripe, deploy]
+last_updated: 2026-06-10
+tags: [production, parity, relaunch, migration, feature-flags, stripe, deploy]
 related:
   - docs/ux/visual-audit/stall-route-provider/README.md
   - docs/architecture/payment-production-readiness.md
   - docs/operations/incident-runbook.md
 sections:
+  - Fas 0 – Strategiskt beslut
+  - Production Goal
   - Bakgrund
   - 1. Sprintmål
   - 2. Viktiga beslut före start
@@ -19,12 +21,52 @@ sections:
   - 6. Out of scope
 ---
 
-# Production Relaunch / Parity-plan
+# Production Parity-plan (tidigare "Relaunch")
 
 > **Status: PLAN — ingen implementation påbörjad.** Detta dokument gör Production Gap
 > Audit (2026-06-09) handlingsbart som en avbockbar checklista. Inga ändringar i
-> prod/staging, ingen deploy, migration eller seed sker förrän besluten i §2 är tagna
-> och Go/No-Go (§5) är grön.
+> prod/staging, ingen deploy, migration eller seed sker förrän Go/No-Go (§5) är grön.
+>
+> **2026-06-10:** PO-beslut omdefinierar målet från *publik relansering* till
+> **production parity** (se Fas 0 + Production Goal). Titeln behåller "Relaunch" inom
+> citat för historik; fokus är nu paritet, inte lansering.
+
+## Fas 0 – Strategiskt beslut
+
+Beslut fattat 2026-06-10 (PO):
+
+- [x] Målet är **production parity**.
+- [x] **Inte** publik lansering.
+- [x] **Stripe Live senare** (ingår inte i denna sprint).
+- [x] **Staging fortsätter vara demo-/testmiljö.**
+
+Konsekvens: prod-data bedöms vara gammal test-/demo-data utan känt affärsvärde (normal
+försiktighet gäller ändå). Detta beslut styr scope i resten av planen.
+
+## Production Goal
+
+Production ska uppnå **staging-paritet**. Detta är **inte** en publik lansering.
+
+Målet är:
+
+- schema-paritet
+- kod-paritet
+- feature-flag-paritet
+- env-paritet
+- deploybarhet
+- smoke-testad miljö
+
+Följande ingår **inte**:
+
+- Stripe Live
+- kommersiell lansering
+- betalande kunder
+- supportberedskap
+- marketing launch
+
+> **Paritets-not:** "feature-flag-paritet" = prod matchar stagings effektiva flagg-config,
+> med **ett medvetet undantag**: `demo_mode` är **AV i prod** (på i staging, eftersom staging
+> är demo-miljön).
 
 ## Bakgrund
 
@@ -52,23 +94,22 @@ Projekt-referenser:
 - Lyfta **production mot staging-paritet kontrollerat**, i ordningen migration → flags → env → deploy → verifiering.
 - **Ingen prod-reset.**
 - **Ingen demo-seed mot prod.**
-- **Skydda befintlig prod-data** (72 bokningar / 21 users) tills beslut om ursprung finns (§2).
-- Varje workstream är avbockbar och reversibel per steg; relansering behandlas som formell go/no-go.
+- **Normal försiktighet med befintlig prod-data** (72 bokningar / 21 users) — bedöms som gammal test-/demo-data (Fas 0), men backup/PITR tas före migration ändå.
+- Varje workstream är avbockbar och reversibel per steg; parity-deploy behandlas som formell go/no-go.
 
 ---
 
 ## 2. Viktiga beslut före start
 
-Dessa MÅSTE besvaras av PO (Johan) innan workstream A–F startar:
+**Besvarade av PO 2026-06-10 (se Fas 0):**
 
-- [ ] **Prod-data:** Är de 72 bokningarna / 21 användarna **riktig användardata** eller gammal testdata?
-  *(Styr om prod kan röras fritt eller måste bevaras/migreras varsamt.)*
-- [ ] **demo_mode på prod:** Var `demo_mode=true` på prod **avsiktligt** (prod användes som demo) eller en stale flagga som ska AV?
-- [ ] **Mål:** Är målet **publik lansering** eller **prod som staging-paritet/backup-miljö**?
-  *(Avgör hur hårt betalnings-/Stripe-blockaden måste lösas nu.)*
-- [ ] **Stripe live:** Ska **Stripe live ingå nu** eller skjutas till senare slice?
+- [x] **Prod-data:** Bedöms som **gammal test-/demo-data**, inget känt affärsvärde i att bevara (normal försiktighet gäller).
+- [x] **demo_mode på prod:** Ska vara **AV** — staging är demo-miljön, inte prod.
+- [x] **Mål:** **Production parity**, inte publik lansering.
+- [x] **Stripe live:** Skjuts till **senare slice** (Post-Parity).
 
-> Tills dessa är besvarade: ingen migration, ingen flag-ändring, ingen deploy.
+> Besluten är tagna. Workstream A–F kan planeras klart, men ingen körning sker förrän
+> Go/No-Go (§5) är grön och Johan ger explicit klartecken.
 
 ---
 
@@ -121,9 +162,9 @@ Checklista:
 | provider_subscription | (default) | (default) | false | [ ] | |
 | push_notifications | (default) | (default) | false | [ ] | |
 | help_center | true | (default) | true | [ ] | paritet |
-| **stable_profiles** | **true** | **false (default)** | **false** | [ ] | **prod PÅ, staging AV — beslut** |
-| **stripe_payments** | **true** | true | false | [ ] | **beslut: live nu eller senare** |
-| **demo_mode** | **true** | true | false | [ ] | **MÅSTE bli AV i prod om publik lansering** |
+| **stable_profiles** | **true** | **false (default)** | **false** | [ ] | **prod PÅ, staging AV — för parity bör prod matcha staging (av), bekräfta** |
+| **stripe_payments** | **true** | true | false | [ ] | **Stripe Live = Post-Parity (Fas 0); flagg-state för parity TBD i B** |
+| **demo_mode** | **true** | true | false | **av (beslut)** | **AV i prod (Fas 0) — staging förblir demo-miljön** |
 | supabase_auth_poc | (default) | (default) | false | [ ] | |
 | data_retention | (default) | (default) | false | [ ] | |
 | messaging | (default) | (default) | true | [ ] | kräver migration 4–6 applicerad |
@@ -132,11 +173,11 @@ Checklista:
 
 Checklista:
 - [ ] Lista prod/staging/default per flagga (tabell ovan — komplettera med Vercel `FEATURE_*`-env)
-- [ ] Definiera avsedd prod-config (fyll "Avsedd prod"-kolumnen efter §2-beslut)
-- [ ] **demo_mode → av** i prod (om publik lansering)
-- [ ] **stable_profiles** → beslut (prod är på idag; staging av)
-- [ ] **stripe_payments** → beslut (kopplat till D + §2 Stripe-beslut)
-- [ ] GA-flaggor (voice_logging, route_planning, route_announcements, customer_insights, self_reschedule) → beslut om de ska på i prod (paritet med staging)
+- [ ] Definiera avsedd prod-config: **parity = matcha stagings effektiva config**, med `demo_mode` som medvetet undantag (av i prod)
+- [x] **demo_mode → AV** i prod (beslutat, Fas 0)
+- [ ] **stable_profiles** → bekräfta (prod på idag, staging av; för parity bör prod matcha staging = av)
+- [ ] **stripe_payments** → flagg-state för parity (Stripe **Live** är Post-Parity per Fas 0; test-mode/mock som staging kan behållas)
+- [ ] GA-flaggor (voice_logging, route_planning, route_announcements, customer_insights, self_reschedule) → **på i prod** för parity med staging (bekräfta)
 - [ ] Verifiera efter ändring (läs `FeatureFlag`-tabell + `/api/feature-flags`)
 
 ### C. Env guard / env docs
@@ -148,9 +189,11 @@ Checklista:
 - [ ] Verifiera Vercel prod-env via `vercel env pull --environment=production` (särskilt efter pausen): Supabase-URL/keys, `APP_URL`, `DATABASE_URL`/`DIRECT_DATABASE_URL`, Upstash Redis
 - [ ] Påminnelse: använd Vercel **REST API** för icke-triviala env-skrivningar (CLI `--value`/stdin sparar tyst tomt)
 
-### D. Stripe / payment readiness
+### D. Stripe / payment readiness — FUTURE SLICE / POST-PARITY
 
-> Endast om §2 "Stripe live" = ja nu. Annars: hoppa, men dokumentera beslutet.
+> **Ingår INTE i Production Parity-sprinten** (PO-beslut Fas 0: Stripe Live senare).
+> Checklistan behålls som **framtida referens** för när live-betalningar aktiveras — efter
+> att produkten fått användarfeedback. Ingen punkt nedan är blockerande för parity.
 
 - [ ] Stripe **företagsverifiering** klar (ägs av Stripe/Johan — hård blocker för live)
 - [ ] **Prod webhook-secret** satt i Vercel (webhook registrerad i Stripe prod-konto mot `equinet.johanlindengard.com/api/webhooks/stripe`)
@@ -187,10 +230,10 @@ Checklista:
 
 | Risk | Sannolikhet | Konsekvens | Mitigering | Ägare |
 |------|-------------|------------|------------|-------|
-| Prod-data är riktig användardata | Medel | Hög (dataförlust/GDPR) | §2-beslut FÖRE alla ändringar; backup/PITR före migration; ingen reset/seed | Johan |
+| Prod-data visar sig ändå vara riktig (bedöms som testdata, Fas 0) | Låg | Medel (dataförlust) | Bedömd test-/demo-data; backup/PITR före migration ändå; ingen reset/seed | Johan |
 | Kod deployas utan att migration körts först | Medel | Hög (500-fel, saknade tabeller) | Workstream-ordning A→E; migration-gate före prod-promote; deploy via `deploy.sh` (ej rå `git push`) | Tech lead |
-| demo_mode aktiv i prod vid publik lansering | Hög (är true idag) | Hög (demo-UX exponeras) | Workstream B: demo_mode→av + verifiering före deploy | Tech lead |
-| Stripe live ej redo men aktiveras | Medel | Hög (misslyckade betalningar/SCA) | §2 Stripe-beslut; D komplett eller stripe_payments av; 3DS-CSP + företagsverifiering | Johan/Tech lead |
+| demo_mode kvar aktiv i prod efter deploy | Hög (är true idag) | Medel (demo-UX i prod; ej publik lansering) | Workstream B: demo_mode→av (beslutat) + verifiering före deploy | Tech lead |
+| Stripe Live aktiveras av misstag i parity-sprinten | Låg | Hög (misslyckade betalningar/SCA) | Stripe Live är Post-Parity (Fas 0); D ej i scope; håll live-keys borta från prod | Johan/Tech lead |
 | RLS-regression efter migration | Låg | Hög (dataläcka mellan providers) | Verifiera RLS-policies (A) + bevistester; smoke-test stall/bokning (F) | Tech lead |
 | Seed-script körs mot prod av misstag | Låg | Kritisk (skriver över prod) | `seed-guard.ts` vägrar prod-ref `xybyzflfxnqqyxnvjklv`; använd ALDRIG legacy `seed-demo.ts` (ingen guard); ingen seed i denna sprint | Tech lead |
 | Vercel prod-env tom/fel efter paus | Medel | Hög (app startar ej) | Workstream C: `vercel env pull` verifiering; non-empty-guard | Tech lead |
@@ -202,18 +245,20 @@ Checklista:
 
 Deploy till prod får ske ENDAST när alla nedan är bockade:
 
-- [ ] Alla **must-have** klara (workstream A, B, C + relevant D)
+- [ ] Alla **must-have** klara (workstream A, B, C, E, F — D är Post-Parity, ej krav)
 - [ ] **Rollback-plan** dokumenterad och aktuell (Vercel promote-tidigare + forward-migration; se `docs/operations/incident-runbook.md`)
 - [ ] **Smoke-test-plan** klar (workstream F definierad och redo att köras direkt efter deploy)
 - [ ] **Johan godkänner deploy** explicit
-- [ ] **Ingen oklar prod-data-risk kvar** (§2 prod-data-fråga besvarad)
+- [x] **Prod-data-fråga besvarad** (Fas 0: bedöms testdata; backup/PITR ändå före migration)
 
 ---
 
 ## 6. Out of scope
 
-Detta ingår INTE i Production Relaunch-sprinten:
+Detta ingår INTE i Production Parity-sprinten:
 
+- **Stripe Live / livebetalningar** (Post-Parity, se workstream D)
+- **Kommersiell lansering, betalande kunder, supportberedskap, marketing launch**
 - Nya features
 - Stall-community
 - Messaging GA (utöver att applicera redan-mergade migrationer)
@@ -225,5 +270,6 @@ Detta ingår INTE i Production Relaunch-sprinten:
 
 ---
 
-> **Nästa steg:** Johan besvarar §2. Därefter detaljeras workstream A (exakt apply-plan med
-> verifierings-SQL) som första körbar slice — men ingen körning förrän Go/No-Go är grön.
+> **Nästa steg:** §2-besluten är tagna (Fas 0). Därefter detaljeras workstream A (exakt
+> apply-plan med verifierings-SQL) som första körbar slice — men ingen körning förrän
+> Go/No-Go är grön och Johan ger explicit klartecken.
