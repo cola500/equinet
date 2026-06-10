@@ -154,6 +154,9 @@ Checklista:
 
 ### B. Feature flag reconciliation
 
+> **Detaljerad körbar plan:** [production-feature-flag-reconciliation-plan.md](production-feature-flag-reconciliation-plan.md)
+> (nuläge prod/staging/default, avsedd parity-config, exakt 8 flaggor att ändra, demo_mode/stripe_payments-särfall, verifiering, Go/No-Go).
+
 **Nuläge per flagga** (DB-värden lästa 2026-06-09; runtime-env `FEATURE_*` i Vercel EJ lästa — verifiera separat):
 
 | Flagga | Prod (DB) | Staging (DB/​default) | Kod-default | Avsedd prod | Not |
