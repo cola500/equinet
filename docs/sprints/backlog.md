@@ -309,6 +309,7 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | MFA-verify minor-fynd (security polish, post-S51-0) | MFA-admin är shippat. 6 minors (distinkta audit-log-strängar för success/failure, submit-disable efter 429, test-assertions på AdminAuditLog, m.fl.). Ej blockerande. Återaktivera om MFA-spåret/forensik prioriteras. |
 | Granska "redan fixat"-rate grep-pattern | Metrics-process-justering. Vilande metrics-kadens. |
 | S42-3 Full-suite flake-rapport | Flake-baseline, vilande sedan S42. Återaktivera vid flaky-test-problem. |
+| Audit hårdkodade framtida datum i tester (time-bomb-audit) | Teknisk kvalitet, ej aktivt. Bevarad från main vid reconcile 2026-06-10. Pre-existing booking-series-fail (fixad 2026-05-14) hade rotorsak i hårdkodat `firstBookingDate: "2026-05-01"` som tickade ner till "förflutet" och bröt 8 tester. Risk: fler test-fixtures kan ha samma time-bomb. Åtgärd vid tillfälle: `grep -rE '"20[2-3][0-9]-[0-1][0-9]-[0-3][0-9]"' src/**/*.test.ts e2e/**`, byt till dynamiska datum där schemat har relativ validering, ev. ESLint/pre-commit-varning. Återaktivera om time-bomb-fail dyker upp igen. |
 
 ## Vid lansering
 
