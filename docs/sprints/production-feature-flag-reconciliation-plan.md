@@ -1,6 +1,6 @@
 ---
 title: Production Feature Flag Reconciliation-plan (Workstream B)
-description: Körbar plan för att reconcilera prod feature flags mot staging-paritet (demo_mode AV, stable_profiles AV, GA-flaggor PÅ, stripe_payments hanterat). Planering — ingen flagg-ändring förrän PO-godkännande.
+description: Reconciliera prod feature flags mot staging-paritet (demo_mode AV, stable_profiles AV, GA-flaggor PÅ, stripe_payments AV). KÖRD 2026-06-10 — 8 flaggor ändrade, verifierade i DB.
 category: sprint
 status: draft
 last_updated: 2026-06-10
@@ -11,6 +11,7 @@ related:
   - docs/sprints/production-migration-apply-plan.md
   - src/lib/feature-flag-definitions.ts
 sections:
+  - Utfall (körning 2026-06-10)
   - Scope och status
   - 1. Nuläge (prod / staging / default)
   - 2. Avsedd prod-config (parity)
@@ -26,8 +27,39 @@ sections:
 # Production Feature Flag Reconciliation-plan (Workstream B)
 
 > Detaljering av **Workstream B** i [Production Parity-planen](production-relaunch-plan.md).
-> **PLAN — ingen flagg-ändring i prod, ingen deploy, ingen seed** förrän §9 Go/No-Go är grön
-> och Johan ger explicit klartecken. Workstream A (migrationer) är klar; B förutsätter den.
+> **STATUS: KÖRD OCH KLAR 2026-06-10** — 8 prod-flaggor reconcilade, verifierade i DB.
+> Se [§Utfall](#utfall-körning-2026-06-10). Ingen prod-env-ändring, deploy, seed eller C-env gjord.
+
+## Utfall (körning 2026-06-10)
+
+Kördes 2026-06-10 efter explicit PO-Go. **8 flaggor ändrade i prod-DB, verifierade. Inga andra
+flaggor påverkade (18 rader oförändrat antal).**
+
+| Flagga | Före | Efter |
+|--------|------|-------|
+| voice_logging | false | **true** |
+| route_planning | false | **true** |
+| route_announcements | false | **true** |
+| customer_insights | false | **true** |
+| self_reschedule | false | **true** |
+| stable_profiles | true | **false** |
+| demo_mode | true | **false** |
+| stripe_payments | true | **false** |
+
+**Metod:** två `UPDATE`-satser via Supabase MCP (5 → true, 3 → false). Oförändrade: offline_mode,
+help_center, follow_provider, municipality_watch, provider_subscription + 5 föräldralösa rader.
+
+**Paritet uppnådd:** prod-DB matchar stagings effektiva flagg-config, med de två medvetna undantagen
+(`demo_mode=false`, `stripe_payments=false`). `messaging` är true via kod-default.
+
+**Kvarstår för full demo-av:** `demo_mode` DB-flagga är nu false, men `NEXT_PUBLIC_DEMO_MODE` (env,
+build-time) måste också av i prod (**Workstream C-env**) + rebuild (**E**). Kunde inte verifieras
+härifrån (prod bakom Vercel Security Checkpoint, HTTP 429). **C-env är nu kritisk för demo-av.**
+
+**Cache-not:** prod-appens flagg-cache 30s server / 60s klient — ändringar slår igenom när prod
+serverar/bygger (prod är dormant bakom checkpoint just nu).
+
+---
 
 ## Scope och status
 
@@ -183,17 +215,17 @@ ej blocker — gör det separat vid tillfälle, inte i denna workstream.
 
 ## 9. Go/No-Go — Workstream B
 
-Får STARTA endast när:
-- [ ] §2 avsedd prod-config godkänd av PO (inkl. stripe_payments AV-beslut)
-- [ ] Före-verifiering körd (§7) — prod DB-utgångsläge + prod `NEXT_PUBLIC_DEMO_MODE`-status känd
-- [ ] Metod vald (direkt SQL via MCP, eller admin-API-toggle)
-- [ ] Johan ger explicit klartecken
+Får STARTA endast när (uppfyllt 2026-06-10):
+- [x] §2 avsedd prod-config godkänd av PO (inkl. stripe_payments AV-beslut)
+- [x] Före-verifiering körd (§7) — prod DB-utgångsläge bekräftat; `NEXT_PUBLIC_DEMO_MODE` ej läsbar (429, C-env)
+- [x] Metod vald (direkt SQL via MCP)
+- [x] Johan gav explicit klartecken
 
-Räknas KLAR när:
-- [ ] 8 flaggor ändrade i prod DB (verifierat)
-- [ ] Diff mot §1 visar inga oavsiktliga ändringar
-- [ ] Effektiv config matchar §2 (med demo_mode-undantaget noterat tills C+E klara)
-- [ ] Staging oförändrad
+Räknas KLAR när (uppfyllt 2026-06-10):
+- [x] 8 flaggor ändrade i prod DB (verifierat)
+- [x] Diff mot §1 visar inga oavsiktliga ändringar (18 rader oförändrat antal)
+- [x] Effektiv config matchar §2 (demo_mode-env-delen kvar tills C+E)
+- [x] Staging oförändrad
 
 > **Efter Workstream B:** prod-flaggor i paritet (utom demo_mode-env som slutförs i C+E).
 > Nästa: Workstream C (env: `NEXT_PUBLIC_DEMO_MODE` + saknade vars) → E (deploy) → F (smoke).

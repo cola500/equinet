@@ -154,6 +154,11 @@ Checklista:
 
 ### B. Feature flag reconciliation
 
+> **✅ GENOMFÖRD OCH GRÖN 2026-06-10:** 8 prod-flaggor reconcilade (5 GA-flaggor PÅ; stable_profiles,
+> demo_mode, stripe_payments AV), verifierade i DB, inga andra flaggor påverkade. Full demo-av kräver
+> fortfarande C-env (`NEXT_PUBLIC_DEMO_MODE`) + rebuild (E). Utfall i
+> [B-planen §Utfall](production-feature-flag-reconciliation-plan.md#utfall-körning-2026-06-10).
+>
 > **Detaljerad körbar plan:** [production-feature-flag-reconciliation-plan.md](production-feature-flag-reconciliation-plan.md)
 > (nuläge prod/staging/default, avsedd parity-config, exakt 8 flaggor att ändra, demo_mode/stripe_payments-särfall, verifiering, Go/No-Go).
 
