@@ -1,3 +1,4 @@
+// Always required in production, regardless of payment provider.
 export const REQUIRED_PROD_VARS = [
   'APP_URL',
   'DATABASE_URL',
@@ -6,16 +7,18 @@ export const REQUIRED_PROD_VARS = [
   'SUPABASE_SERVICE_ROLE_KEY',
   'RESEND_API_KEY',
   'FROM_EMAIL',
-  'STRIPE_SECRET_KEY',
-  'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
   'UPSTASH_REDIS_REST_URL',
   'UPSTASH_REDIS_REST_TOKEN',
 ]
 
 // Required ONLY when Stripe is the active payment provider (PAYMENT_PROVIDER=stripe).
-// Kept conditional so the Production Parity deploy (Stripe off) is not blocked by an
-// unused webhook secret, while still being enforced once Stripe Live is enabled.
-export const STRIPE_REQUIRED_VARS = ['STRIPE_WEBHOOK_SECRET']
+// Kept conditional so the Production Parity deploy (Stripe off) is not blocked by
+// unused Stripe config, while still being enforced once Stripe Live is enabled.
+export const STRIPE_REQUIRED_VARS = [
+  'STRIPE_SECRET_KEY',
+  'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
+  'STRIPE_WEBHOOK_SECRET',
+]
 
 // A var counts as missing when it is undefined, empty, or whitespace-only.
 // (Trim guards against a var set to "   " silently passing as "present".)
