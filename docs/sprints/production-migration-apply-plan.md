@@ -25,9 +25,45 @@ sections:
 # Production Migration Apply-plan (Workstream A)
 
 > Detaljering av **Workstream A** i [Production Parity-planen](production-relaunch-plan.md).
-> **PLAN — ingen migration körs, ingen deploy, ingen prod/staging-ändring** förrän §7
-> Go/No-Go är grön och Johan ger explicit klartecken. Prod-data bedöms som testdata
-> (Fas 0), men **backup/PITR tas ändå** före första migrationen.
+> **STATUS: KÖRD OCH KLAR 2026-06-10** — alla 7 migrationer applicerade på prod utan
+> avvikelse. Se [§Utfall](#utfall-körning-2026-06-10) nedan. Ingen kod-deploy gjord;
+> deploy kräver nytt PO-beslut.
+
+## Utfall (körning 2026-06-10)
+
+Workstream A kördes 2026-06-10 efter explicit PO-Go. Resultat: **alla 7 migrationer
+applicerade rent, inga avvikelser, prod-data oförändrad.**
+
+| Steg | Migration | Verifierat utfall |
+|------|-----------|-------------------|
+| 1 | admin_audit_log | `AdminAuditLog` + 3 index. 40 applied. |
+| 2 | pg_cron_maintenance | pg_cron installerad, 3 cron-jobb (inga dubbletter). 41 applied. |
+| 3 | stripe_webhook_event | `StripeWebhookEvent` + unikt `eventId`-index. 42 applied. |
+| 4 | add_conversation_message | `Conversation` + `Message` + enum + 2 FK. 43 applied. |
+| 5 | conversation_rls_policies | RLS på båda; 4+6 policies; column-GRANT på `readAt`. 44 applied. |
+| 6 | add_message_attachment_fields | 3 nullable-kolumner på `Message`. 45 applied. |
+| 7 | horse_provider_booking_read | RLS-policy på `Horse`. 46 applied. |
+
+**Slutläge:** 46 applied / 0 failed/pending. Full paritet repo↔prod (46=46, noll diff i
+båda riktningar). Prod-data oförändrad: Booking=72, Provider=7, User=21 (= checkpoint).
+
+**Metod använd:** Supabase MCP `apply_migration` per steg + manuell `_prisma_migrations`-
+registrering med checksums (§1). En migration i taget, verifierings-SQL efter varje.
+
+**Avvikelse från plan (PO-godkänd):** §4/§7 krävde verifierat återställbar backup/PITR före
+apply. Det kunde **inte** tas — Supabase free tier ger inte PITR/on-demand-backup. PO
+beslutade 2026-06-10 att medvetet köra utan formell backup eftersom prod-data bedöms som
+gammal test-/demo-data (Fas 0). Logisk checkpoint (migration-topp + counts) togs som referens.
+
+**Lärdomar:**
+- Högst-risk-migrationen (pg_cron, steg 2) gick rent — `available=1` pre-flight var korrekt signal; inga duplicerade jobb (kördes exakt en gång).
+- Migration 5:s funktionsberoenden (`auth.uid()` + `rls_provider_id()`) var verifierat närvarande pre-flight → ingen blockare. Pre-flight-kontrollen av RLS-hjälpfunktioner var värd tiden.
+- Ingen rollback behövdes. Inget steg avvek.
+
+**Kvarstår (kräver nytt PO-beslut):** ingen kod-deploy, ingen seed, ingen flag-ändring,
+ingen staging→main-merge har gjorts. Nästa workstream (B/C/E/F) startar separat.
+
+---
 
 ## Scope och status
 
@@ -185,12 +221,12 @@ Apply får STARTA endast när:
 - [ ] Fönster valt då ingen annan skriver mot prod-DB
 - [ ] Johan ger explicit klartecken
 
-Apply räknas KLAR när:
-- [ ] Alla 7 steg applicerade i ordning, var och en efter-verifierad
-- [ ] Slutverifiering: 46 applied, 0 failed/pending
-- [ ] `npm run migrate:status` mot prod: inga pending, ingen drift
-- [ ] Nyckeltabeller + RLS bekräftade (AdminAuditLog, StripeWebhookEvent, Conversation, Message, Horse-policy)
-- [ ] Prod-data oförändrad jämfört med checkpoint (Booking=72, Provider=7, User=21)
+Apply räknas KLAR när (alla uppfyllda 2026-06-10):
+- [x] Alla 7 steg applicerade i ordning, var och en efter-verifierad
+- [x] Slutverifiering: 46 applied, 0 failed/pending
+- [x] Migrate-status-ekvivalent: full paritet repo↔prod (46=46, noll diff båda riktningar)
+- [x] Nyckeltabeller + RLS bekräftade (AdminAuditLog, StripeWebhookEvent, Conversation, Message, Horse-policy)
+- [x] Prod-data oförändrad jämfört med checkpoint (Booking=72, Provider=7, User=21)
 
 > **Efter Workstream A:** prod-DB har schema-paritet. Nästa: Workstream B (flags) → C (env) →
 > E (kod-deploy) → F (smoke). Ingen kod-deploy förrän A är KLAR-verifierad.

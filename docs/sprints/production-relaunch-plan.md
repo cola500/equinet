@@ -117,6 +117,10 @@ Projekt-referenser:
 
 ### A. Prod DB migration sync
 
+> **✅ GENOMFÖRD OCH GRÖN 2026-06-10:** 7/7 migrationer applicerade, 46 applied / 0 failed,
+> prod-data oförändrad (Booking=72, Provider=7, User=21), ingen deploy/seed/flag-ändring gjord.
+> Fullt utfall i [apply-planen §Utfall](production-migration-apply-plan.md#utfall-körning-2026-06-10).
+>
 > **Detaljerad körbar apply-plan:** [production-migration-apply-plan.md](production-migration-apply-plan.md)
 > (apply-ordning, verifierings-SQL före/efter, backup, risker per migration, rollback, egen Go/No-Go).
 
