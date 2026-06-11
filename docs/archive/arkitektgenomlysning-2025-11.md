@@ -1,3 +1,20 @@
+---
+title: "Arkitektgenomlysning 2025-11 (historisk)"
+description: "Rå genomlysning från 2025-11-15. ARKIVERAD -- samtliga punkter är åtgärdade eller superseded (PostgreSQL/Supabase, Upstash Redis, security headers). Aktuell genomlysning: docs/architecture-review.md."
+category: architecture
+status: archived
+last_updated: 2026-06-11
+sections:
+  - Fixade Problem
+  - Kvarvarande Problem (Prioriterad ordning)
+---
+
+> **ARKIVERAD 2026-06-11.** Detta är en rå genomlysning från 2025-11-15, bevarad som
+> historik. Samtliga "kvarvarande problem" är sedan länge lösta eller superseded:
+> PostgreSQL-migrationen är gjord (Supabase), rate limiting kör Upstash Redis,
+> security headers och auth-mönstret är ersatta av Supabase Auth + RLS.
+> För aktuell arkitekturstatus, se [architecture-review.md](../architecture-review.md).
+
 # **🚨 Kritiska Problem (Status: 2025-11-15)**
 
 ## ✅ **Fixade Problem**
