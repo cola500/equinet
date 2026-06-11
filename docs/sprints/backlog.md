@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Kanonisk backlog för Equinet. Alla kända stories, uppgifter och beslut. status.md pekar hit; roadmap.md är den strategiska vyn."
 category: sprint
 status: active
-last_updated: 2026-06-07
+last_updated: 2026-06-11
 tags: [backlog, roadmap, planning]
 sections:
   - Aktiva produktspår
@@ -137,7 +137,6 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Help-data drift protection | 15-30 min | CI-validation som regenererar `articles-data.ts` och diffar mot committed version. Bevisat behov efter PR #333 (staging hade tom hjälpsektion pga `.vercelignore` + build-time-generator). Story: [help-data-drift-protection.md](../stories/help-data-drift-protection.md). |
 | Audit hårdkodade framtida datum i tester (time-bomb-audit) | 30 min–1h | Booking-series-fail (fixad 2026-05-14) hade rotorsak i hårdkodat `firstBookingDate: "2026-05-01"`. Risk: fler test-fixtures har samma time-bomb. `grep -rE '"20[2-3][0-9]-..."' src/**/*.test.ts e2e/**`, byt till dynamiska datum, ev. ESLint-regel/pre-commit-check. |
 | URL-konfigurationsmatris | 30 min | `docs/operations/url-configuration.md`: alla URL-config-platser (Vercel `APP_URL`, Supabase Site URL + Redirect URLs, Stripe webhook, Resend-domän, iOS prod-URL). Vi har bränt oss på trippel-miss. |
-| Städa Vercel env-variabler med literal `\\n` på slutet | 15 min | `NEXT_PUBLIC_SUPABASE_URL`/`..._ANON_KEY` i prod har literal `\\n`-suffix → `vercel env pull` ger trasiga lokala anrop. Fix via UI. |
 | recurring_bookings E2E-verifiering | 1 dag | Medel. |
 | group_bookings E2E + UX-review | 2-3 dagar | Medel. |
 | E2E: fixa skippade tester | 1-2 veckor | Låg prioritet. |
