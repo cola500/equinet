@@ -33,7 +33,7 @@ sections:
 | [offline-pwa.md](architecture/offline-pwa.md) | Offline PWA-arkitektur (service worker, IndexedDB, sync) |
 | [booking-flow.md](architecture/booking-flow.md) | Bokningsflode och betalning |
 | [scaling.md](architecture/scaling.md) | Skalningsplan for 500 anvandare |
-| [arkitektgenomlysning.md](architecture/arkitektgenomlysning.md) | Arkitekturgenomlysning |
+| [provider-workday.md](architecture/provider-workday.md) | Leverantörens arbetsdag -- rutter, geo-integrationer, Dagens rutt |
 | [architecture-review.md](architecture-review.md) | Arkitekturgenomgang Q1 2026 |
 | [code-quality-review.md](code-quality-review.md) | Kodkvalitetsgenomgang Q1 2026 |
 | [changeability-review.md](changeability-review.md) | Forandringsbarhet Q1 2026 |
