@@ -40,6 +40,10 @@ npm run migrate:status    # Finns det pending migrationer?
 
 ### Losning
 
+> **DATABASE_URL-format/ändringar:** se [environment-runbook.md](environment-runbook.md) — korrekt
+> pooler-suffix (`?pgbouncer=true&connection_limit=1`) och säker delete+create. Felaktigt `&` istället
+> för `?` ger `PrismaClientInitializationError` (databasnamn tolkas som `postgres&...`).
+
 **Supabase:**
 1. Kontrollera Supabase Dashboard -> Database Health
 2. Kontrollera att `connection_limit=1` finns i DATABASE_URL (serverless-krav)
