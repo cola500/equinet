@@ -53,6 +53,7 @@ sections:
 | [url-configuration.md](operations/url-configuration.md) | Alla URL-config-platser (Vercel, Supabase, iOS, Stripe, Resend) + checklista domänbyte |
 | [deployment.md](operations/deployment.md) | Komplett deploy-guide (Vercel + Supabase) |
 | [environments.md](operations/environments.md) | Konfiguration och skillnader mellan lokal utveckling och produktion |
+| [environment-runbook.md](operations/environment-runbook.md) | Säkra copy/paste-steg för Vercel/Supabase env + DB-URL:er (audit, verifiering, delete+create) — prod + staging |
 | [monitoring.md](operations/monitoring.md) | Övervakningsverktyg, loggning, viktiga metrics och begränsningar |
 | [incident-runbook.md](operations/incident-runbook.md) | Vanliga driftstörningar och steg-för-steg-lösningar |
 | [backup-policy.md](operations/backup-policy.md) | RPO/RTO, backup-strategi och restore-steg |

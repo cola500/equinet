@@ -35,7 +35,7 @@ sections:
 | **Deploy** | `npm run dev` | Push till `staging`-branch | Push till `main`-branch |
 | **Demo-läge** | Valfritt (`NEXT_PUBLIC_DEMO_MODE`) | **På** | Av |
 | **Crons** | -- | **Avstängda** (`DISABLE_CRONS=true`) | På (`CRON_SECRET`) |
-| **Betalning** | Mock | Stripe test-mode | Stripe (live väntar på företagsverifiering) |
+| **Betalning** | Mock | Stripe test-mode | **Mock** (`PAYMENT_PROVIDER=mock`; Stripe Live = Post-Parity) |
 
 Tre helt isolerade miljöer: egna Vercel-projekt, egna Supabase-projekt, egna databaser
 och egna env-namespaces. Undantag: Upstash Redis delas mellan staging och prod (free tier).
