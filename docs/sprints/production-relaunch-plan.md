@@ -197,6 +197,8 @@ Checklista:
 
 ### C. Env guard / env docs
 
+> **Återanvändbar env-rutin:** [environment-runbook.md](../operations/environment-runbook.md) — säkra copy/paste-steg för Vercel/Supabase env + DB-URL:er (staging + prod).
+>
 > **Detaljerad körbar plan:** [production-env-guard-plan.md](production-env-guard-plan.md)
 > (NEXT_PUBLIC_DEMO_MODE-slutförande, check-prod-env-härdning, .env.example-fix, docs/kod vs prod-env, Go/No-Go).
 >

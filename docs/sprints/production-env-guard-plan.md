@@ -242,6 +242,10 @@ bygget ej längre blockerat), `NEXT_PUBLIC_DEMO_MODE` = FALSE, `DISABLE_CRONS`/`
 
 ## 7. REST API-åtgärdsrunbook
 
+> **Återanvändbar rutin:** generella copy/paste-säkra steg för env/DB-URL-ändringar finns i
+> [environment-runbook.md](../operations/environment-runbook.md) (audit, DATABASE_URL delete+create,
+> DEMO_MODE, troubleshooting). Detta avsnitt är den Workstream-C-specifika instansen.
+
 > **Instruktioner — körs av Johan, INTE nu. Paus före varje riktig ändring.** Inga secrets i detta
 > dokument. Per projektregel: Vercel **REST API** (`type:"plain"` config / `"encrypted"` secret),
 > aldrig CLI `--value`/stdin; **delade rader splittas via UI**, inte API-delete.
