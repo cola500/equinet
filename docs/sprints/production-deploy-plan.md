@@ -2,8 +2,8 @@
 title: Production Deploy-plan (Workstream E)
 description: Separat deploy-plan för Workstream E — merge staging→main → prod-deploy. Pre-checks, exakta merge/deploy-steg, rollback, smoke-test, Go/No-Go. Ingen deploy förrän PO-Go.
 category: sprint
-status: draft
-last_updated: 2026-06-10
+status: active
+last_updated: 2026-06-11
 tags: [production, deploy, parity, vercel, rollback, smoke-test]
 depends_on:
   - docs/sprints/production-relaunch-plan.md
@@ -25,8 +25,19 @@ sections:
 # Production Deploy-plan (Workstream E)
 
 > Detaljering av **Workstream E** i [Production Parity-planen](production-relaunch-plan.md).
-> **PLAN — ingen deploy** förrän §5 Go/No-Go är grön och Johan ger explicit klartecken.
 > Förutsätter A (migrationer ✅), B (flaggor ✅), C (env-guard + prod-env ✅) klara.
+
+> **✅ GENOMFÖRD 2026-06-10→11.** Två parity-deployer:
+> - **PR #394** (`b165103e`): första staging→main. Blockerades initialt av 8 röda auth-E2E —
+>   discovery visade **test-skuld** (kund routas till `/hem`, ej `/providers`; landing-CTA bytt),
+>   fixad i PR #395 → E2E grön → merge + deploy success.
+> - **PR #398** (`d58ecd2b`): uppföljande parity-deploy med provider→kalender-routing (#396)
+>   och env-scripts R1–R3 (#397). CI helt grön (inkl. E2E + Offline Smoke). Smoke grön (§4).
+>
+> **Incidenter under deploy/smoke (lösta):** prod-`DATABASE_URL` hade `&connection_limit=1`
+> utan `?pgbouncer=true` → Prisma-init-fel → session-401; fixad via REST API delete+create +
+> redeploy. ANON_KEY-`\n` städad (hygien). Återanvändbar rutin:
+> [environment-runbook.md](../operations/environment-runbook.md).
 
 ## Scope och status
 
@@ -61,7 +72,7 @@ Workstream E = lyft prod-koden till staging-nivå genom att **merga `staging` �
 | 2 | **Flaggor (B)** | MCP `SELECT ... FROM "FeatureFlag"` | 5 GA på, stable_profiles/demo_mode/stripe_payments av |
 | 3 | **Prod-env (C)** | `npm run audit:prod-env:safe` | 9 required `SET`, `PAYMENT_PROVIDER`=mock, `NEXT_PUBLIC_DEMO_MODE`=FALSE, DB-URL:er `SET`, Stripe-block hoppas över |
 | 4 | **check-prod-env passerar** | implicit i prod-build (prebuild) | Inga saknade required (mock → Stripe-vars ej krävda) |
-| 5 | **CI grön på staging→main-PR** | GitHub Actions | check:all-grindar gröna (unit, typecheck, build, lint, migration-from-scratch, security). **KORRIGERING:** E2E + Offline Smoke **SKIPPAS** på staging→main (CI-villkoret skippar tunga Playwright-jobb när `staging` är inblandad) — de kördes på feature-PR:erna in i staging. |
+| 5 | **CI grön på staging→main-PR** | GitHub Actions | check:all-grindar gröna (unit, typecheck, build, lint, migration-from-scratch, security) **+ E2E + Offline Smoke**. **RÄTTELSE (2026-06-11):** tunga Playwright-jobb **KÖRS** på staging→main-PR (villkoret är `base_ref == 'main'` — en staging→main-PR har base main). De skippas däremot på feature→staging-PR:er. Tidigare "KORRIGERING" här hade det omvänt — verifierat empiriskt på PR #394/#398 (E2E körde och fångade auth-test-skuld). |
 | 6 | **`migration-from-scratch` grön** | CI-jobb | 46 migrationer applicerar rent på färsk DB |
 | 7 | **Rent working tree på main-sidan** | `git status` | Inga ocommittade ändringar |
 | 8 | **Reconcile klar** | `git merge origin/main → staging` | Konflikter lösta, pushad → PR mergeable (annars validerar CI bara staging-HEAD, ej merge-resultatet) |
@@ -120,40 +131,46 @@ Prod-deploy är snabbt reverterbar; DB-ändringar är additiva och kräver norma
 > Prod har 1 Stable men **0 stall-kopplade hästar** → "Stall: X" visas inte i prod — **förväntat, ej fel**.
 
 **Förutsättningar [Johan-manuellt — kan ej göras av agent]:**
-- [ ] **Vercel Attack Challenge Mode AV** under smoke-fönstret (equinet-app → Settings → Firewall →
-      Attack Challenge Mode → Off). IP-bypass saknas på planen → toggla av/på. **Slå PÅ igen** direkt efter.
-      *(Säkerhetsinställning — agenten ändrar inte firewall.)*
-- [ ] **Smoke-persona:** sätt temp-lösenord på **`provider@example.com`** (Lindgrens Hovslageri & Ridskola
-      — 12 bokningar, 5 tjänster) via Supabase Auth-dashboard (prod `xybyzflfxnqqyxnvjklv` → Authentication
-      → Users). *(Credentials — agenten sätter inte lösenord.)*
-- [ ] (valfritt) Admin/kund-check via **`johan@jaernfoten.se`** (admin, din mail).
+- [x] **Vercel Attack Challenge Mode AV** under smoke-fönstret (togglad av/på av Johan via
+      `vercel firewall attack-mode disable/enable`). *(Säkerhetsinställning — agenten ändrar inte firewall.)*
+      Notering: en riktig browser löser challengen automatiskt (~6s); `curl` får 429 även med
+      attack-mode av (auto-bot-mitigering) — förväntat.
+- [x] **Smoke-persona:** temp-lösenord satt på **`provider@example.com`** (Lindgrens Hovslageri & Ridskola)
+      via Supabase Auth-dashboard. *(Credentials — agenten sätter inte lösenord.)*
+- [ ] (valfritt) Admin/kund-check via **`johan@jaernfoten.se`** (admin, din mail) — ej utförd, ej krav.
 
-**Smoke-checklista (agenten verifierar när prod är åtkomligt):**
-- [ ] **Appen bootar** — ingen 500 vid start (DATABASE_URL nu satt → första riktiga prod-runtime).
-- [ ] **Login** med `provider@example.com`.
-- [ ] **Bokningslista** renderar utan fel (12 bokningar finns).
-- [ ] **Dagens rutt** (`/provider/today`) **renderar utan 500**.
-- [ ] **Inga 500 från tidigare saknade tabeller** (StripeWebhookEvent, Conversation, Message — nu finns).
-- [ ] **demo_mode AV** — ingen demo-UX/demo-knappar (NEXT_PUBLIC_DEMO_MODE=false bakad i denna build).
-- [ ] **Betalningar av** — ingen betalningsyta (stripe_payments=false, PAYMENT_PROVIDER=mock).
-- [ ] **Loggar rena** — Vercel runtime logs + Sentry inga nya fel efter deploy.
-- [ ] **N/A — stall-data verifieras EJ på prod** (ingen stall-data); stall-featuren grön på staging.
-- [ ] **Återställ Attack Challenge Mode (PÅ).**
+**Smoke-checklista (✅ GRÖN 2026-06-11, körd efter både #394 och #398):**
+- [x] **Appen bootar** — ingen 500 vid start.
+- [x] **Login** med `provider@example.com` — session etableras; landar på `/provider/calendar` (#396).
+- [x] **Bokningslista** renderar utan fel (Alla 11 / Väntar 5 / Bekräftade 2 / Genomförda 4 / Avbokade 1).
+- [x] **Dagens rutt** (`/provider/today`) **renderar utan 500** (korrekt tomtläge).
+- [x] **Inga 500 från tidigare saknade tabeller** (47 tabeller; StripeWebhookEvent, Conversation, Message finns).
+- [x] **demo_mode AV** — inga demo-knappar; NEXT_PUBLIC_DEMO_MODE=FALSE i builden.
+- [x] **Betalningar av** — mock (stripe_payments=false, PAYMENT_PROVIDER=mock).
+- [x] **Loggar rena** — enda console-brus = `manifest.webmanifest` 429 (bot-mitigering, ej app-fel).
+- [x] **N/A — stall-data verifieras EJ på prod** (ingen stall-data); stall-featuren grön på staging.
+- [x] **Återställ Attack Challenge Mode (PÅ)** — gjort av Johan.
+
+> **Avvikelse som smoke FÅNGADE (syftet med smoke):** första smoken (efter #394) hittade att login
+> inte etablerade session — rotorsak prod-`DATABASE_URL`-suffixet (se status-blocket överst). Fixad,
+> redeployad, re-smokad grön. Detta validerar smoke-proceduren.
 
 ## 5. Go/No-Go — Workstream E
 
 Deploy får STARTA endast när:
-- [ ] Pre-checks 1–7 (§1) gröna — omkörda direkt före
-- [ ] Rollback-plan (§3) bekräftad aktuell
-- [ ] Smoke-förutsättningar (§4) klara: Attack Mode-toggle-plan + temp-lösenord på `provider@example.com`
+- [x] Pre-checks 1–7 (§1) gröna — omkörda direkt före (2026-06-10 för #394; 2026-06-11 för #398)
+- [x] Rollback-plan (§3) bekräftad aktuell
+- [x] Smoke-förutsättningar (§4) klara: Attack Mode-toggle-plan + temp-lösenord på `provider@example.com`
 - [x] **Seed-beslut: Alternativ C** (ingen prod-seed, guard oförändrad) — PO 2026-06-10
-- [ ] **Johan ger explicit klartecken**
+- [x] **Johan ger explicit klartecken** (E-Go 2026-06-10 #394; villkorat E-Go 2026-06-11 #398)
 
 Räknas KLAR när:
-- [ ] PR `staging→main` mergad, CI var grön
-- [ ] Prod-build Ready, `check-prod-env` OK, rätt commit live
-- [ ] Smoke-test (§4) grön — inga 500, demo av, betalning av
-- [ ] Loggar rena
+- [x] PR `staging→main` mergad, CI var grön (#394 `b165103e`, #398 `d58ecd2b` — inkl. E2E)
+- [x] Prod-build Ready, `check-prod-env` OK, rätt commit live
+- [x] Smoke-test (§4) grön — inga 500, demo av, betalning av
+- [x] Loggar rena
+
+> **✅ Workstream E: KLAR 2026-06-11.**
 
 ## 6. Riskregister
 
