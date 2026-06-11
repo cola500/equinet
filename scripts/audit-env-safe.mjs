@@ -1,18 +1,26 @@
-// Read-only safe audit of production environment variables (Workstream C-env).
+// Read-only safe audit of Vercel environment variables (prod or staging).
 //
-// Pulls Vercel production env into a temp file, reports ONLY presence/status per
-// variable (SET / MISSING / EMPTY / WHITESPACE_ONLY), shows non-secret booleans as
-// TRUE/FALSE/UNSET and PAYMENT_PROVIDER as mock/stripe/OTHER, then DELETES the temp
-// file. Never prints any secret value.
+// Pulls the chosen project's production env into a temp file, reports ONLY
+// presence/status per variable (SET / MISSING / EMPTY / WHITESPACE_ONLY), shows
+// non-secret booleans as TRUE/FALSE/UNSET and PAYMENT_PROVIDER as mock/stripe/OTHER,
+// then DELETES the temp file. Never prints any secret value.
 //
-// Run via: npm run audit:prod-env:safe   (tsx resolves the .ts import below)
+// Run via:
+//   npm run audit:prod-env:safe        (prod — equinet-app)
+//   npm run audit:staging-env:safe     (staging — equinet-staging-app)
+//   tsx scripts/audit-env-safe.mjs --project <prod|staging>
+//
+// Targeting uses a throwaway temp dir linked to the project, so the repo's own
+// .vercel link is never touched. CLI-auth only (no VERCEL_TOKEN).
 //
 // No env change. No deploy. No flag change. Read-only.
 
 /* global console, process */
 
 import { execFileSync } from 'node:child_process'
-import { readFileSync, rmSync, existsSync } from 'node:fs'
+import { readFileSync, rmSync, existsSync, mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 // Canonical lists live in check-prod-env.ts — imported so this audit never drifts.
 // Namespace import (not named) because check-prod-env.ts is CJS under tsx (no
@@ -23,7 +31,14 @@ const checkProdEnv = checkProdEnvNs.default ?? checkProdEnvNs
 const REQUIRED_PROD_VARS = checkProdEnv.REQUIRED_PROD_VARS
 const STRIPE_REQUIRED_VARS = checkProdEnv.STRIPE_REQUIRED_VARS
 
-const AUDIT_FILE = '.env.prod.audit'
+/** Map a --project selector to the real Vercel project name. Returns null when invalid. */
+export function resolveProject(arg) {
+  if (arg === undefined || arg === 'prod' || arg === 'production') {
+    return { sel: 'prod', name: 'equinet-app' }
+  }
+  if (arg === 'staging') return { sel: 'staging', name: 'equinet-staging-app' }
+  return null
+}
 
 /** Classify a raw value (or undefined when the key is absent). Never returns the value. */
 export function classify(value) {
@@ -96,39 +111,53 @@ export function buildReport(map) {
   return lines.join('\n')
 }
 
-function cleanup() {
-  try {
-    rmSync(AUDIT_FILE, { force: true })
-  } catch {
-    /* best-effort */
-  }
+/** Read the --project value from argv (supports `--project x` and `--project=x`). */
+export function parseProjectArg(argv) {
+  const eq = argv.find((a) => a.startsWith('--project='))
+  if (eq) return eq.split('=')[1]
+  const i = argv.indexOf('--project')
+  return i !== -1 ? argv[i + 1] : undefined
 }
 
 function main() {
-  // 1. Pull production env to a temp file (stderr captured for the auth/link hint).
+  const project = resolveProject(parseProjectArg(process.argv))
+  if (!project) {
+    console.error("FEL: --project måste vara 'prod' eller 'staging'.")
+    process.exit(1)
+  }
+
+  // Link a throwaway temp dir to the chosen project and pull its production env
+  // there — the repo's own .vercel link is never touched.
+  const tmp = mkdtempSync(join(tmpdir(), 'equinet-env-audit-'))
+  const auditFile = join(tmp, '.env.audit')
   try {
-    execFileSync('vercel', ['env', 'pull', '--environment=production', AUDIT_FILE], {
+    execFileSync('vercel', ['link', '--cwd', tmp, '--project', project.name, '--yes'], {
+      stdio: ['ignore', 'ignore', 'pipe'],
+    })
+    execFileSync('vercel', ['env', 'pull', '--cwd', tmp, '--environment=production', auditFile], {
       stdio: ['ignore', 'ignore', 'pipe'],
     })
   } catch {
-    console.error('FEL: `vercel env pull --environment=production` misslyckades.')
-    console.error('Kör `vercel login` och `vercel link` (välj prod-projektet) och försök igen.')
-    cleanup()
+    console.error(`FEL: kunde inte länka/pulla ${project.sel} (${project.name}).`)
+    console.error('Kör `vercel login` och försök igen (CLI-auth krävs).')
+    rmSync(tmp, { recursive: true, force: true })
     process.exit(1)
   }
 
-  if (!existsSync(AUDIT_FILE)) {
+  if (!existsSync(auditFile)) {
     console.error('FEL: audit-filen skapades inte av `vercel env pull`.')
+    rmSync(tmp, { recursive: true, force: true })
     process.exit(1)
   }
 
   try {
-    const map = parseEnvFile(readFileSync(AUDIT_FILE, 'utf8'))
-    console.log('Production env — säker statusrapport (inga värden visas)\n')
+    const map = parseEnvFile(readFileSync(auditFile, 'utf8'))
+    const label = project.sel === 'staging' ? 'Staging' : 'Production'
+    console.log(`${label} env (${project.name}) — säker statusrapport (inga värden visas)\n`)
     console.log(buildReport(map))
-    console.log('\n(Endast status visad. Audit-filen raderas nu.)')
+    console.log('\n(Endast status visad. Temp-filen raderas nu.)')
   } finally {
-    cleanup()
+    rmSync(tmp, { recursive: true, force: true })
   }
 }
 

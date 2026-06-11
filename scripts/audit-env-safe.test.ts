@@ -5,7 +5,36 @@ import {
   providerStatus,
   parseEnvFile,
   buildReport,
-} from './audit-prod-env-safe.mjs'
+  resolveProject,
+  parseProjectArg,
+} from './audit-env-safe.mjs'
+
+describe('resolveProject', () => {
+  it('defaults to prod (equinet-app) when no arg', () => {
+    expect(resolveProject(undefined)).toEqual({ sel: 'prod', name: 'equinet-app' })
+  })
+  it('maps prod/production → equinet-app', () => {
+    expect(resolveProject('prod')?.name).toBe('equinet-app')
+    expect(resolveProject('production')?.name).toBe('equinet-app')
+  })
+  it('maps staging → equinet-staging-app', () => {
+    expect(resolveProject('staging')).toEqual({ sel: 'staging', name: 'equinet-staging-app' })
+  })
+  it('returns null for invalid selectors', () => {
+    expect(resolveProject('dev')).toBeNull()
+    expect(resolveProject('equinet-app')).toBeNull()
+  })
+})
+
+describe('parseProjectArg', () => {
+  it('reads --project x and --project=x', () => {
+    expect(parseProjectArg(['node', 's', '--project', 'staging'])).toBe('staging')
+    expect(parseProjectArg(['node', 's', '--project=prod'])).toBe('prod')
+  })
+  it('returns undefined when absent', () => {
+    expect(parseProjectArg(['node', 's'])).toBeUndefined()
+  })
+})
 
 describe('classify', () => {
   it('returns MISSING when the key is absent (undefined)', () => {

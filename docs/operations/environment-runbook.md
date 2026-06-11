@@ -67,31 +67,20 @@ Plus icke-hemliga booleans → `TRUE`/`FALSE`/`UNSET` och `PAYMENT_PROVIDER` →
 npm run audit:prod-env:safe
 ```
 
-Scriptet (`scripts/audit-prod-env-safe.mjs`) kör `vercel env pull --environment=production`
+Scriptet (`scripts/audit-env-safe.mjs --project prod`) kör `vercel env pull --environment=production`
 till en temp-fil, skriver ut statusrapporten och **raderar temp-filen**. Inga värden visas.
 
 ### Staging
 
-Staging är ett separat Vercel-projekt (`equinet-staging-app`). Det finns inget dedikerat
-staging-audit-script ännu — kör manuellt genom att tillfälligt länka till staging-projektet:
+Staging är ett separat Vercel-projekt (`equinet-staging-app`). Auditen riktar dit automatiskt
+via en temporär projekt-länk (rör inte repots egen `.vercel`):
 
 ```bash
-# 1. Länka tillfälligt till staging-projektet (i en separat katalog rekommenderas)
-vercel link --project equinet-staging-app --yes
-
-# 2. Pulla + inspektera status (icke-existerande filnamn → ingen overwrite-prompt)
-f="/tmp/staging-audit-$$.env"; rm -f "$f"
-vercel env pull --environment=production "$f" >/dev/null 2>&1
-grep -E '^(DATABASE_URL|DIRECT_DATABASE_URL|NEXT_PUBLIC_DEMO_MODE|PAYMENT_PROVIDER)=' "$f" \
-  | sed -E 's#(://[^:]+:)[^@]+(@)#\1***\2#'   # maskera lösenord
-rm -f "$f"
-
-# 3. Länka tillbaka till prod
-vercel link --project equinet-app --yes
+npm run audit:staging-env:safe
 ```
 
-> **Framtida förbättring:** ett `audit:staging-env:safe`-script som tar projekt som parameter.
-> Tills dess: manuellt enligt ovan.
+Samma maskerade statusrapport som prod. Bägge auditerna delar `scripts/audit-env-safe.mjs`
+(`--project prod|staging`) och visar aldrig värden.
 
 ---
 
@@ -113,27 +102,29 @@ postgresql://postgres.<ref>:<LÖSENORD>@aws-1-<region>.pooler.supabase.com:6543/
 ### Verifiera (maskerat)
 
 ```bash
-f="/tmp/db-verify-$$.env"; rm -f "$f"
-vercel env pull --environment=production "$f" >/dev/null 2>&1
-line=$(grep -E '^DATABASE_URL=' "$f" | head -1); val="${line#*=}"; val="${val%\"}"; val="${val#\"}"
-rm -f "$f"
-echo "längd: ${#val}"
-echo "?pgbouncer=true: $(printf '%s' "$val" | grep -q '?pgbouncer=true' && echo ja || echo NEJ)"
-echo "databasnamn rent /postgres?: $(printf '%s' "$val" | grep -qE '/postgres\?' && echo ja || echo NEJ)"
-echo "maskerat: $(printf '%s' "$val" | sed -E 's#(://[^:]+:)[^@]+(@)#\1***\2#')"
+bash scripts/verify-db-urls.sh prod        # eller: staging
 ```
 
-### Delete + recreate (production)
+Verifierar både DATABASE_URL (pooler 6543 + `?pgbouncer=true&connection_limit=1`) och
+DIRECT_DATABASE_URL (5432, ingen pgbouncer) — maskerat, read-only.
 
-Eftersom DATABASE_URL är `encrypted`/sensitive: **ta bort + skapa ny**. Hämta `?`-formaterad
-sträng från Supabase (Dashboard → Connect → **Transaction pooler**) — den har redan rätt format.
+### Delete + recreate (prod eller staging)
 
-Det finns ett färdigt helper-script som läser nuvarande värde, fixar **bara** suffixet
-(bevarar lösenordet) och recreatar via REST API utan att skriva ut secreten:
+Eftersom DATABASE_URL är `encrypted`/sensitive: **ta bort + skapa ny** (PATCH är opålitligt).
+`set-vercel-env.sh` läser nuvarande värde, fixar **bara** suffixet (bevarar lösenordet) och
+recreatar via REST API utan att skriva ut secreten. Dry-run som default, `--go` för att skriva:
 
 ```bash
-bash scripts/set-prod-database-url.sh          # DRY-RUN: visar maskerad före/efter + plan
-bash scripts/set-prod-database-url.sh --go      # KÖR delete + create + verifiera
+bash scripts/set-vercel-env.sh --project prod    --key DATABASE_URL --normalize-db-url        # DRY-RUN
+bash scripts/set-vercel-env.sh --project prod    --key DATABASE_URL --normalize-db-url --go    # KÖR
+bash scripts/set-vercel-env.sh --project staging --key DATABASE_URL --normalize-db-url --go    # staging
+```
+
+För andra sensitive vars (utan normalisering) frågar scriptet efter nytt värde (dolt):
+
+```bash
+bash scripts/set-vercel-env.sh --project prod --key DIRECT_DATABASE_URL          # DRY-RUN, fråga om värde
+bash scripts/set-vercel-env.sh --project prod --key DIRECT_DATABASE_URL --go      # KÖR
 ```
 
 Eller manuellt via Vercel REST API (mönster — fyll i projekt/team/id):
@@ -240,25 +231,25 @@ npm run audit:prod-env:safe
 
 ### Audit staging
 ```bash
-vercel link --project equinet-staging-app --yes
-f="/tmp/staging-audit-$$.env"; rm -f "$f"; vercel env pull --environment=production "$f" >/dev/null 2>&1
-grep -E '^(DATABASE_URL|DIRECT_DATABASE_URL|NEXT_PUBLIC_DEMO_MODE|PAYMENT_PROVIDER)=' "$f" | sed -E 's#(://[^:]+:)[^@]+(@)#\1***\2#'
-rm -f "$f"; vercel link --project equinet-app --yes
+npm run audit:staging-env:safe
+```
+
+### Verifiera DB-URL-format (maskat)
+```bash
+bash scripts/verify-db-urls.sh prod
+bash scripts/verify-db-urls.sh staging
 ```
 
 ### Update prod DATABASE_URL (fixa suffix)
 ```bash
-bash scripts/set-prod-database-url.sh          # dry-run (maskerad före/efter)
-bash scripts/set-prod-database-url.sh --go      # delete + create + verifiera
+bash scripts/set-vercel-env.sh --project prod --key DATABASE_URL --normalize-db-url        # dry-run
+bash scripts/set-vercel-env.sh --project prod --key DATABASE_URL --normalize-db-url --go    # kör
 ```
 
 ### Update staging DATABASE_URL
 ```bash
-# Länka till staging först, kör sedan samma delete+create-mönster (REST API) mot equinet-staging-app.
-# Anpassa scriptet eller använd REST API-blocket ovan med staging-projektets PID/TEAM.
-vercel link --project equinet-staging-app --yes
-# ... delete + create mot target [production] i staging-projektet ...
-vercel link --project equinet-app --yes
+bash scripts/set-vercel-env.sh --project staging --key DATABASE_URL --normalize-db-url        # dry-run
+bash scripts/set-vercel-env.sh --project staging --key DATABASE_URL --normalize-db-url --go    # kör
 ```
 
 ### Set/remove NEXT_PUBLIC_DEMO_MODE
@@ -277,8 +268,10 @@ vercel env add PAYMENT_PROVIDER production           # skriv: mock
 
 ### Verify after change
 ```bash
-npm run audit:prod-env:safe        # status
-# + byte-verifiera DATABASE_URL maskerat (se DATABASE_URL → Verifiera ovan)
+npm run audit:prod-env:safe        # status (prod)
+npm run audit:staging-env:safe     # status (staging)
+bash scripts/verify-db-urls.sh prod        # DB-URL-format maskat
+bash scripts/verify-db-urls.sh staging
 ```
 
 ### Cleanup audit files
@@ -309,5 +302,7 @@ rm -f /tmp/*-audit-*.env /tmp/db-verify-*.env /tmp/staging-audit-*.env
 - [production-env-guard-plan.md](../sprints/production-env-guard-plan.md) — Workstream C (env guard) och utfall.
 - [staging-environment-setup.md](staging-environment-setup.md) — hur staging-miljön är uppsatt.
 - [incident-runbook.md](incident-runbook.md) — generell incidenthantering.
-- `scripts/audit-prod-env-safe.mjs` — safe audit-scriptet.
-- `scripts/set-prod-database-url.sh` — helper för DATABASE_URL delete+create (dry-run + `--go`).
+- `scripts/audit-env-safe.mjs` — safe audit (`--project prod|staging`); via `npm run audit:prod-env:safe` / `audit:staging-env:safe`.
+- `scripts/verify-db-urls.sh <prod|staging>` — maskerad format-verifiering av DATABASE_URL + DIRECT_DATABASE_URL.
+- `scripts/set-vercel-env.sh --project <prod|staging> --key <KEY> [--normalize-db-url] [--go]` — säker delete+create (dry-run default).
+- `scripts/lib/vercel-env-lib.sh` — delade helpers (projekt-targeting, mask, normalisering).
