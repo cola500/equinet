@@ -27,8 +27,8 @@ Logga in som **Erik Järnfot** på `/login`:
 
 ## Genomgång (10 steg)
 
-- **Dashboard** — översikt bokningar, kunder, aktuella händelser
-- **Kalender** — veckovy, klicka på Lisa Andersson/Molly-bokningen
+- **Kalender** (här landar du efter inloggning) — veckovy, klicka på Lisa Andersson/Molly-bokningen
+- **Översikt/Dashboard** (via menyn) — översikt bokningar, kunder, aktuella händelser
 - **Bokningsdetalj** — serie-badge ("Del av återkommande serie"), kundinfo, tidslinje
 - **Bokningslista** — filtrera per status, se historik
 - **Kundlista** — klicka på Anders Bergman
