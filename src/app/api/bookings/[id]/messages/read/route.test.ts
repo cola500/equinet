@@ -52,10 +52,8 @@ vi.mock('@/lib/prisma', () => ({
 
 import { PATCH } from './route'
 import { getAuthUser } from '@/lib/auth-dual'
-import { isFeatureEnabled } from '@/lib/feature-flags'
 
 const mockGetAuthUser = vi.mocked(getAuthUser)
-const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 // -----------------------------------------------------------
 // Fixtures
@@ -102,7 +100,6 @@ describe('PATCH /api/bookings/[id]/messages/read', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetAuthUser.mockResolvedValue(makeCustomerUser() as never)
-    mockIsFeatureEnabled.mockResolvedValue(true)
     mockPrismaBookingFindFirst.mockResolvedValue(makeBookingRow())
     mockFindByBookingId.mockResolvedValue({
       id: 'conv-1',
@@ -117,12 +114,6 @@ describe('PATCH /api/bookings/[id]/messages/read', () => {
     mockGetAuthUser.mockResolvedValue(null)
     const res = await PATCH(makeRequest(), { params })
     expect(res.status).toBe(401)
-  })
-
-  it('returns 404 when messaging feature is disabled', async () => {
-    mockIsFeatureEnabled.mockResolvedValue(false)
-    const res = await PATCH(makeRequest(), { params })
-    expect(res.status).toBe(404)
   })
 
   it('returns 404 when booking not found', async () => {

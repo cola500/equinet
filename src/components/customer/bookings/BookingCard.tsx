@@ -15,7 +15,6 @@ import { StarRating } from "@/components/review/StarRating"
 import { format, formatDistanceToNow } from "date-fns"
 import { sv } from "date-fns/locale"
 import type { CombinedBooking, Booking } from "./types"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { MessagingDialog } from "./MessagingDialog"
 
 interface BookingCardProps {
@@ -83,11 +82,10 @@ export function BookingCard({
   onReschedule,
   onDeleteReview,
 }: BookingCardProps) {
-  const messagingEnabled = useFeatureFlag("messaging")
   const [messagingOpen, setMessagingOpen] = useState(false)
 
   const allowedMessagingStatuses = ["pending", "confirmed", "completed"]
-  const canMessage = booking.type === "fixed" && messagingEnabled && allowedMessagingStatuses.includes(booking.status)
+  const canMessage = booking.type === "fixed" && allowedMessagingStatuses.includes(booking.status)
 
   return (
     <Card

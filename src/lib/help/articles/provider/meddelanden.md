@@ -56,4 +56,3 @@ Klicka för att fylla i textrutan — du kan redigera innan du skickar.
 
 - Meddelanden är kopplade till en specifik bokning — du och kunden ser bara meddelanden för den gemensamma bokningen.
 - Kunden kan initiera en konversation från sin bokningssida. Du svarar i din inkorg.
-- Funktionen kräver att Meddelanden är aktiverat i ditt konto. Kontakta support om du inte ser fliken.
