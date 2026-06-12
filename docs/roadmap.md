@@ -141,7 +141,6 @@ NFR Production Readiness Score: **79%** (50/63 klara). Enda P0-blocker ar Stripe
 | `provider_subscription` | Vilken prismodell? Stripe subscription-infrastruktur ar klar. |
 | `stable_profiles` | Behalla eller ta bort? Aldrig testad med riktiga anvandare. |
 | `demo_mode` | Behovs efter lansering? Kan slackas. |
-| `supabase_auth_poc` | Bort -- PoC ar klar sedan S10. |
 
 ---
 
