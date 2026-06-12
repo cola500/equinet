@@ -128,3 +128,21 @@ BEGIN
   END IF;
 END
 $$;
+
+-- -----------------------------------------------------------------------------
+-- Deterministic table grants for anon / authenticated / service_role
+-- -----------------------------------------------------------------------------
+-- These role privileges normally come from Supabase's default privileges, which
+-- apply non-deterministically in CI (race between `supabase start` init and
+-- `prisma migrate deploy`). When the race is lost, Prisma-created tables receive
+-- no role grants → "permission denied for table Booking/Notification/Service" in
+-- the offline-E2E job (and online reads would fail too). These explicit grants run
+-- AFTER `migrate deploy` (auth-triggers.sql is applied with --url after migrations),
+-- so every table already exists. RLS still enforces row-level security — table
+-- grants only let the role attempt a query; policies decide which rows are visible.
+-- Idempotent: safe to re-run.
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;

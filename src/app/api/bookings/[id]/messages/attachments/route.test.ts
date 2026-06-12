@@ -82,7 +82,6 @@ vi.mock('@/domain/notification/MessageNotifierFactory', () => ({
 import { POST } from './route'
 import { getAuthUser } from '@/lib/auth-dual'
 import { loadBookingForMessaging } from '@/domain/conversation/loadBookingForMessaging'
-import { isFeatureEnabled } from '@/lib/feature-flags'
 import { rateLimiters, RateLimitServiceError } from '@/lib/rate-limit'
 import { validateMessageAttachment, uploadMessageAttachment, deleteMessageAttachment } from '@/lib/supabase-storage'
 
@@ -153,7 +152,6 @@ function makeRequestWithContentLength(bookingId: string, contentLength: number) 
 describe('POST /api/bookings/[id]/messages/attachments', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     vi.mocked(rateLimiters.messageUpload).mockResolvedValue(true)
     vi.mocked(validateMessageAttachment).mockResolvedValue(null)
     vi.mocked(uploadMessageAttachment).mockResolvedValue('booking-1/msg-abc.jpg')
@@ -167,14 +165,6 @@ describe('POST /api/bookings/[id]/messages/attachments', () => {
     const req = makeFormDataRequest('b0000000-0000-4000-b000-000000000001')
     const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
     expect(res.status).toBe(401)
-  })
-
-  it('returns 404 when messaging feature is disabled', async () => {
-    vi.mocked(getAuthUser).mockResolvedValue(makeAuthUser() as never)
-    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
-    const req = makeFormDataRequest('b0000000-0000-4000-b000-000000000001')
-    const res = await POST(req, { params: Promise.resolve({ id: 'b0000000-0000-4000-b000-000000000001' }) })
-    expect(res.status).toBe(404)
   })
 
   it('returns 429 when rate limited', async () => {

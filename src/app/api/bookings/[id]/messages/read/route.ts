@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getAuthUser } from '@/lib/auth-dual'
 import { rateLimiters } from '@/lib/rate-limit'
-import { isFeatureEnabled } from '@/lib/feature-flags'
 import { logger } from '@/lib/logger'
 import { ConversationService } from '@/domain/conversation/ConversationService'
 import { loadBookingForMessaging } from '@/domain/conversation/loadBookingForMessaging'
@@ -25,11 +24,6 @@ export async function PATCH(
     const authUser = await getAuthUser(request)
     if (!authUser) {
       return NextResponse.json({ error: 'Ej inloggad' }, { status: 401 })
-    }
-
-    // 2. Feature flag
-    if (!(await isFeatureEnabled('messaging'))) {
-      return NextResponse.json({ error: 'Ej tillgänglig' }, { status: 404 })
     }
 
     // 3B.2: reject non-UUID bookingId before DB/storage/service work
@@ -56,7 +50,7 @@ export async function PATCH(
     // 5. Mark messages as read
     const readerRole = userType === 'customer' ? 'CUSTOMER' : 'PROVIDER'
     const repo = new PrismaConversationRepository()
-    const service = new ConversationService({ conversationRepository: repo, isFeatureEnabled })
+    const service = new ConversationService({ conversationRepository: repo })
 
     await service.markAsRead({ bookingId, readerRole })
 

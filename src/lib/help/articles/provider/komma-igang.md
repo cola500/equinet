@@ -14,7 +14,7 @@ keywords:
 summary: Steg-för-steg-checklista för att komma igång som leverantör på Equinet.
 ---
 
-När du skapar ett leverantörskonto möts du av en checklista på din dashboard som vägleder dig genom uppsättningen.
+När du skapar ett leverantörskonto landar du på din **kalender** — din arbetsyta. Under **Översikt** i menyn ser du status och nästa steg, och stegen nedan vägleder dig genom uppsättningen.
 
 1. Fyll i din företagsprofil
 2. Lägg till minst en tjänst

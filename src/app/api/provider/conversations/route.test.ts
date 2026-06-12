@@ -45,10 +45,8 @@ vi.mock('@/infrastructure/persistence/conversation/PrismaConversationRepository'
 // Import after mocks
 import { GET } from './route'
 import { getAuthUser } from '@/lib/auth-dual'
-import { isFeatureEnabled } from '@/lib/feature-flags'
 
 const mockGetAuthUser = vi.mocked(getAuthUser)
-const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 // -----------------------------------------------------------
 // Fixtures
@@ -87,7 +85,6 @@ describe('GET /api/provider/conversations', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetAuthUser.mockResolvedValue(makeProviderUser() as never)
-    mockIsFeatureEnabled.mockResolvedValue(true)
     mockGetInboxForProvider.mockResolvedValue(makeInboxItems())
   })
 
@@ -95,12 +92,6 @@ describe('GET /api/provider/conversations', () => {
     mockGetAuthUser.mockResolvedValue(null)
     const res = await GET(makeRequest())
     expect(res.status).toBe(401)
-  })
-
-  it('returns 404 when messaging feature is disabled', async () => {
-    mockIsFeatureEnabled.mockResolvedValue(false)
-    const res = await GET(makeRequest())
-    expect(res.status).toBe(404)
   })
 
   it('returns 403 when caller is not a provider', async () => {

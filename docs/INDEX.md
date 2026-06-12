@@ -33,7 +33,7 @@ sections:
 | [offline-pwa.md](architecture/offline-pwa.md) | Offline PWA-arkitektur (service worker, IndexedDB, sync) |
 | [booking-flow.md](architecture/booking-flow.md) | Bokningsflode och betalning |
 | [scaling.md](architecture/scaling.md) | Skalningsplan for 500 anvandare |
-| [arkitektgenomlysning.md](architecture/arkitektgenomlysning.md) | Arkitekturgenomlysning |
+| [provider-workday.md](architecture/provider-workday.md) | Leverantörens arbetsdag -- rutter, geo-integrationer, Dagens rutt |
 | [architecture-review.md](architecture-review.md) | Arkitekturgenomgang Q1 2026 |
 | [code-quality-review.md](code-quality-review.md) | Kodkvalitetsgenomgang Q1 2026 |
 | [changeability-review.md](changeability-review.md) | Forandringsbarhet Q1 2026 |
@@ -53,6 +53,7 @@ sections:
 | [url-configuration.md](operations/url-configuration.md) | Alla URL-config-platser (Vercel, Supabase, iOS, Stripe, Resend) + checklista domänbyte |
 | [deployment.md](operations/deployment.md) | Komplett deploy-guide (Vercel + Supabase) |
 | [environments.md](operations/environments.md) | Konfiguration och skillnader mellan lokal utveckling och produktion |
+| [environment-runbook.md](operations/environment-runbook.md) | Säkra copy/paste-steg för Vercel/Supabase env + DB-URL:er (audit, verifiering, delete+create) — prod + staging |
 | [monitoring.md](operations/monitoring.md) | Övervakningsverktyg, loggning, viktiga metrics och begränsningar |
 | [incident-runbook.md](operations/incident-runbook.md) | Vanliga driftstörningar och steg-för-steg-lösningar |
 | [backup-policy.md](operations/backup-policy.md) | RPO/RTO, backup-strategi och restore-steg |

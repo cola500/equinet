@@ -126,28 +126,12 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: true,
     category: "shared",
   },
-  supabase_auth_poc: {
-    key: "supabase_auth_poc",
-    label: "Supabase Auth PoC",
-    description: "Aktiverar test-route för Supabase Auth proof-of-concept",
-    defaultEnabled: false,
-    clientVisible: false,
-    category: "shared",
-  },
   data_retention: {
     key: "data_retention",
     label: "GDPR datalagring",
     description: "Automatisk radering av inaktiva konton efter 2 år + 30 dagars varning",
     defaultEnabled: false,
     clientVisible: false,
-    category: "shared",
-  },
-  messaging: {
-    key: "messaging",
-    label: "Meddelanden",
-    description: "Tvåvägs text-kommunikation mellan kund och leverantör per bokning",
-    defaultEnabled: true,
-    clientVisible: true,
     category: "shared",
   },
 }

@@ -4,9 +4,10 @@ description: "Konfiguration och skillnader mellan lokal utveckling, staging och 
 category: operations
 tags: [environments, vercel, supabase, ios, config]
 status: active
-last_updated: 2026-05-08
+last_updated: 2026-06-11
 related:
   - deployment.md
+  - environment-runbook.md
   - staging-environment-setup.md
   - url-configuration.md
   - ../../NFR.md
@@ -152,11 +153,15 @@ git checkout staging && git merge main && git push origin staging
 - **Redirect URLs allowlist:** innehåller både ny och gammal domän under cutover-perioden
 
 ```
-DATABASE_URL=postgresql://postgres.REF:PWD@pooler.supabase.com:5432/postgres?pgbouncer=true&connection_limit=1
-DIRECT_DATABASE_URL=postgresql://postgres.REF:PWD@pooler.supabase.com:5432/postgres
+DATABASE_URL=postgresql://postgres.REF:PWD@aws-1-REGION.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+DIRECT_DATABASE_URL=postgresql://postgres:PWD@db.REF.supabase.co:5432/postgres
 ```
 
-> `DIRECT_DATABASE_URL` anvands for migrationer (kringgår PgBouncer).
+> **DATABASE_URL = transaction pooler (port `6543`) MED `?pgbouncer=true&connection_limit=1`** (runtime/serverless).
+> **DIRECT_DATABASE_URL = direct (port `5432`) UTAN pgbouncer** — används för migrationer (kringgår PgBouncer).
+> Vanligt fel: `&connection_limit=1` utan inledande `?` → Prisma tolkar databasnamnet fel →
+> `PrismaClientInitializationError` (prod-incident 2026-06-11). Auktoritativ format-rutin +
+> maskerad verifiering: **[environment-runbook.md](environment-runbook.md)** (`scripts/verify-db-urls.sh`).
 
 ### Cron-jobb
 
@@ -181,7 +186,9 @@ Autentiseras med `CRON_SECRET` (Bearer token).
 | `RESEND_API_KEY` | (tom = konsol-logg) | -- | Resend API-nyckel | E-post |
 | `CRON_SECRET` | Valfri | -- | Stark slumpad | Cron-autentisering |
 | `DISABLE_CRONS` | -- | `true` (i isolerat staging-projekt) | -- (FAR ALDRIG vara satt) | Skip-flagga for cron-jobb. Pre-build-guard avvisar prod-deploy om DISABLE_CRONS=true. |
-| `SUBSCRIPTION_PROVIDER` | `mock` | `mock` | `stripe` | Betalning |
+| `PAYMENT_PROVIDER` | `mock` | `mock` | **`mock`** | Betalningsgateway. Parity: prod kör **mock**; Stripe Live = Post-Parity. |
+| `SUBSCRIPTION_PROVIDER` | `mock` | `mock` | (ej satt) | Prenumeration. Ej satt i prod → kod-default. Verifiera via `npm run audit:prod-env:safe`. |
+| `NEXT_PUBLIC_DEMO_MODE` | (ej satt) | `true` | **`false`** | Demo-UI (build-time, kräver rebuild vid ändring). Av i prod, på i staging (demo-miljön). |
 
 ### DISABLE_CRONS — anvandning
 

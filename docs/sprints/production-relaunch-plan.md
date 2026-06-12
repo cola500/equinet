@@ -2,8 +2,8 @@
 title: Production Parity-plan (tidigare "Relaunch")
 description: Handlingsbar sprintplan/checklista för att lyfta production till staging-paritet (deploybar, schema/kod/feature/env-paritet, smoke-testad) — INTE publik lansering. Baserad på Production Gap Audit 2026-06-09, PO-beslut 2026-06-10.
 category: sprint
-status: draft
-last_updated: 2026-06-10
+status: active
+last_updated: 2026-06-11
 tags: [production, parity, relaunch, migration, feature-flags, stripe, deploy]
 related:
   - docs/ux/visual-audit/stall-route-provider/README.md
@@ -23,9 +23,17 @@ sections:
 
 # Production Parity-plan (tidigare "Relaunch")
 
-> **Status: PLAN — ingen implementation påbörjad.** Detta dokument gör Production Gap
-> Audit (2026-06-09) handlingsbart som en avbockbar checklista. Inga ändringar i
-> prod/staging, ingen deploy, migration eller seed sker förrän Go/No-Go (§5) är grön.
+> **✅ Status: GENOMFÖRD 2026-06-11.** Production Parity är uppnådd: migrationer (A),
+> flaggor (B), env (C) och deploy (E, PR #394 + #398 → `d58ecd2b`) klara, smoke-test (F)
+> grön 2026-06-11. Prod kör staging-paritetskoden med demo av och betalning på mock.
+> Stripe Live och kommersiell lansering är fortsatt Post-Parity (D / Out of scope).
+>
+> **Incidenter under E/F** (båda lösta; se [environment-runbook.md](../operations/environment-runbook.md)
+> för den återanvändbara rutinen):
+> 1. Prod-`DATABASE_URL` hade `…/postgres&connection_limit=1` (`&` i st.f. `?pgbouncer=true&`)
+>    → `PrismaClientInitializationError` → session-401 vid login. Fixad via REST API
+>    delete+create + redeploy (2026-06-11).
+> 2. `NEXT_PUBLIC_SUPABASE_ANON_KEY` hade literal `\n`-suffix — städad (hygien; var inte rotorsaken).
 >
 > **2026-06-10:** PO-beslut omdefinierar målet från *publik relansering* till
 > **production parity** (se Fas 0 + Production Goal). Titeln behåller "Relaunch" inom
@@ -136,19 +144,19 @@ Projekt-referenser:
 | 6 | `20260419100000_add_message_attachment_fields` | Bilage-fält på Message | Medel |
 | 7 | `20260608120000_horse_provider_booking_read` | RLS: leverantör läser häst på egen bokning (stall) | Medel (stall-vyer) |
 
-Checklista:
-- [ ] Bekräfta listan ovan mot prod via `migrate:status` / `_prisma_migrations` (förväntat: 39 applied, 7 pending)
-- [ ] Fastställ apply-ordning (kronologisk, tabellen ovan)
-- [ ] Ta fram verifierings-SQL per migration (tabell-existens + RLS-policy-existens), t.ex.:
+Checklista (allt utfört 2026-06-10, se apply-planens utfall):
+- [x] Bekräfta listan ovan mot prod via `migrate:status` / `_prisma_migrations` (förväntat: 39 applied, 7 pending)
+- [x] Fastställ apply-ordning (kronologisk, tabellen ovan)
+- [x] Ta fram verifierings-SQL per migration (tabell-existens + RLS-policy-existens), t.ex.:
   - `SELECT to_regclass('public."StripeWebhookEvent"');` (migration 3)
   - `SELECT to_regclass('public."Conversation"'), to_regclass('public."Message"');` (migration 4)
   - `SELECT policyname FROM pg_policies WHERE tablename='Horse' AND policyname='horse_provider_booking_read';` (migration 7)
-- [ ] Ta backup/checkpoint av prod-DB FÖRE (Supabase PITR/backup; dokumentera tidpunkt)
-- [ ] Applicera migrationerna i ordning (1→7) via Supabase MCP `apply_migration` eller `migrate deploy`
-- [ ] Registrera varje i `_prisma_migrations` med korrekt checksum (om applicerad via MCP)
-- [ ] Verifiera `migrate:status` = 0 pending, 0 failed
-- [ ] Verifiera nyckeltabeller finns: StripeWebhookEvent, Conversation, Message, AdminAuditLog
-- [ ] Verifiera RLS-policies aktiva (Booking, Horse, Conversation)
+- [x] Ta backup/checkpoint av prod-DB FÖRE (Supabase PITR/backup; dokumentera tidpunkt)
+- [x] Applicera migrationerna i ordning (1→7) via Supabase MCP `apply_migration` eller `migrate deploy`
+- [x] Registrera varje i `_prisma_migrations` med korrekt checksum (om applicerad via MCP)
+- [x] Verifiera `migrate:status` = 0 pending, 0 failed (46 applied / 0 failed)
+- [x] Verifiera nyckeltabeller finns: StripeWebhookEvent, Conversation, Message, AdminAuditLog
+- [x] Verifiera RLS-policies aktiva (Booking, Horse, Conversation)
 
 > **Beroende:** Måste göras FÖRE kod-deploy (E). Prod-koden förväntar redan dessa tabeller.
 
@@ -186,14 +194,14 @@ Checklista:
 
 **Föräldralösa flagg-rader** (borttagna ur kod, GA 2026-04-25 — rader kvar i DB, ignoreras av kod): `business_insights`, `due_for_service`, `group_bookings`, `recurring_bookings` (staging + prod), samt `customer_invite` (prod). Städa vid tillfälle, ej blocker.
 
-Checklista:
-- [ ] Lista prod/staging/default per flagga (tabell ovan — komplettera med Vercel `FEATURE_*`-env)
-- [ ] Definiera avsedd prod-config: **parity = matcha stagings effektiva config**, med `demo_mode` som medvetet undantag (av i prod)
+Checklista (allt utfört 2026-06-10, se B-planens utfall):
+- [x] Lista prod/staging/default per flagga (tabell ovan — komplettera med Vercel `FEATURE_*`-env)
+- [x] Definiera avsedd prod-config: **parity = matcha stagings effektiva config**, med `demo_mode` som medvetet undantag (av i prod)
 - [x] **demo_mode → AV** i prod (beslutat, Fas 0)
-- [ ] **stable_profiles** → bekräfta (prod på idag, staging av; för parity bör prod matcha staging = av)
-- [ ] **stripe_payments** → flagg-state för parity (Stripe **Live** är Post-Parity per Fas 0; test-mode/mock som staging kan behållas)
-- [ ] GA-flaggor (voice_logging, route_planning, route_announcements, customer_insights, self_reschedule) → **på i prod** för parity med staging (bekräfta)
-- [ ] Verifiera efter ändring (läs `FeatureFlag`-tabell + `/api/feature-flags`)
+- [x] **stable_profiles** → AV (prod matchar staging)
+- [x] **stripe_payments** → AV (Stripe **Live** är Post-Parity; prod kör `PAYMENT_PROVIDER=mock`)
+- [x] GA-flaggor (voice_logging, route_planning, route_announcements, customer_insights, self_reschedule) → **på i prod** (parity med staging)
+- [x] Verifiera efter ändring (läs `FeatureFlag`-tabell + `/api/feature-flags`)
 
 ### C. Env guard / env docs
 
@@ -212,9 +220,9 @@ Checklista:
 - [x] Rätta `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` i `.env.example` — **PR #392**
 - [x] Lägg till saknade env-vars i `.env.example` (`NEXTAUTH_SECRET`, `PAYMENT_PROVIDER`, `MODAL_API_URL`, `FORTNOX_*`, `EDGE_CONFIG`/`EDGE_CONFIG_ID`/`VERCEL_API_TOKEN`, `DISABLE_SW`, `ANALYZE`, `DISABLE_CRONS`, `STAGING_PROJECT`, `NEXT_PUBLIC_DEMO_MODE`) — **PR #392**
 - [x] **STRIPE_SECRET_KEY-blockern löst** (val A: villkorliga Stripe-vars) — **PR #392**
-- [ ] Verifiera Vercel prod-env via `vercel env pull --environment=production` (särskilt efter pausen): Supabase-URL/keys, `APP_URL`, `DATABASE_URL`/`DIRECT_DATABASE_URL`, Upstash Redis — **[Johan-manuellt]**
-- [ ] Sätt `NEXT_PUBLIC_DEMO_MODE` = false/borttagen i prod-env (slutför demo_mode, kräver rebuild i E) — **[Johan-manuellt]**
-- [ ] Påminnelse: använd Vercel **REST API** för icke-triviala env-skrivningar (CLI `--value`/stdin sparar tyst tomt)
+- [x] Verifiera Vercel prod-env via `vercel env pull --environment=production` (alla 9 required SET; DB-URL-format verifierade via `verify-db-urls.sh`)
+- [x] Sätt `NEXT_PUBLIC_DEMO_MODE` = false i prod-env (rebuild gjord i E; demo bekräftat av i prod-smoke)
+- [x] Påminnelse: använd Vercel **REST API** för icke-triviala env-skrivningar (CLI `--value`/stdin sparar tyst tomt) — kodifierad i [environment-runbook.md](../operations/environment-runbook.md) + `scripts/set-vercel-env.sh`
 
 ### D. Stripe / payment readiness — FUTURE SLICE / POST-PARITY
 
@@ -242,23 +250,33 @@ Checklista:
 > gjordes villkorliga (required bara när `PAYMENT_PROVIDER=stripe`). `check-prod-env` blockerar inte längre
 > prod-deployen när Stripe är av. Detaljer i [env-guard-planen §2](production-env-guard-plan.md).
 
-- [x] **STRIPE_SECRET_KEY-blockern löst** (val A, PR #392 — väntar merge)
-- [ ] CI grön på staging-branchen (`check:all` + E2E mot main-PR)
-- [ ] Migrationer applicerade på prod-DB FÖRST (workstream A klar)
-- [ ] Feature flags reconcilade (workstream B klar)
-- [ ] Env-guard grön + Vercel prod-env verifierad (workstream C klar) — inkl. PR #392 mergad
-- [ ] Merge `staging` → `main` (PR, CI grön)
-- [ ] Verifiera prod-deploy (rätt commit live, build OK, `check-prod-env` passerade)
+> **✅ GENOMFÖRD 2026-06-10→11:** Första parity-deployen via **PR #394** (merge `b165103e`).
+> Auth-E2E-blockern (8 tester) visade sig vara test-skuld (kund→`/hem`, register-CTA) — fixad
+> i **PR #395** → #394:s E2E grön → merge + deploy success. Uppföljande parity-deploy **PR #398**
+> (`d58ecd2b`, 2026-06-11) tog med provider→kalender-routing (#396), env-scripts R1–R3 (#397).
+> Två env-incidenter under E/F (DATABASE_URL-suffix, ANON_KEY `\n`) — se status-blocket överst
+> + [environment-runbook.md](../operations/environment-runbook.md).
+
+- [x] **STRIPE_SECRET_KEY-blockern löst** (val A, PR #392 — mergad)
+- [x] CI grön på staging-branchen (`check:all` + E2E mot main-PR — E2E körs på base=main-PR)
+- [x] Migrationer applicerade på prod-DB FÖRST (workstream A klar)
+- [x] Feature flags reconcilade (workstream B klar)
+- [x] Env-guard grön + Vercel prod-env verifierad (workstream C klar) — inkl. PR #392 mergad
+- [x] Merge `staging` → `main` (PR #394 `b165103e` + PR #398 `d58ecd2b`, CI grön inkl. E2E)
+- [x] Verifiera prod-deploy (rätt commit live, build OK, `check-prod-env` passerade)
 
 ### F. Prod smoke-test
 
-- [ ] Login (riktig persona — INTE demo-seed)
-- [ ] Bokningslista renderar utan fel
-- [ ] Dagens rutt (`/provider/today`) renderar
-- [ ] Häst/stall-data syns (RLS-migration 7 verifierad)
-- [ ] Betalningar (om enabled) — test/live enligt §2
-- [ ] **Inga 500-fel från saknade tabeller** (StripeWebhookEvent, Conversation, Message)
-- [ ] Loggar kontrollerade (Sentry/Vercel runtime logs rena efter deploy)
+> **✅ GRÖN 2026-06-11** (körd efter både #394- och #398-deployen, persona `provider@example.com`):
+
+- [x] Login (riktig persona — INTE demo-seed) — session etableras; provider landar på `/provider/calendar` (#396)
+- [x] Bokningslista renderar utan fel (Alla 11 / Väntar 5 / Bekräftade 2 / Genomförda 4 / Avbokade 1)
+- [x] Dagens rutt (`/provider/today`) renderar (korrekt tomtläge, ingen 500)
+- [x] Häst/stall-data syns (RLS-migration 7 verifierad — hästlänkar i bokningslistan resolvar)
+- [x] Betalningar — **mock** (`PAYMENT_PROVIDER=mock`; Stripe Live = Post-Parity, ej smokad)
+- [x] **Inga 500-fel från saknade tabeller** (47 tabeller i prod; StripeWebhookEvent, Conversation, Message finns)
+- [x] Loggar kontrollerade (enda console-bruset = `manifest.webmanifest` 429 från Vercels bot-mitigering — inte app-fel)
+- [x] Demo bekräftat AV i prod (inga demo-knappar på `/login`; `NEXT_PUBLIC_DEMO_MODE=FALSE`)
 
 ---
 
@@ -281,11 +299,13 @@ Checklista:
 
 Deploy till prod får ske ENDAST när alla nedan är bockade:
 
-- [ ] Alla **must-have** klara (workstream A, B, C, E, F — D är Post-Parity, ej krav)
-- [ ] **Rollback-plan** dokumenterad och aktuell (Vercel promote-tidigare + forward-migration; se `docs/operations/incident-runbook.md`)
-- [ ] **Smoke-test-plan** klar (workstream F definierad och redo att köras direkt efter deploy)
-- [ ] **Johan godkänner deploy** explicit
+- [x] Alla **must-have** klara (workstream A, B, C, E, F — D är Post-Parity, ej krav)
+- [x] **Rollback-plan** dokumenterad och aktuell (Vercel promote-tidigare + forward-migration; se `docs/operations/incident-runbook.md`)
+- [x] **Smoke-test-plan** klar (workstream F definierad och redo att köras direkt efter deploy)
+- [x] **Johan godkänner deploy** explicit (E-Go 2026-06-10 för #394; villkorat E-Go 2026-06-11 för #398)
 - [x] **Prod-data-fråga besvarad** (Fas 0: bedöms testdata; backup/PITR ändå före migration)
+
+> **✅ Go/No-Go: GO gavs och deployen genomfördes 2026-06-10→11.** Sprinten är avslutad.
 
 ---
 

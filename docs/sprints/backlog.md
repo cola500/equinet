@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Kanonisk backlog för Equinet. Alla kända stories, uppgifter och beslut. status.md pekar hit; roadmap.md är den strategiska vyn."
 category: sprint
 status: active
-last_updated: 2026-06-07
+last_updated: 2026-06-12
 tags: [backlog, roadmap, planning]
 sections:
   - Aktiva produktspår
@@ -59,7 +59,6 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | `provider_subscription` | Vilken prismodell? Stripe subscription-infrastruktur är klar. | Monetarisering |
 | `stable_profiles` | Behålla eller ta bort? Aldrig testad med riktiga användare. | Feature-yta, underhåll |
 | `demo_mode` | Behövs efter lansering, eller kan släckas? | Demo-spår |
-| `supabase_auth_poc` | PoC klar sedan S10 → ta bort flaggan? (kandidat: arkivera) | Städning |
 | Mapbox-token | Köpa konto/token för att aktivera `route_planning` + `route_announcements` (kod klar)? | Ruttplanering live |
 | Fortnox API-access | Ansöka om access för fakturerings-integration? | Fortnox-spår |
 | Seven Dimensions + teater-metodik (R8) | Behåll / förenkla / ta bort? Process-metodik-eval; fönstret (S55) passerat. Din process-kompass. | Arbetssätt |
@@ -137,7 +136,6 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Help-data drift protection | 15-30 min | CI-validation som regenererar `articles-data.ts` och diffar mot committed version. Bevisat behov efter PR #333 (staging hade tom hjälpsektion pga `.vercelignore` + build-time-generator). Story: [help-data-drift-protection.md](../stories/help-data-drift-protection.md). |
 | Audit hårdkodade framtida datum i tester (time-bomb-audit) | 30 min–1h | Booking-series-fail (fixad 2026-05-14) hade rotorsak i hårdkodat `firstBookingDate: "2026-05-01"`. Risk: fler test-fixtures har samma time-bomb. `grep -rE '"20[2-3][0-9]-..."' src/**/*.test.ts e2e/**`, byt till dynamiska datum, ev. ESLint-regel/pre-commit-check. |
 | URL-konfigurationsmatris | 30 min | `docs/operations/url-configuration.md`: alla URL-config-platser (Vercel `APP_URL`, Supabase Site URL + Redirect URLs, Stripe webhook, Resend-domän, iOS prod-URL). Vi har bränt oss på trippel-miss. |
-| Städa Vercel env-variabler med literal `\\n` på slutet | 15 min | `NEXT_PUBLIC_SUPABASE_URL`/`..._ANON_KEY` i prod har literal `\\n`-suffix → `vercel env pull` ger trasiga lokala anrop. Fix via UI. |
 | recurring_bookings E2E-verifiering | 1 dag | Medel. |
 | group_bookings E2E + UX-review | 2-3 dagar | Medel. |
 | E2E: fixa skippade tester | 1-2 veckor | Låg prioritet. |
@@ -286,6 +284,7 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 
 | Item | Effort | Beskrivning |
 |------|--------|-------------|
+| **✅ LÖST 2026-06-12: Offline E2E Smoke RLS-grant-fel (blockerade prod-release)** | klart (PR fix/offline-e2e-rls-grants) | **Rotorsak (bekräftad lokalt):** `anon`/`authenticated`/`service_role`-tabellgrants på Booking/Notification/Service kom **enbart** från Supabase **default privileges** (auto-grant vid table-skapande) — inga explicita grants i migrationerna. Default privileges applieras **icke-deterministiskt** i CI (race mellan `supabase start`-init och `prisma migrate deploy`); förlorar racet → Prisma-skapade tabeller får inga grants → `permission denied for table Booking/Notification/Service` → `offline-mutations.spec.ts:230` timeoutar (bokningskort renderar ej). Inte orsakat av messaging-releasen. Passerade på #398 = vann racet. **Lösning:** explicita `GRANT ... TO anon/authenticated/service_role` på alla public-tabeller + `ALTER DEFAULT PRIVILEGES` i slutet av `supabase/auth-triggers.sql` (applieras efter migrate deploy via `--url` i CI); RLS skyddar fortfarande raderna. Bonus: `--schema` på `npm run setup` (lokal determinism). Verifierat lokalt: revoke → permission denied reproducerat → applicera auth-triggers.sql → grants återställda. **Offline-smoke-bekräftelse sker via #404-rerun** (offline-smoke körs bara på base=main). |
 | Review-matris: auth-UI-gap (S47-0) | 15 min | `src/components/auth/**/*.tsx` matchar bara `ui-component` → saknar security-reviewer trots säkerhets-yta. Lägg rad i `.claude/rules/review-matrix.md`. |
 | Docs-sync: environments.md + .env.local-gotcha | 30-45 min | environments.md säger Docker PostgreSQL men vi använder Supabase CLI sedan S17-7. Dokumentera `.env.local`-fallgropen. |
 | Versionera `.claude/skills/` (ta bort gitignore-rad) | 1-2h | 13 skills är otracked/osynkade. Granska kvalitet → ta bort `.gitignore`-rad → committa. Trade-off: förlorar per-dev-anpassade skills. *(Process-beslut.)* |
@@ -293,7 +292,6 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Konsolidera meta-rules-filer | 2-4h | 5 filer (team-workflow, autonomous-sprint, tech-lead, parallel-sessions, auto-assign, ~1200 rader) dokumenterar samma tema. Ingen refereras från CLAUDE.md Snabbreferens. Slå ihop, arkivera resten till `docs/archive/rules/`. *(Process-beslut.)* |
 | MessagingDialog öppnar ej i headless Playwright (S50-0) | 30 min | `onClick` triggas men `open`-state flippar ej i headless. API-kedjan funkar → inte prod-blocker. Undersök `--headed` + verkliga browsers. |
 | iOS WebView login-bypass för mobile-mcp (S50-0) | 45 min | WKWebView `<input type=password>` = `SecureTextField`, XCUITest kan inte skriva. Utforska: pre-seed session via API + deep link, biometri-bypass, Keychain AutoFill. Utan detta kan iOS login-flöde inte E2E-testas. |
-| `npm run setup` auth-triggers-steget tyst trasigt | 15 min | `setup`-scriptet kör `npx prisma db execute --file supabase/auth-triggers.sql` **utan** `--schema`/`--url` → "Either --url or --schema must be provided", felet ignoreras (exit 0). Lokala auth-triggers appliceras aldrig → lokal E2E-seed kan faila (GoTrue 500 "Database error creating new user") + orphan-rader ackumuleras. **Fix:** lägg `--schema prisma/schema.prisma` på det steget. Hittad 2026-06-10 vid 5 Whys på auth-E2E-discovery. |
 
 ---
 
@@ -311,6 +309,10 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Granska "redan fixat"-rate grep-pattern | Metrics-process-justering. Vilande metrics-kadens. |
 | S42-3 Full-suite flake-rapport | Flake-baseline, vilande sedan S42. Återaktivera vid flaky-test-problem. |
 | Audit hårdkodade framtida datum i tester (time-bomb-audit) | Teknisk kvalitet, ej aktivt. Bevarad från main vid reconcile 2026-06-10. Pre-existing booking-series-fail (fixad 2026-05-14) hade rotorsak i hårdkodat `firstBookingDate: "2026-05-01"` som tickade ner till "förflutet" och bröt 8 tester. Risk: fler test-fixtures kan ha samma time-bomb. Åtgärd vid tillfälle: `grep -rE '"20[2-3][0-9]-[0-1][0-9]-[0-3][0-9]"' src/**/*.test.ts e2e/**`, byt till dynamiska datum där schemat har relativ validering, ev. ESLint/pre-commit-varning. Återaktivera om time-bomb-fail dyker upp igen. |
+| **Docs F1** — Hjälpartikel **Dagens rutt** (`/provider/today`), provider | Från docs drift audit 2026-06-11 (slice 3). Flödet är verifierat live; artikeln är klar att skriva. Återaktivera vid grönt ljus. |
+| **Docs F2** — Hjälpartikel/sektion **stall som besöksplats** (provider + kund) | Från docs drift audit 2026-06-11. Provider-sidan verifierad, men **kundens stall-kopplingsflöde** (självbetjäning? via leverantör? `stable_profiles`-flagga?) är ej klarlagt → skriv inte förrän flödet bekräftats (oklar produktavsikt). |
+| **Docs F3** — Kundguide **kundhem `/hem`** | Från docs drift audit 2026-06-11. Nya kundlandningen (sedan demo-access 2026-06-06) saknar hjälpartikel. Lågt risk; kan slås ihop med F2. |
+| **Docs F4** — Integrera **`docs/architecture/provider-workday.md`** i `docs/INDEX.md` + länka från relevanta provider-artiklar | Från docs drift audit 2026-06-11. provider-workday.md räddades i #400 men är ännu inte länkad från INDEX. ~15 min. |
 
 ## Vid lansering
 

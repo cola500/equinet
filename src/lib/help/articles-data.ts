@@ -1186,8 +1186,8 @@ export const allArticles: HelpArticle[] = [
       {
         "heading": "Genomgång (10 steg)",
         "bullets": [
-          "**Dashboard** — översikt bokningar, kunder, aktuella händelser",
-          "**Kalender** — veckovy, klicka på Lisa Andersson/Molly-bokningen",
+          "**Kalender** (här landar du efter inloggning) — veckovy, klicka på Lisa Andersson/Molly-bokningen",
+          "**Översikt/Dashboard** (via menyn) — översikt bokningar, kunder, aktuella händelser",
           "**Bokningsdetalj** — serie-badge (\"Del av återkommande serie\"), kundinfo, tidslinje",
           "**Bokningslista** — filtrera per status, se historik",
           "**Kundlista** — klicka på Anders Bergman",
@@ -1573,7 +1573,7 @@ export const allArticles: HelpArticle[] = [
     "content": [
       {
         "paragraphs": [
-          "När du skapar ett leverantörskonto möts du av en checklista på din dashboard som vägleder dig genom uppsättningen."
+          "När du skapar ett leverantörskonto landar du på din **kalender** — din arbetsyta. Under **Översikt** i menyn ser du status och nästa steg, och stegen nedan vägleder dig genom uppsättningen."
         ],
         "steps": [
           "Fyll i din företagsprofil",
@@ -2001,8 +2001,7 @@ export const allArticles: HelpArticle[] = [
         "heading": "Tips",
         "bullets": [
           "Meddelanden är kopplade till en specifik bokning — du och kunden ser bara meddelanden för den gemensamma bokningen.",
-          "Kunden kan initiera en konversation från sin bokningssida. Du svarar i din inkorg.",
-          "Funktionen kräver att Meddelanden är aktiverat i ditt konto. Kontakta support om du inte ser fliken."
+          "Kunden kan initiera en konversation från sin bokningssida. Du svarar i din inkorg."
         ]
       }
     ]
