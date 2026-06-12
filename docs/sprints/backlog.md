@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Kanonisk backlog för Equinet. Alla kända stories, uppgifter och beslut. status.md pekar hit; roadmap.md är den strategiska vyn."
 category: sprint
 status: active
-last_updated: 2026-06-11
+last_updated: 2026-06-12
 tags: [backlog, roadmap, planning]
 sections:
   - Aktiva produktspår
@@ -310,6 +310,10 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Granska "redan fixat"-rate grep-pattern | Metrics-process-justering. Vilande metrics-kadens. |
 | S42-3 Full-suite flake-rapport | Flake-baseline, vilande sedan S42. Återaktivera vid flaky-test-problem. |
 | Audit hårdkodade framtida datum i tester (time-bomb-audit) | Teknisk kvalitet, ej aktivt. Bevarad från main vid reconcile 2026-06-10. Pre-existing booking-series-fail (fixad 2026-05-14) hade rotorsak i hårdkodat `firstBookingDate: "2026-05-01"` som tickade ner till "förflutet" och bröt 8 tester. Risk: fler test-fixtures kan ha samma time-bomb. Åtgärd vid tillfälle: `grep -rE '"20[2-3][0-9]-[0-1][0-9]-[0-3][0-9]"' src/**/*.test.ts e2e/**`, byt till dynamiska datum där schemat har relativ validering, ev. ESLint/pre-commit-varning. Återaktivera om time-bomb-fail dyker upp igen. |
+| **Docs F1** — Hjälpartikel **Dagens rutt** (`/provider/today`), provider | Från docs drift audit 2026-06-11 (slice 3). Flödet är verifierat live; artikeln är klar att skriva. Återaktivera vid grönt ljus. |
+| **Docs F2** — Hjälpartikel/sektion **stall som besöksplats** (provider + kund) | Från docs drift audit 2026-06-11. Provider-sidan verifierad, men **kundens stall-kopplingsflöde** (självbetjäning? via leverantör? `stable_profiles`-flagga?) är ej klarlagt → skriv inte förrän flödet bekräftats (oklar produktavsikt). |
+| **Docs F3** — Kundguide **kundhem `/hem`** | Från docs drift audit 2026-06-11. Nya kundlandningen (sedan demo-access 2026-06-06) saknar hjälpartikel. Lågt risk; kan slås ihop med F2. |
+| **Docs F4** — Integrera **`docs/architecture/provider-workday.md`** i `docs/INDEX.md` + länka från relevanta provider-artiklar | Från docs drift audit 2026-06-11. provider-workday.md räddades i #400 men är ännu inte länkad från INDEX. ~15 min. |
 
 ## Vid lansering
 
