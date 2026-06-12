@@ -59,7 +59,6 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | `provider_subscription` | Vilken prismodell? Stripe subscription-infrastruktur är klar. | Monetarisering |
 | `stable_profiles` | Behålla eller ta bort? Aldrig testad med riktiga användare. | Feature-yta, underhåll |
 | `demo_mode` | Behövs efter lansering, eller kan släckas? | Demo-spår |
-| `supabase_auth_poc` | PoC klar sedan S10 → ta bort flaggan? (kandidat: arkivera) | Städning |
 | Mapbox-token | Köpa konto/token för att aktivera `route_planning` + `route_announcements` (kod klar)? | Ruttplanering live |
 | Fortnox API-access | Ansöka om access för fakturerings-integration? | Fortnox-spår |
 | Seven Dimensions + teater-metodik (R8) | Behåll / förenkla / ta bort? Process-metodik-eval; fönstret (S55) passerat. Din process-kompass. | Arbetssätt |
