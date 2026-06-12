@@ -33,16 +33,13 @@ function makeBooking(overrides: Partial<BookingForConversation> = {}): BookingFo
 describe('ConversationService', () => {
   let repo: MockConversationRepository
   let service: ConversationService
-  let isFeatureEnabled: ReturnType<typeof vi.fn>
   let mockNotifier: { notifyNewMessage: ReturnType<typeof vi.fn> }
 
   beforeEach(() => {
     repo = new MockConversationRepository()
-    isFeatureEnabled = vi.fn().mockResolvedValue(true)
     mockNotifier = { notifyNewMessage: vi.fn().mockResolvedValue(undefined) }
     service = new ConversationService({
       conversationRepository: repo,
-      isFeatureEnabled,
       messageNotifier: mockNotifier as unknown as MessageNotifier,
     })
   })
@@ -382,50 +379,6 @@ describe('ConversationService', () => {
   })
 
   // --------------------------------------------------------
-  // Feature flag gating
-  // --------------------------------------------------------
-
-  describe('feature flag: messaging disabled', () => {
-    beforeEach(() => {
-      isFeatureEnabled.mockResolvedValue(false)
-    })
-
-    it('sendMessage returns FEATURE_DISABLED when messaging flag is off', async () => {
-      const booking = makeBooking()
-      const result = await service.sendMessage({
-        booking,
-        senderType: 'CUSTOMER',
-        senderId: 'customer-user-1',
-        content: 'Hej',
-      })
-
-      expect(result.isFailure).toBe(true)
-      expect(result.error.type).toBe('FEATURE_DISABLED')
-    })
-
-    it('listMessages returns empty list when messaging flag is off', async () => {
-      const result = await service.listMessages({ bookingId: 'booking-1' })
-      expect(result.messages).toEqual([])
-      expect(result.nextCursor).toBeNull()
-    })
-
-    it('markAsRead no-ops when messaging flag is off', async () => {
-      await expect(
-        service.markAsRead({ bookingId: 'booking-1', readerRole: 'CUSTOMER' })
-      ).resolves.not.toThrow()
-    })
-
-    it('getInboxForProvider returns empty list when messaging flag is off', async () => {
-      const items = await service.getInboxForProvider('provider-user-1')
-      expect(items).toEqual([])
-    })
-
-    it('getTotalUnreadForProvider returns 0 when messaging flag is off', async () => {
-      const count = await service.getTotalUnreadForProvider('provider-user-1')
-      expect(count).toBe(0)
-    })
-  })
-
   // --------------------------------------------------------
   // getTotalUnreadForProvider
   // --------------------------------------------------------

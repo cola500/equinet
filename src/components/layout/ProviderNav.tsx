@@ -69,7 +69,7 @@ const primaryNavItems: NavItem[] = [
   { href: "/provider/dashboard", label: "Översikt", offlineSafe: true },
   { href: "/provider/calendar", label: "Kalender", offlineSafe: true },
   { href: "/provider/bookings", label: "Bokningar", offlineSafe: true },
-  { href: "/provider/messages", label: "Meddelanden", matchPrefix: "/provider/messages", featureFlag: "messaging" },
+  { href: "/provider/messages", label: "Meddelanden", matchPrefix: "/provider/messages" },
   { href: "/provider/services", label: "Mina tjänster" },
   { href: "/provider/customers", label: "Kunder", matchPrefix: "/provider/customers" },
   { href: "/provider/reviews", label: "Recensioner" },
@@ -98,7 +98,7 @@ const NAV_REGISTRY: Record<string, { label: string; mobileLabel?: string; icon: 
   // Shorter label on the mobile bottom bar so the tab/active-pill width stays even
   // with the others; the desktop top-nav keeps the full "Mina tjänster".
   "/provider/services": { label: "Mina tjänster", mobileLabel: "Tjänster", icon: Stethoscope },
-  "/provider/messages": { label: "Meddelanden", icon: MessageSquare, matchPrefix: "/provider/messages", featureFlag: "messaging" },
+  "/provider/messages": { label: "Meddelanden", icon: MessageSquare, matchPrefix: "/provider/messages" },
   "/provider/insights": { label: "Insikter", icon: BarChart3, matchPrefix: "/provider/insights" },
   "/provider/profile": { label: "Min profil", icon: User },
   "/provider/help": { label: "Hjälp", icon: HelpCircle, matchPrefix: "/provider/help", featureFlag: "help_center" },
@@ -162,7 +162,7 @@ export function ProviderNav() {
   const demo = isDemoModeWithFlags(flags)
 
   const { data: unreadData } = useSWR<{ count: number }>(
-    flags.messaging && !demo ? "/api/provider/conversations/unread-count" : null,
+    !demo ? "/api/provider/conversations/unread-count" : null,
     { refreshInterval: 30000 }
   )
   const unreadCount = unreadData?.count ?? 0
@@ -174,14 +174,13 @@ export function ProviderNav() {
 
   const tabsWithBadge = useMemo(() =>
     baseTabs
-      .filter((tab) => !tab.matchPrefix?.startsWith("/provider/messages") || flags.messaging)
       .map((tab) => {
         if (tab.href === "/provider/bookings") return { ...tab, badge: pendingCount }
         if (tab.href === "/provider/messages") return { ...tab, badge: unreadCount }
         return tab
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pendingCount, unreadCount, demo, flags.messaging]
+    [pendingCount, unreadCount, demo]
   )
 
   // Close dropdown when clicking outside

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getAuthUser } from '@/lib/auth-dual'
 import { rateLimiters, RateLimitServiceError } from '@/lib/rate-limit'
-import { isFeatureEnabled } from '@/lib/feature-flags'
 import { logger } from '@/lib/logger'
 import { ConversationService } from '@/domain/conversation/ConversationService'
 import { mapConversationErrorToStatus } from '@/domain/conversation/mapConversationErrorToStatus'
@@ -37,11 +36,6 @@ export async function POST(
     const authUser = await getAuthUser(request)
     if (!authUser) {
       return NextResponse.json({ error: 'Ej inloggad' }, { status: 401 })
-    }
-
-    // 2. Feature flag (before rate limiting to avoid consuming tokens when disabled)
-    if (!(await isFeatureEnabled('messaging'))) {
-      return NextResponse.json({ error: 'Ej tillgänglig' }, { status: 404 })
     }
 
     // 3B.2: reject non-UUID bookingId before DB/storage/service work
@@ -108,7 +102,6 @@ export async function POST(
     const repo = new PrismaConversationRepository()
     const service = new ConversationService({
       conversationRepository: repo,
-      isFeatureEnabled,
       messageNotifier: createMessageNotifier(),
     })
 
@@ -160,11 +153,6 @@ export async function GET(
       return NextResponse.json({ error: 'Ej inloggad' }, { status: 401 })
     }
 
-    // 2. Feature flag
-    if (!(await isFeatureEnabled('messaging'))) {
-      return NextResponse.json({ error: 'Ej tillgänglig' }, { status: 404 })
-    }
-
     // 3B.2: reject non-UUID bookingId before DB/storage/service work
     if (!bookingIdSchema.safeParse(bookingId).success) {
       return NextResponse.json({ error: 'Ogiltigt bookingId' }, { status: 400 })
@@ -203,7 +191,7 @@ export async function GET(
 
     // 6. List messages
     const repo = new PrismaConversationRepository()
-    const service = new ConversationService({ conversationRepository: repo, isFeatureEnabled })
+    const service = new ConversationService({ conversationRepository: repo })
     const result = await service.listMessages({ bookingId, cursor, limit })
 
     const senderType = userType === 'customer' ? 'CUSTOMER' : 'PROVIDER'

@@ -98,7 +98,6 @@ describe("feature-flags", () => {
         stripe_payments: false,
         demo_mode: false,
         data_retention: false,
-        messaging: true,
       })
     })
 

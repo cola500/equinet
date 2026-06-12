@@ -2001,8 +2001,7 @@ export const allArticles: HelpArticle[] = [
         "heading": "Tips",
         "bullets": [
           "Meddelanden är kopplade till en specifik bokning — du och kunden ser bara meddelanden för den gemensamma bokningen.",
-          "Kunden kan initiera en konversation från sin bokningssida. Du svarar i din inkorg.",
-          "Funktionen kräver att Meddelanden är aktiverat i ditt konto. Kontakta support om du inte ser fliken."
+          "Kunden kan initiera en konversation från sin bokningssida. Du svarar i din inkorg."
         ]
       }
     ]

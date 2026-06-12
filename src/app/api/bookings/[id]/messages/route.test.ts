@@ -57,10 +57,8 @@ vi.mock('@/lib/prisma', () => ({
 // Import after mocks
 import { GET, POST } from './route'
 import { getAuthUser } from '@/lib/auth-dual'
-import { isFeatureEnabled } from '@/lib/feature-flags'
 
 const mockGetAuthUser = vi.mocked(getAuthUser)
-const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 // -----------------------------------------------------------
 // Fixtures
@@ -114,7 +112,6 @@ describe('POST /api/bookings/[id]/messages', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetAuthUser.mockResolvedValue(makeCustomerUser() as never)
-    mockIsFeatureEnabled.mockResolvedValue(true)
     mockPrismaBookingFindFirst.mockResolvedValue(makeBookingRow())
     mockCreateMessage.mockResolvedValue({
       id: 'msg-1',
@@ -131,12 +128,6 @@ describe('POST /api/bookings/[id]/messages', () => {
     mockGetAuthUser.mockResolvedValue(null)
     const res = await POST(makeRequest({ content: 'Hej' }), { params })
     expect(res.status).toBe(401)
-  })
-
-  it('returns 404 when messaging feature is disabled', async () => {
-    mockIsFeatureEnabled.mockResolvedValue(false)
-    const res = await POST(makeRequest({ content: 'Hej' }), { params })
-    expect(res.status).toBe(404)
   })
 
   it('returns 404 when booking not found or not owned', async () => {
@@ -206,7 +197,6 @@ describe('GET /api/bookings/[id]/messages', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetAuthUser.mockResolvedValue(makeCustomerUser() as never)
-    mockIsFeatureEnabled.mockResolvedValue(true)
     mockPrismaBookingFindFirst.mockResolvedValue(makeBookingRow())
     mockFindByBookingId.mockResolvedValue({ id: 'conv-1', bookingId: BOOKING_ID, createdAt: new Date(), lastMessageAt: new Date() })
     mockListMessages.mockResolvedValue({ messages: [], nextCursor: null })
@@ -217,13 +207,6 @@ describe('GET /api/bookings/[id]/messages', () => {
     const req = new NextRequest(`http://localhost/api/bookings/${BOOKING_ID}/messages`, { method: 'GET' })
     const res = await GET(req, { params })
     expect(res.status).toBe(401)
-  })
-
-  it('returns 404 when messaging feature is disabled', async () => {
-    mockIsFeatureEnabled.mockResolvedValue(false)
-    const req = new NextRequest(`http://localhost/api/bookings/${BOOKING_ID}/messages`, { method: 'GET' })
-    const res = await GET(req, { params })
-    expect(res.status).toBe(404)
   })
 
   it('returns empty messages array when no conversation exists', async () => {

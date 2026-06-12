@@ -2,8 +2,8 @@
 title: "Messaging Rollout"
 description: "Rollout-plan och observationsguide för messaging-funktionen (S37)"
 category: operations
-status: active
-last_updated: 2026-04-19
+status: archived
+last_updated: 2026-06-12
 sections:
   - Bakgrund
   - Rollback-procedur
@@ -12,6 +12,10 @@ sections:
 ---
 
 # Messaging Rollout
+
+> **✅ GA 2026-06-12 — feature-flaggan `messaging` pensionerad** (Feature Flag Retirement Sprint, slice 2).
+> Meddelanden är nu kärnfunktionalitet utan flagg-gate. Rollout-/rollback-stegen nedan är historiska
+> (flaggan finns inte längre att toggla). Dokumentet behålls som historik.
 
 ## Bakgrund
 
