@@ -46,14 +46,6 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: true,
     category: "provider",
   },
-  self_reschedule: {
-    key: "self_reschedule",
-    label: "Självservice-ombokning",
-    description: "Kunder kan boka om sina bokningar utan att kontakta leverantören",
-    defaultEnabled: true,
-    clientVisible: true,
-    category: "customer",
-  },
   offline_mode: {
     key: "offline_mode",
     label: "Offlineläge",
@@ -92,14 +84,6 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     description: "Skicka push-notiser via APNs till iOS-appen",
     defaultEnabled: false,
     clientVisible: false,
-    category: "shared",
-  },
-  help_center: {
-    key: "help_center",
-    label: "Hjälpcentral",
-    description: "Inbyggd hjälpcentral med sökbara artiklar per roll",
-    defaultEnabled: true,
-    clientVisible: true,
     category: "shared",
   },
   stable_profiles: {

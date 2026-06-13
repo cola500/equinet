@@ -12,14 +12,8 @@ vi.mock("@/lib/rate-limit", () => ({
   RateLimitServiceError: class extends Error {},
 }))
 
-// Mock feature flags
-vi.mock("@/lib/feature-flags", () => ({
-  isFeatureEnabled: vi.fn(),
-}))
-
 import { GET } from "./route"
 import { getAuthUser } from "@/lib/auth-dual"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 
 function createRequest(url = "http://localhost/api/native/help/hantera-bokningar") {
   return new Request(url, {
@@ -40,7 +34,6 @@ describe("GET /api/native/help/[slug]", () => {
 
   it("returns 401 when not authenticated", async () => {
     vi.mocked(getAuthUser).mockResolvedValue(null)
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
     const res = await GET(createRequest(), {
       params: Promise.resolve({ slug: "hantera-bokningar" }),
@@ -48,19 +41,8 @@ describe("GET /api/native/help/[slug]", () => {
     expect(res.status).toBe(401)
   })
 
-  it("returns 404 when flag is disabled", async () => {
-    vi.mocked(getAuthUser).mockResolvedValue(mockProviderUser)
-    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
-
-    const res = await GET(createRequest(), {
-      params: Promise.resolve({ slug: "hantera-bokningar" }),
-    })
-    expect(res.status).toBe(404)
-  })
-
   it("returns article by slug", async () => {
     vi.mocked(getAuthUser).mockResolvedValue(mockProviderUser)
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
     const res = await GET(createRequest(), {
       params: Promise.resolve({ slug: "hantera-bokningar" }),
@@ -76,7 +58,6 @@ describe("GET /api/native/help/[slug]", () => {
 
   it("returns 404 for unknown slug", async () => {
     vi.mocked(getAuthUser).mockResolvedValue(mockProviderUser)
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
     const res = await GET(createRequest(), {
       params: Promise.resolve({ slug: "nonexistent-article" }),

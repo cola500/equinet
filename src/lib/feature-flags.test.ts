@@ -1,9 +1,4 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
-
-vi.mock("./edge-config", () => ({
-  readFlagsFromEdgeConfig: vi.fn().mockResolvedValue(null),
-  syncFlagsToEdgeConfig: vi.fn().mockResolvedValue(undefined),
-}))
+import { describe, it, expect, beforeEach, afterEach } from "vitest"
 
 import {
   isFeatureEnabled,
@@ -16,10 +11,6 @@ import {
   _resetRedisForTesting,
 } from "./feature-flags"
 import { MockFeatureFlagRepository } from "@/infrastructure/persistence/feature-flag"
-import { readFlagsFromEdgeConfig, syncFlagsToEdgeConfig } from "./edge-config"
-
-const mockReadEdgeConfig = vi.mocked(readFlagsFromEdgeConfig)
-const mockSyncEdgeConfig = vi.mocked(syncFlagsToEdgeConfig)
 
 describe("feature-flags", () => {
   let mockRepo: MockFeatureFlagRepository
@@ -33,8 +24,6 @@ describe("feature-flags", () => {
         delete process.env[key]
       }
     }
-    mockReadEdgeConfig.mockResolvedValue(null)
-    mockSyncEdgeConfig.mockResolvedValue(undefined)
   })
 
   afterEach(() => {
@@ -87,13 +76,11 @@ describe("feature-flags", () => {
         route_planning: true,
         route_announcements: true,
         customer_insights: true,
-        self_reschedule: true,
         offline_mode: true,
         follow_provider: true,
         municipality_watch: true,
         provider_subscription: false,
         push_notifications: false,
-        help_center: true,
         stable_profiles: false,
         stripe_payments: false,
         data_retention: false,
@@ -226,51 +213,39 @@ describe("feature-flags", () => {
     })
   })
 
-  describe("Edge Config integration", () => {
-    it("reads from Edge Config when available", async () => {
-      mockReadEdgeConfig.mockResolvedValue({
-        voice_logging: false,
-        route_announcements: true,
-      })
-
-      const flags = await getFeatureFlags()
-
-      expect(flags.voice_logging).toBe(false)
-      expect(flags.route_announcements).toBe(true)
-      // Flags not in Edge Config fall back to code default
-      expect(flags.route_planning).toBe(true)
-    })
-
-    it("falls back to DB when Edge Config returns null", async () => {
-      mockReadEdgeConfig.mockResolvedValue(null)
+  describe("source of truth (DB)", () => {
+    it("env var overrides a DB row", async () => {
       await mockRepo.upsert("voice_logging", false)
-
-      const flags = await getFeatureFlags()
-
-      expect(flags.voice_logging).toBe(false)
-    })
-
-    it("env var overrides Edge Config", async () => {
       process.env.FEATURE_VOICE_LOGGING = "true"
-      mockReadEdgeConfig.mockResolvedValue({ voice_logging: false })
 
       const flags = await getFeatureFlags()
 
       expect(flags.voice_logging).toBe(true)
     })
 
-    it("syncs to Edge Config after setFeatureFlagOverride", async () => {
-      await setFeatureFlagOverride("route_announcements", "true")
+    it("DB row overrides code default", async () => {
+      // route_announcements defaults to true; DB row turns it off
+      await mockRepo.upsert("route_announcements", false)
 
-      expect(mockSyncEdgeConfig).toHaveBeenCalledWith(
-        expect.objectContaining({ route_announcements: true })
-      )
+      const flags = await getFeatureFlags()
+
+      expect(flags.route_announcements).toBe(false)
     })
 
-    it("syncs to Edge Config after removeFeatureFlagOverride", async () => {
-      await removeFeatureFlagOverride("route_announcements")
+    it("setFeatureFlagOverride changes the effective value", async () => {
+      await setFeatureFlagOverride("route_announcements", "false")
+      expect((await getFeatureFlags()).route_announcements).toBe(false)
 
-      expect(mockSyncEdgeConfig).toHaveBeenCalled()
+      await setFeatureFlagOverride("route_announcements", "true")
+      expect((await getFeatureFlags()).route_announcements).toBe(true)
+    })
+
+    it("removeFeatureFlagOverride resets to code default", async () => {
+      await setFeatureFlagOverride("route_announcements", "false")
+      expect((await getFeatureFlags()).route_announcements).toBe(false)
+
+      await removeFeatureFlagOverride("route_announcements")
+      expect((await getFeatureFlags()).route_announcements).toBe(true)
     })
   })
 })

@@ -3,7 +3,7 @@ title: "Manuell testningsguide"
 description: "Komplett checklista for manuell testning av Equinet -- alla floden, feature flags, mobil"
 category: testing
 status: active
-last_updated: 2026-04-18
+last_updated: 2026-06-13
 tags: [testing, manual, checklist, qa]
 sections:
   - Startsida och offentliga sidor
@@ -102,7 +102,7 @@ sections:
 - [ ] Avboka vantande bokning
 - [ ] Betalning fungerar (mock)
 - [ ] Kvitto kan laddas ner
-- [ ] Ombokning fungerar [kraver self_reschedule]
+- [ ] Ombokning fungerar (styrs av leverantörsinställningen rescheduleEnabled)
 
 ### Recensioner
 
@@ -283,9 +283,9 @@ sections:
 - [ ] Andringar synkas vid ateranslutning
 - [ ] Ej cacheade sidor visar offline-meddelande
 
-### Sjalvservice-ombokning (self_reschedule)
+### Sjalvservice-ombokning (leverantorsinstallning rescheduleEnabled)
 
-- [ ] Ombokning visas/doljs baserat pa flagga
+- [ ] Ombokning visas/doljs baserat pa leverantorsinstallningen (rescheduleEnabled), inte feature flag
 - [ ] Kund kan valja nytt datum/tid
 - [ ] Leverantor ser ombokningshistorik
 

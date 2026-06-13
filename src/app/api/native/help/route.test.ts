@@ -12,14 +12,8 @@ vi.mock("@/lib/rate-limit", () => ({
   RateLimitServiceError: class extends Error {},
 }))
 
-// Mock feature flags
-vi.mock("@/lib/feature-flags", () => ({
-  isFeatureEnabled: vi.fn(),
-}))
-
 import { GET } from "./route"
 import { getAuthUser } from "@/lib/auth-dual"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 
 function createRequest(url = "http://localhost/api/native/help") {
   return new Request(url, {
@@ -34,22 +28,9 @@ describe("GET /api/native/help", () => {
 
   it("returns 401 when not authenticated", async () => {
     vi.mocked(getAuthUser).mockResolvedValue(null)
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
     const res = await GET(createRequest())
     expect(res.status).toBe(401)
-  })
-
-  it("returns 404 when help_center flag is disabled", async () => {
-    vi.mocked(getAuthUser).mockResolvedValue({
-      id: "user-1",
-      email: "test@test.com",
-      userType: "provider",
-    } as ReturnType<typeof getAuthUser> extends Promise<infer T> ? NonNullable<T> : never)
-    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
-
-    const res = await GET(createRequest())
-    expect(res.status).toBe(404)
   })
 
   it("returns provider articles for provider user", async () => {
@@ -58,7 +39,6 @@ describe("GET /api/native/help", () => {
       email: "test@test.com",
       userType: "provider",
     } as ReturnType<typeof getAuthUser> extends Promise<infer T> ? NonNullable<T> : never)
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
     const res = await GET(createRequest())
     expect(res.status).toBe(200)
@@ -76,7 +56,6 @@ describe("GET /api/native/help", () => {
       email: "test@test.com",
       userType: "customer",
     } as ReturnType<typeof getAuthUser> extends Promise<infer T> ? NonNullable<T> : never)
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
     const res = await GET(createRequest())
     expect(res.status).toBe(200)
@@ -92,7 +71,6 @@ describe("GET /api/native/help", () => {
       email: "test@test.com",
       userType: "provider",
     } as ReturnType<typeof getAuthUser> extends Promise<infer T> ? NonNullable<T> : never)
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
 
     const res = await GET(
       createRequest("http://localhost/api/native/help?q=bokning")

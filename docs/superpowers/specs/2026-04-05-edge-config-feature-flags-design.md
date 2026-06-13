@@ -2,8 +2,8 @@
 title: "S17-6: Edge Config for feature flags"
 description: "Byt feature flag-lasning fran PostgreSQL till Vercel Edge Config (<1ms)"
 category: architecture
-status: wip
-last_updated: 2026-04-05
+status: archived
+last_updated: 2026-06-13
 sections:
   - Oversikt
   - Arkitektur
@@ -12,6 +12,10 @@ sections:
   - Testning
   - Rollback
 ---
+
+> **SUPERSEDED (2026-06-13).** Edge Config togs bort ur feature flag-resolution (beslut B —
+> Supabase DB är enda source of truth). Detta spec är historiskt. Se
+> [feature-flag-source-of-truth-debt.md](../../operations/feature-flag-source-of-truth-debt.md).
 
 # S17-6: Edge Config for feature flags
 

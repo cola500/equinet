@@ -3,7 +3,6 @@ import type { IFeatureFlagRepository } from "@/infrastructure/persistence/featur
 import { featureFlagRepository as defaultRepository } from "@/infrastructure/persistence/feature-flag"
 import { FEATURE_FLAGS } from "./feature-flag-definitions"
 import type { FeatureFlag } from "./feature-flag-definitions"
-import { readFlagsFromEdgeConfig, syncFlagsToEdgeConfig } from "./edge-config"
 
 // Re-export for backward compatibility
 export { FEATURE_FLAGS }
@@ -31,39 +30,32 @@ function isCacheValid(): boolean {
 /**
  * Get all feature flags with their current enabled state.
  *
- * Priority: env variable > Edge Config override > database override > code default
+ * Priority: env variable > database override > code default
  *
- * Edge Config is tried first (<1ms reads, no cache needed).
- * Falls back to DB with 30s cache. Falls back to code defaults on DB error.
+ * The DB is the single source of truth (read with a 30s cache).
+ * Falls back to code defaults on DB error.
  */
 export async function getFeatureFlags(): Promise<Record<string, boolean>> {
   const keys = Object.keys(FEATURE_FLAGS)
   const result: Record<string, boolean> = {}
 
-  // Try Edge Config first, fall back to DB
-  let edgeConfigFlags: Record<string, boolean> | null = null
   let dbOverrides: Record<string, boolean> = {}
 
-  // Edge Config (fast path, no cache needed -- <1ms reads)
-  edgeConfigFlags = await readFlagsFromEdgeConfig()
-
-  // DB fallback (with 30s cache)
-  if (edgeConfigFlags === null) {
-    if (isCacheValid()) {
-      dbOverrides = cache!.data
-    } else {
-      try {
-        const repo = getRepository()
-        const flags = await repo.findAll()
-        for (const flag of flags) {
-          dbOverrides[flag.key] = flag.enabled
-        }
-        cache = { data: dbOverrides, timestamp: Date.now() }
-      } catch (error) {
-        logger.warn("Failed to fetch feature flags from database, using defaults", {
-          error: error instanceof Error ? error.message : String(error),
-        })
+  // DB (single source of truth, with 30s cache)
+  if (isCacheValid()) {
+    dbOverrides = cache!.data
+  } else {
+    try {
+      const repo = getRepository()
+      const flags = await repo.findAll()
+      for (const flag of flags) {
+        dbOverrides[flag.key] = flag.enabled
       }
+      cache = { data: dbOverrides, timestamp: Date.now() }
+    } catch (error) {
+      logger.warn("Failed to fetch feature flags from database, using defaults", {
+        error: error instanceof Error ? error.message : String(error),
+      })
     }
   }
 
@@ -78,19 +70,13 @@ export async function getFeatureFlags(): Promise<Record<string, boolean>> {
       continue
     }
 
-    // 2. Edge Config override
-    if (edgeConfigFlags && key in edgeConfigFlags) {
-      result[key] = edgeConfigFlags[key]
-      continue
-    }
-
-    // 3. Database override
+    // 2. Database override
     if (key in dbOverrides) {
       result[key] = dbOverrides[key]
       continue
     }
 
-    // 4. Code default
+    // 3. Code default
     result[key] = flag.defaultEnabled
   }
 
@@ -134,9 +120,6 @@ export async function setFeatureFlagOverride(
     const repo = getRepository()
     await repo.upsert(key, value === "true")
     invalidateCache()
-    // Sync all flags to Edge Config (fire-and-forget)
-    const allFlags = await getFeatureFlags()
-    syncFlagsToEdgeConfig(allFlags).catch(() => {})
   } catch (error) {
     const message = error instanceof Error ? error.message : "okänt fel"
     throw new Error(`Kunde inte uppdatera flaggan ${key}: ${message}`)
@@ -154,9 +137,6 @@ export async function removeFeatureFlagOverride(key: string): Promise<void> {
     const repo = getRepository()
     await repo.upsert(key, defaultValue)
     invalidateCache()
-    // Sync all flags to Edge Config (fire-and-forget)
-    const allFlags = await getFeatureFlags()
-    syncFlagsToEdgeConfig(allFlags).catch(() => {})
   } catch (error) {
     const message = error instanceof Error ? error.message : "okänt fel"
     throw new Error(`Kunde inte uppdatera flaggan ${key}: ${message}`)
