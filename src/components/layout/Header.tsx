@@ -18,11 +18,6 @@ import { notifyNativeLogout } from "@/lib/native-bridge"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { isDemoMode } from "@/lib/demo-mode"
 
-function useDemoMode(): boolean {
-  const flagValue = useFeatureFlag("demo_mode")
-  return isDemoMode() || flagValue
-}
-
 interface HeaderProps {
   hideSecondaryNav?: boolean
 }
@@ -30,7 +25,7 @@ interface HeaderProps {
 export function Header({ hideSecondaryNav = false }: HeaderProps) {
   const { user, isAuthenticated, isLoading, isProvider, isCustomer, isAdmin, isStableOwner } = useAuth()
   const stableEnabled = useFeatureFlag("stable_profiles")
-  const demo = useDemoMode()
+  const demo = isDemoMode()
 
   const handleLogout = async () => {
     notifyNativeLogout()

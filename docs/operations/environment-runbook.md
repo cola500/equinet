@@ -3,7 +3,7 @@ title: Environment Runbook — Vercel + Supabase DB URLs
 description: Säkra copy/paste-steg för att granska och ändra env-variabler (DATABASE_URL, DIRECT_DATABASE_URL, DEMO_MODE, PAYMENT_PROVIDER) i Vercel för staging och production, utan att läcka secrets eller bryta runtime.
 category: operations
 status: active
-last_updated: 2026-06-11
+last_updated: 2026-06-13
 sections:
   - Principer
   - Safe audit
@@ -187,20 +187,19 @@ inget `pgbouncer`. Rör **aldrig** DIRECT när du fixar DATABASE_URL — de är 
 
 ## DEMO_MODE
 
-Två lager styr demo:
+Demo styrs av **ett** reglage:
 
 | Reglage | Var | Effekt |
 |---------|-----|--------|
-| `NEXT_PUBLIC_DEMO_MODE` | Vercel env (build-time) | Inbakas i klient-bundeln; styr demo-UI (demo-login-knappar etc.) |
-| `demo_mode` | DB feature-flag (`FeatureFlag`-tabellen) | Server-side demo-beteende (t.ex. provider-landningsval historiskt) |
+| `NEXT_PUBLIC_DEMO_MODE` | Vercel env (build-time) | Inbakas i klient-bundeln; styr demo-UI (nav/paths, demo-login-knappar etc.) |
 
 - **Build-time:** `NEXT_PUBLIC_DEMO_MODE` bakas in vid build → **rebuild krävs** efter ändring.
-- **Staging** kan ha `demo_mode=true` + `NEXT_PUBLIC_DEMO_MODE=true` (det ÄR demomiljön).
-- **Production** ska ha `demo_mode=false` (DB-flagga **off**) och `NEXT_PUBLIC_DEMO_MODE=false`.
+- **Staging** har `NEXT_PUBLIC_DEMO_MODE=true` (det ÄR demomiljön).
+- **Production** har `NEXT_PUBLIC_DEMO_MODE=false`.
+- Demo är **inte** en feature flag — det finns ingen `demo_mode`-rad i `FeatureFlag` och ingen admin-toggle.
 - **Demo-läge filtrerar ALDRIG data** — det styr synlighet för nav/paths, inte datainnehåll. Se `src/lib/demo-mode.ts`.
 
-> Verifiera prod: `npm run audit:prod-env:safe` ska visa `NEXT_PUBLIC_DEMO_MODE = FALSE`. DB-flaggan
-> verifieras mot Supabase (`SELECT enabled FROM "FeatureFlag" WHERE key='demo_mode'`).
+> Verifiera prod: `npm run audit:prod-env:safe` ska visa `NEXT_PUBLIC_DEMO_MODE = FALSE`.
 
 ---
 
