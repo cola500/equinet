@@ -424,18 +424,6 @@ paths:
 - `src/app/api/bookings/[id]/payment/route.ts`
 - `src/app/customer/bookings/page.tsx`
 
-### `demo_mode`
-
-- `src/app/provider/debug/page.tsx`
-- `src/app/provider/export/page.tsx`
-- `src/app/provider/profile/page.tsx`
-- `src/app/provider/reviews/page.tsx`
-- `src/app/provider/routes/page.tsx`
-- `src/app/provider/services/page.tsx`
-- `src/app/provider/settings/integrations/page.tsx`
-- `src/app/provider/verification/page.tsx`
-- `src/components/layout/Header.tsx`
-
 ### `supabase_auth_poc`
 
 - `src/app/api/v2/test-auth/route.ts`

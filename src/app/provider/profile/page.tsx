@@ -18,7 +18,7 @@ import Link from "next/link"
 import { ProfileSkeleton } from "@/components/loading/ProfileSkeleton"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
-import { isDemoModeWithFlags } from "@/lib/demo-mode"
+import { isDemoMode } from "@/lib/demo-mode"
 import { BusinessInfoCard } from "@/components/provider/profile/BusinessInfoCard"
 import { RescheduleSettingsCard } from "@/components/provider/profile/RescheduleSettingsCard"
 import { RecurringBookingsCard } from "@/components/provider/profile/RecurringBookingsCard"
@@ -62,8 +62,7 @@ function ProviderProfilePageContent() {
 
   const { guardMutation } = useOfflineGuard()
   const helpEnabled = useFeatureFlag("help_center")
-  const demoFlag = useFeatureFlag("demo_mode")
-  const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
+  const demo = isDemoMode()
   const selfRescheduleEnabled = useFeatureFlag("self_reschedule") && !demo
   const recurringBookingsEnabled = true
   const subscriptionEnabled = useFeatureFlag("provider_subscription")

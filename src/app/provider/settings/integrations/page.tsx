@@ -26,8 +26,7 @@ import {
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { ProfileSkeleton } from "@/components/loading/ProfileSkeleton"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
-import { isDemoModeWithFlags } from "@/lib/demo-mode"
+import { isDemoMode } from "@/lib/demo-mode"
 
 interface FortnoxStatus {
   connected: boolean
@@ -54,8 +53,7 @@ function IntegrationsContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
-  const demoFlag = useFeatureFlag("demo_mode")
-  const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
+  const demo = isDemoMode()
   const [fortnoxStatus, setFortnoxStatus] = useState<FortnoxStatus>({
     connected: false,
   })

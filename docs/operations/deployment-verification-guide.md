@@ -3,7 +3,7 @@ title: "Deployment Verification Guide"
 description: "Var verifierar man vad? Snabb beslutsguide för staging/prod-isolation, demo-läge och varför equinet-staging-app feature-branch-previews blir 'Canceled by Ignored Build Step' (förväntat)."
 category: operations
 status: active
-last_updated: 2026-06-02
+last_updated: 2026-06-13
 tags: [deployment, verification, staging, demo-mode, vercel, branch-isolation]
 depends_on:
   - docs/operations/environments.md
@@ -34,7 +34,7 @@ Provider Demo UX?
   → Verifiera på STAGING
   → https://equinet-staging.johanlindengard.com
 
-Demo mode (demo_mode aktivt)?
+Demo mode (NEXT_PUBLIC_DEMO_MODE=true)?
   → Endast STAGING (equinet-staging-app). Inte prod, inte feature-previews.
 
 Feature-branch-preview för demo-UX?
@@ -72,7 +72,7 @@ Production Branch.
 
 - **Demo-UX verifieras endast på staging** (`equinet-staging.johanlindengard.com`).
 - **equinet-app-previews är INTE demo-verifiering.** Prod-projektet bygger previews för alla
-  branches, men där är `demo_mode` inte aktivt → du ser vanlig provider-vy, inte demon.
+  branches, men där är `NEXT_PUBLIC_DEMO_MODE` inte satt → du ser vanlig provider-vy, inte demon.
 - **equinet-staging-app bygger endast `staging`-branchen.** Feature-branches ignoreras
   medvetet av staging-projektet (kostnads-/isolationskontroll).
 - **Feature-branch-previews på staging-projektet kan bli "Canceled by Ignored Build Step".**
@@ -88,8 +88,8 @@ Production Branch.
 Nej. equinet-app bygger previews för alla branches; equinet-staging-app bygger bara sin
 Production Branch (`staging`) och avbryter resten via Ignored Build Step.
 
-**"demo_mode saknas i previewen."**
-`demo_mode` är aktivt på equinet-staging-app (staging). equinet-app-previewen kör utan det
+**"demo-läget saknas i previewen."**
+`NEXT_PUBLIC_DEMO_MODE=true` är satt på equinet-staging-app (staging). equinet-app-previewen kör utan det
 → full login-form (med "Registrera dig"/"Glömt lösenord"), ingen DemoLoginButton, vanlig
 provider-nav. Det är rätt — det är inte demomiljön.
 
@@ -112,7 +112,7 @@ i en preview där det inte borde spela roll.
 |----------|---------------|
 | Demo-UX | **staging** (`equinet-staging.johanlindengard.com`) |
 | Demo-navigation | **staging** |
-| Demo-läge (demo_mode-beteende) | **staging** |
+| Demo-läge (NEXT_PUBLIC_DEMO_MODE-beteende) | **staging** |
 | Feature-branch-kod (logik) | **PR + tester** (`npm run check:all`, render-/unit-tester) |
 | Produktions-UX | **equinet-app** (`equinet.johanlindengard.com`) |
 | Pre-merge visuell demo-koll | **lokal demo-mode** (`NEXT_PUBLIC_DEMO_MODE=true`) |
@@ -125,7 +125,7 @@ i en preview där det inte borde spela roll.
 
 **Status:** Accepterad (2026-06-02).
 
-**Kontext:** Demo-läget (`demo_mode`) styr en förenklad provider-vy avsedd för
+**Kontext:** Demo-läget (`NEXT_PUBLIC_DEMO_MODE`) styr en förenklad provider-vy avsedd för
 pilot-demos. Det är env-gate:at på staging-projektet och finns inte i prod eller i
 prod-projektets feature-previews. Det ledde upprepade gånger till förvirring kring var
 demo-UX ska verifieras och varför staging-projektets feature-previews blir CANCELED.

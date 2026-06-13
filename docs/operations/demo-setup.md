@@ -3,7 +3,7 @@ title: "Demo Setup — Erik Järnfot (leverantörsdemo)"
 description: "Inloggning och instruktioner för att köra leverantörsdemon för Erik Järnfot"
 category: operations
 status: active
-last_updated: 2026-06-07
+last_updated: 2026-06-13
 sections:
   - Inloggning
   - Köra demon
@@ -61,14 +61,16 @@ npm run dev
 
 ### Steg 4 (valfritt): Aktivera demo-läge
 
-`demo_mode`-flaggan fokuserar UI:t på kärnleverantörsvyerna och visar en snabb-inloggningsknapp.
+Demo-läget fokuserar UI:t på kärnleverantörsvyerna och visar en snabb-inloggningsknapp.
 
 ```bash
 # Sätt miljövariabel i .env.local
 NEXT_PUBLIC_DEMO_MODE=true
 ```
 
-Eller aktivera via adminpanelen: `/admin/system` → Feature Flags → `demo_mode`.
+Demo-läget styrs **enbart** av miljövariabeln `NEXT_PUBLIC_DEMO_MODE` (env/config).
+Det är inte längre en feature flag — det finns ingen `demo_mode`-rad i `FeatureFlag`
+och ingen admin-toggle i `/admin/system`.
 
 #### Vad demo-läget gör
 

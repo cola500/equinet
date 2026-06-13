@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation"
 import useSWR from "swr"
 import { useAuth } from "@/hooks/useAuth"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
-import { isDemoModeWithFlags } from "@/lib/demo-mode"
+import { isDemoMode } from "@/lib/demo-mode"
 import { OfflineErrorState } from "@/components/ui/OfflineErrorState"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -58,8 +57,7 @@ const statusConfig = {
 export default function DueForServicePage() {
   const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
-  const demoFlag = useFeatureFlag("demo_mode")
-  const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
+  const demo = isDemoMode()
 
   useEffect(() => {
     if (demo) {
