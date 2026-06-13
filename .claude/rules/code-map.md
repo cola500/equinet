@@ -322,11 +322,6 @@ paths:
 - `src/app/provider/insights/page.tsx`
 - `src/components/layout/ProviderNav.tsx`
 
-### `self_reschedule`
-
-- `src/app/api/bookings/[id]/reschedule/route.ts`
-- `src/app/provider/profile/page.tsx`
-
 ### `recurring_bookings`
 
 - `src/app/api/booking-series/[id]/cancel/route.ts`
@@ -383,20 +378,6 @@ paths:
 
 - `src/app/api/device-tokens/route.ts`
 - `src/domain/notification/PushDeliveryService.ts`
-
-### `help_center`
-
-- `src/app/api/native/help/[slug]/route.ts`
-- `src/app/api/native/help/route.ts`
-- `src/app/customer/help/[slug]/page.tsx`
-- `src/app/customer/help/page.tsx`
-- `src/app/provider/help/[slug]/page.tsx`
-- `src/app/provider/help/page.tsx`
-- `src/app/provider/profile/page.tsx`
-- `src/app/provider/route-planning/page.tsx`
-- `src/app/provider/voice-log/page.tsx`
-- `src/components/layout/CustomerNav.tsx`
-- `src/components/layout/ProviderNav.tsx`
 
 ### `stable_profiles`
 

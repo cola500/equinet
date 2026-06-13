@@ -3,11 +3,9 @@
  *
  * Auth: Bearer > Supabase.
  * Returns full article with content blocks.
- * Feature flag: help_center
  */
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthUser } from "@/lib/auth-dual"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { getArticle } from "@/lib/help"
@@ -24,13 +22,7 @@ export async function GET(
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
-    // 2. Feature flag
-    const enabled = await isFeatureEnabled("help_center")
-    if (!enabled) {
-      return NextResponse.json({ error: "Funktionen är inte aktiverad" }, { status: 404 })
-    }
-
-    // 3. Rate limiting
+    // 2. Rate limiting
     try {
       const clientIP = getClientIP(request)
       const isAllowed = await rateLimiters.api(clientIP)

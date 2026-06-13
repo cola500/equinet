@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth-server"
 import { rateLimiters } from "@/lib/rate-limit"
 import { logger } from "@/lib/logger"
 import { z } from "zod"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import {
   createBookingService,
   mapBookingErrorToStatus,
@@ -35,12 +34,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Åtkomst nekad" }, { status: 403 })
     }
 
-    // 2. Feature flag check
-    if (!(await isFeatureEnabled("self_reschedule"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
-    }
-
-    // 3. Rate limiting
+    // 2. Rate limiting
     const rateLimitKey = `booking:${session.user.id}`
     try {
       const isAllowed = await rateLimiters.booking(rateLimitKey)
