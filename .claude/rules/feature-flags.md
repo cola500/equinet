@@ -3,7 +3,7 @@ title: "Feature Flags"
 description: "Prioritetsordning, standardmonster och checklista for feature flags"
 category: rule
 status: active
-last_updated: 2026-04-12
+last_updated: 2026-06-13
 tags: [feature-flags, server, client, testing]
 paths:
   - "src/lib/feature-flag*"
@@ -24,8 +24,13 @@ sections:
 ## Prioritetsordning
 
 1. **Miljövariabel** (högst): `FEATURE_VOICE_LOGGING=true` i `.env` / `.env.local`
-2. **Databas-override**: Via admin-panelen `/admin/system`
+2. **Databas-override**: Via admin-panelen `/admin/system` (Supabase `FeatureFlag`)
 3. **Kod-default**: `defaultEnabled` i `src/lib/feature-flag-definitions.ts`
+
+> **Supabase DB är enda source of truth (beslut B, 2026-06-13).** Edge Config-lagret är
+> borttaget ur aktiv resolution — admin-toggle skriver DB och får faktisk effekt i alla
+> miljöer. Prod och staging har separata Supabase-projekt → separata flaggvärden. DB läses
+> med 30s cache. Se [feature-flag-source-of-truth-debt.md](../../docs/operations/feature-flag-source-of-truth-debt.md).
 
 ## Filer
 
