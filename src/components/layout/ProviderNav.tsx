@@ -60,7 +60,7 @@ const providerMoreItems: MoreItem[] = [
   { href: "/provider/group-bookings", label: "Gruppbokningar", icon: UserPlus, matchPrefix: "/provider/group-bookings", section: "Planering" },
   { href: "/provider/insights", label: "Insikter", icon: BarChart3, matchPrefix: "/provider/insights", section: "Mitt företag" },
   { href: "/provider/reviews", label: "Recensioner", icon: Star, section: "Mitt företag" },
-  { href: "/provider/help", label: "Hjälp", icon: HelpCircle, matchPrefix: "/provider/help", featureFlag: "help_center", section: "Mitt företag" },
+  { href: "/provider/help", label: "Hjälp", icon: HelpCircle, matchPrefix: "/provider/help", section: "Mitt företag" },
   { href: "/provider/profile", label: "Min profil", icon: User, section: "Mitt företag" },
 ]
 
@@ -83,7 +83,7 @@ const secondaryNavItems: (NavItem & { section?: string })[] = [
   { href: "/provider/due-for-service", label: "Besöksplanering", matchPrefix: "/provider/due-for-service", section: "Planering" },
   { href: "/provider/group-bookings", label: "Gruppbokningar", matchPrefix: "/provider/group-bookings", section: "Planering" },
   { href: "/provider/insights", label: "Insikter", matchPrefix: "/provider/insights", section: "Mitt företag" },
-  { href: "/provider/help", label: "Hjälp", matchPrefix: "/provider/help", featureFlag: "help_center", section: "Mitt företag" },
+  { href: "/provider/help", label: "Hjälp", matchPrefix: "/provider/help", section: "Mitt företag" },
   { href: "/provider/profile", label: "Min profil", section: "Mitt företag" },
 ]
 
@@ -101,7 +101,7 @@ const NAV_REGISTRY: Record<string, { label: string; mobileLabel?: string; icon: 
   "/provider/messages": { label: "Meddelanden", icon: MessageSquare, matchPrefix: "/provider/messages" },
   "/provider/insights": { label: "Insikter", icon: BarChart3, matchPrefix: "/provider/insights" },
   "/provider/profile": { label: "Min profil", icon: User },
-  "/provider/help": { label: "Hjälp", icon: HelpCircle, matchPrefix: "/provider/help", featureFlag: "help_center" },
+  "/provider/help": { label: "Hjälp", icon: HelpCircle, matchPrefix: "/provider/help" },
 }
 
 const toTabItem = (href: string): TabItem => {

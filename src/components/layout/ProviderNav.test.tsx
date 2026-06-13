@@ -234,7 +234,7 @@ describe("ProviderNav", () => {
 
     it("demo mode: Mer drawer holds the 5 moved items (Översikt, Bokningar, Insikter, Profil, Hjälp)", () => {
       process.env.NEXT_PUBLIC_DEMO_MODE = "true"
-      vi.mocked(useFeatureFlags).mockReturnValue({ messaging: true, help_center: true })
+      vi.mocked(useFeatureFlags).mockReturnValue({ messaging: true })
 
       render(<ProviderNav />)
 

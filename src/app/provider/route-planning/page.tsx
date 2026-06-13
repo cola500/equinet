@@ -18,7 +18,6 @@ import { sv } from "date-fns/locale"
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { InfoPopover } from "@/components/ui/info-popover"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { OfflineNotAvailable } from "@/components/ui/OfflineNotAvailable"
 import { optimizeRoute, type Location } from "@/lib/route-optimizer"
 import { getRoute } from "@/lib/routing"
@@ -35,7 +34,6 @@ export default function RoutePlanningPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
   const isOnline = useOnlineStatus()
-  const helpEnabled = useFeatureFlag("help_center")
   const demo = isDemoMode()
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set())
   const [isCreatingRoute, setIsCreatingRoute] = useState(false)
@@ -300,7 +298,7 @@ export default function RoutePlanningPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold flex items-center gap-2">
             Rutt-planering
-            <InfoPopover text="Planera dina besöksrutter genom att välja beställningar och optimera ordningen." helpHref={helpEnabled ? "/provider/help/ruttplanering" : undefined} />
+            <InfoPopover text="Planera dina besöksrutter genom att välja beställningar och optimera ordningen." helpHref="/provider/help/ruttplanering" />
           </h1>
           <p className="text-gray-600 mt-2">
             Välj tillgängliga beställningar och skapa en optimerad rutt

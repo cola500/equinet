@@ -5,7 +5,6 @@ import { NextRequest } from "next/server"
 // Top-level imports for mocked modules
 import { auth } from "@/lib/auth-server"
 import { rateLimiters } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { mapBookingErrorToStatus, mapBookingErrorToMessage } from "@/domain/booking"
 
 const mockSession = {
@@ -34,10 +33,6 @@ vi.mock("@/lib/logger", () => ({
     warn: vi.fn(),
     security: vi.fn(),
   },
-}))
-
-vi.mock("@/lib/feature-flags", () => ({
-  isFeatureEnabled: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock("@/lib/prisma", () => ({
@@ -82,7 +77,6 @@ describe("PATCH /api/bookings/[id]/reschedule", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(auth).mockResolvedValue(mockSession as never)
-    vi.mocked(isFeatureEnabled).mockResolvedValue(true)
     vi.mocked(rateLimiters.booking).mockResolvedValue(true)
 
     mockRescheduleBooking.mockResolvedValue({
@@ -146,17 +140,6 @@ describe("PATCH /api/bookings/[id]/reschedule", () => {
     expect(response.status).toBe(403)
     const data = await response.json()
     expect(data.error).toBe("Åtkomst nekad")
-  })
-
-  it("returns 404 when self_reschedule feature flag is disabled", async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
-
-    const request = makeRequest(validBody)
-    const response = await PATCH(request, { params: Promise.resolve({ id: "booking-1" }) })
-
-    expect(response.status).toBe(404)
-    const data = await response.json()
-    expect(data.error).toBe("Ej tillgänglig")
   })
 
   it("should return 429 when rate limited", async () => {
