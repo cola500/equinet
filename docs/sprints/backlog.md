@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Kanonisk backlog för Equinet. Alla kända stories, uppgifter och beslut. status.md pekar hit; roadmap.md är den strategiska vyn."
 category: sprint
 status: active
-last_updated: 2026-06-12
+last_updated: 2026-06-13
 tags: [backlog, roadmap, planning]
 sections:
   - Aktiva produktspår
@@ -129,6 +129,7 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 
 | Story | Effort | Prioritet |
 |-------|--------|-----------|
+| **Feature flag source-of-truth separation** (architecture/ops debt) | Beslut + 0.5–1 dag | **Kräver beslut innan ytterligare flagg-cleanup.** Källstyrningen är blandad/oklar: prod styrs av **Edge Config** (DB bypassas → prod-DB-rader kan vara döda), staging saknar Edge Config (env + DB/default). Admin-toggle kan vara verkningslös i prod. Dokumentationen säger `env > DB > default` men verklig kedja är `env > Edge Config > DB > default`. Beslut: **A)** Edge Config överallt eller **B)** Supabase DB överallt. Ingen drift-cleanup baserad på prod/staging-skillnader förrän beslutet är taget. Se [feature-flag-source-of-truth-debt.md](../operations/feature-flag-source-of-truth-debt.md). |
 | Leaflet CSS lazy-load (licensrisk) | 15 min | `leaflet.css` importeras i layout.tsx (alltid). Flytta till `RouteMapVisualization.tsx` (lazy). Eliminerar Hippocratic-licenserad kod från sidor som inte använder ruttplanering. Se `docs/security/license-audit-2026-04-15.md`. |
 | E-postverifiering Resend i prod (S17-5 / S22-3) | 0.5 dag | **Blockerad** — kräver domänverifiering eller Resend Pro. Gratis-konto tillåter bara eget e-post. Verifiera leverans i prod. |
 | BDD integrationstester — horses, booking-series, bookings POST, group-bookings join | 1 dag | Kärndomäner saknar integration: Horses (8 routes), Booking-series (3), `POST /api/bookings`, `POST /api/group-bookings/join` (Serializable). 18/181 routes har integration. Audit: [bdd-coverage-audit-2026-04-25.md](../research/bdd-coverage-audit-2026-04-25.md). |

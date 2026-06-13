@@ -3,7 +3,7 @@ title: "Feature Flags"
 description: "Prioritetsordning, standardmonster och checklista for feature flags"
 category: rule
 status: active
-last_updated: 2026-04-12
+last_updated: 2026-06-13
 tags: [feature-flags, server, client, testing]
 paths:
   - "src/lib/feature-flag*"
@@ -24,8 +24,14 @@ sections:
 ## Prioritetsordning
 
 1. **Miljövariabel** (högst): `FEATURE_VOICE_LOGGING=true` i `.env` / `.env.local`
-2. **Databas-override**: Via admin-panelen `/admin/system`
-3. **Kod-default**: `defaultEnabled` i `src/lib/feature-flag-definitions.ts`
+2. **Edge Config**: Vercel Edge Config-storens `feature_flags`-objekt (om `EDGE_CONFIG`-env är satt)
+3. **Databas-override**: Via admin-panelen `/admin/system`
+4. **Kod-default**: `defaultEnabled` i `src/lib/feature-flag-definitions.ts`
+
+> ⚠️ **Källstyrning är blandad/oklar mellan miljöer (2026-06-13).** När Edge Config är aktiv (satt
+> i prod) **hoppas DB-läsningen över helt** — prod-DB-rader och admin-toggle kan då vara verkningslösa/
+> missvisande. Staging saknar Edge Config. Gör ingen flagg-cleanup baserad på prod/staging-skillnader
+> förrän A/B-beslutet är taget. Se [feature-flag-source-of-truth-debt.md](../../docs/operations/feature-flag-source-of-truth-debt.md).
 
 ## Filer
 
