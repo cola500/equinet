@@ -44,7 +44,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const initialFlags = await getFeatureFlags()
-  const demo = isDemoMode() || initialFlags.demo_mode === true
+  const demo = isDemoMode()
 
   return (
     <html lang="sv">

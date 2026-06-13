@@ -19,8 +19,7 @@ import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 import { EmptyState } from "@/components/ui/empty-state"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
-import { isDemoModeWithFlags } from "@/lib/demo-mode"
+import { isDemoMode } from "@/lib/demo-mode"
 
 interface Service {
   id: string
@@ -45,8 +44,7 @@ const INTERVAL_OPTIONS = [
 export default function ProviderServicesPage() {
   const { isLoading, isProvider } = useAuth()
   const { services: allServices, mutate: mutateServices } = useServices()
-  const demoFlag = useFeatureFlag("demo_mode")
-  const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
+  const demo = isDemoMode()
   const services = allServices
   const serviceDialog = useDialogState()
   const [editingService, setEditingService] = useState<Service | null>(null)

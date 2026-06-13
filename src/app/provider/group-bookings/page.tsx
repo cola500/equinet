@@ -4,8 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
-import { isDemoModeWithFlags } from "@/lib/demo-mode"
+import { isDemoMode } from "@/lib/demo-mode"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { Button } from "@/components/ui/button"
 import {
@@ -59,8 +58,7 @@ function formatDate(dateStr: string): string {
 export default function ProviderGroupBookingsPage() {
   const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
-  const demoFlag = useFeatureFlag("demo_mode")
-  const demo = isDemoModeWithFlags({ demo_mode: demoFlag })
+  const demo = isDemoMode()
 
   useEffect(() => {
     if (demo) {

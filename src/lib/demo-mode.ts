@@ -1,29 +1,28 @@
 /**
  * Demo mode utility.
  *
- * Can be activated in two ways (either is sufficient):
- * 1. Env variable: NEXT_PUBLIC_DEMO_MODE=true (or FEATURE_DEMO_MODE=true)
- * 2. Feature flag: demo_mode (via admin panel or database)
+ * Demo mode is controlled solely by the environment/config variable
+ * NEXT_PUBLIC_DEMO_MODE (staging=true, production=false). It is NOT a feature flag
+ * — there is no demo_mode row in feature_flags and no admin toggle.
  *
- * isDemoMode() is a cheap, synchronous check for the env variable.
- * Components that have access to feature flags should also check
- * flags.demo_mode for the database-backed flag.
+ * isDemoMode() is a cheap, synchronous check that works on both server and client
+ * (NEXT_PUBLIC_ vars are inlined at build time).
  */
 
 /**
- * Check env variable (synchronous, works everywhere).
- * For the full check including database flag, use isDemoModeWithFlags().
+ * Check the demo-mode env variable (synchronous, works everywhere).
  */
 export function isDemoMode(): boolean {
   return process.env.NEXT_PUBLIC_DEMO_MODE === "true"
 }
 
 /**
- * Check both env variable and feature flag record.
- * Use this in components that already have access to flags from useFeatureFlags().
+ * @deprecated Demo mode is now controlled solely by NEXT_PUBLIC_DEMO_MODE (env/config),
+ * not by a feature flag. This wrapper is kept for call-site compatibility and ignores
+ * its argument — prefer isDemoMode() directly.
  */
-export function isDemoModeWithFlags(flags: Record<string, boolean>): boolean {
-  return isDemoMode() || flags.demo_mode === true
+export function isDemoModeWithFlags(_flags?: Record<string, boolean>): boolean {
+  return isDemoMode()
 }
 
 /**

@@ -10,7 +10,7 @@ vi.mock("@/hooks/useOnlineStatus", () => ({
 }))
 
 vi.mock("@/components/providers/FeatureFlagProvider", () => ({
-  useFeatureFlag: vi.fn((flag: string) => flag !== "demo_mode"),
+  useFeatureFlag: vi.fn(() => true),
 }))
 
 vi.mock("@/components/layout/ProviderLayout", () => ({

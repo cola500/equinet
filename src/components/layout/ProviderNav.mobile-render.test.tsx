@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, within } from "@testing-library/react"
 import { ProviderNav } from "./ProviderNav"
 
@@ -27,9 +27,13 @@ function bottomBarLinkLabels(container: HTMLElement): string[] {
 
 describe("ProviderNav mobile bottom bar (rendered, real BottomTabBar)", () => {
   beforeEach(() => vi.clearAllMocks())
+  afterEach(() => {
+    delete process.env.NEXT_PUBLIC_DEMO_MODE
+  })
 
   it("demo mode renders exactly 4 primary tabs + a Mer button", () => {
-    mockFlags.current = { demo_mode: true, messaging: true }
+    process.env.NEXT_PUBLIC_DEMO_MODE = "true"
+    mockFlags.current = { messaging: true }
     const { container } = render(<ProviderNav />)
 
     expect(bottomBarLinkLabels(container)).toEqual([

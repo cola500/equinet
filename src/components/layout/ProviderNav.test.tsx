@@ -70,6 +70,7 @@ describe("ProviderNav", () => {
       writable: true,
       value: originalLocation,
     })
+    delete process.env.NEXT_PUBLIC_DEMO_MODE
   })
 
   it("should render desktop nav links when online", () => {
@@ -217,7 +218,8 @@ describe("ProviderNav", () => {
 
   describe("mobile bottom tab bar (Slice 1)", () => {
     it("demo mode: shows exactly 4 primary tabs (Kalender, Kunder, Tjänster, Meddelanden)", () => {
-      vi.mocked(useFeatureFlags).mockReturnValue({ demo_mode: true, messaging: true })
+      process.env.NEXT_PUBLIC_DEMO_MODE = "true"
+      vi.mocked(useFeatureFlags).mockReturnValue({ messaging: true })
 
       render(<ProviderNav />)
 
@@ -231,7 +233,8 @@ describe("ProviderNav", () => {
     })
 
     it("demo mode: Mer drawer holds the 5 moved items (Översikt, Bokningar, Insikter, Profil, Hjälp)", () => {
-      vi.mocked(useFeatureFlags).mockReturnValue({ demo_mode: true, messaging: true, help_center: true })
+      process.env.NEXT_PUBLIC_DEMO_MODE = "true"
+      vi.mocked(useFeatureFlags).mockReturnValue({ messaging: true, help_center: true })
 
       render(<ProviderNav />)
 
