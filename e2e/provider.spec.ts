@@ -26,16 +26,13 @@ test.describe('Provider Flow', () => {
     await page.getByLabel('Lösenord', { exact: true }).fill('ProviderPass123!');
     await page.getByRole('button', { name: /logga in/i }).click();
 
-    // Vänta på redirect till provider dashboard (kan gå via /dashboard först)
-    await expect(page).toHaveURL(/\/(provider\/)?dashboard/, { timeout: 15000 });
+    // Providers land on the calendar after login (not the dashboard).
+    await expect(page).toHaveURL(/\/provider\/calendar/, { timeout: 15000 });
 
-    // Om vi är på /dashboard, vänta på redirect till /provider/dashboard
-    if (page.url().includes('/dashboard') && !page.url().includes('/provider/dashboard')) {
-      // Vänta på redirect eller gå dit direkt
-      await expect(page).toHaveURL(/\/provider\/dashboard/, { timeout: 5000 }).catch(async () => {
-        await page.goto('/provider/dashboard');
-      });
-    }
+    // Översikt remains available but is no longer the landing page -- navigate
+    // there explicitly for the dashboard-focused assertions below.
+    await page.goto('/provider/dashboard');
+    await expect(page).toHaveURL(/\/provider\/dashboard/, { timeout: 5000 });
   });
 
   test('should display provider dashboard with stats', async ({ page }) => {

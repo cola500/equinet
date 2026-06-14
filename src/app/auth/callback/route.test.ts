@@ -26,12 +26,15 @@ describe('GET /auth/callback', () => {
     mockSupabaseClient.auth.exchangeCodeForSession.mockResolvedValue({ error: null })
   })
 
-  it('exchanges code for session and redirects to /provider/dashboard', async () => {
+  it('exchanges code for session and redirects to /dashboard (role-based routing)', async () => {
     const res = await GET(makeRequest({ code: 'valid-code-123' }))
 
     expect(mockSupabaseClient.auth.exchangeCodeForSession).toHaveBeenCalledWith('valid-code-123')
     expect(res.status).toBe(307)
-    expect(res.headers.get('location')).toContain('/provider/dashboard')
+    // Route via /dashboard so the server redirects per userType (provider -> calendar).
+    // Never hard-code a role-specific landing here.
+    expect(res.headers.get('location')).toContain('/dashboard')
+    expect(res.headers.get('location')).not.toContain('/provider/dashboard')
   })
 
   it('redirects to /login with error when no code param', async () => {

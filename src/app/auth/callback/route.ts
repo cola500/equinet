@@ -20,5 +20,8 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  return NextResponse.redirect(new URL("/provider/dashboard", origin))
+  // Route via /dashboard so the server redirects per userType
+  // (provider -> /provider/calendar, horse owner -> /hem).
+  // Never hard-code a role-specific landing here.
+  return NextResponse.redirect(new URL("/dashboard", origin))
 }
