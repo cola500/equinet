@@ -1,0 +1,66 @@
+name: Production Smoke Test
+
+# Manual only — NEVER on push/PR. Runs Playwright against the LIVE production site.
+# Credentials come from GitHub Secrets (see "Required secrets" below). GitHub Actions
+# auto-masks secret values in logs; the spec never prints passwords.
+#
+# Required secrets:
+#   PROD_SMOKE_PROVIDER_EMAIL     - email of a seeded prod test PROVIDER
+#   PROD_SMOKE_PROVIDER_PASSWORD  - its password
+#   PROD_SMOKE_CUSTOMER_EMAIL     - email of a seeded prod test CUSTOMER
+#   PROD_SMOKE_CUSTOMER_PASSWORD  - its password
+#
+# KNOWN BLOCKER (confirmed locally 2026-06-13): production sits behind the Vercel
+# Security Checkpoint (Attack Challenge Mode). Headless Playwright from a datacenter
+# IP is blocked at the challenge and never reaches the app. To unblock, ONE of:
+#   (a) Create a Vercel Firewall *bypass rule* that skips the challenge for requests
+#       carrying header `x-vercel-protection-bypass: <secret>`, then set that secret as
+#       the optional GitHub Secret PROD_SMOKE_BYPASS_SECRET (the config sends the header).
+#   (b) Run from a self-hosted runner whose static IP is allowlisted in the firewall.
+#   (c) Temporarily disable Attack Challenge Mode during the smoke window.
+# Without one of these the run fails at `waitPastCheckpoint`.
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Production URL'
+        required: false
+        default: 'https://equinet.johanlindengard.com'
+
+jobs:
+  prod-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run production smoke test
+        run: npx playwright test --config=playwright.prod-smoke.config.ts
+        env:
+          PROD_SMOKE_URL: ${{ inputs.url }}
+          PROD_SMOKE_PROVIDER_EMAIL: ${{ secrets.PROD_SMOKE_PROVIDER_EMAIL }}
+          PROD_SMOKE_PROVIDER_PASSWORD: ${{ secrets.PROD_SMOKE_PROVIDER_PASSWORD }}
+          PROD_SMOKE_CUSTOMER_EMAIL: ${{ secrets.PROD_SMOKE_CUSTOMER_EMAIL }}
+          PROD_SMOKE_CUSTOMER_PASSWORD: ${{ secrets.PROD_SMOKE_CUSTOMER_PASSWORD }}
+          # Optional — only needed to clear the Vercel Security Checkpoint (see header note above).
+          PROD_SMOKE_BYPASS_SECRET: ${{ secrets.PROD_SMOKE_BYPASS_SECRET }}
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-smoke-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

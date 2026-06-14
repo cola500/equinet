@@ -17,6 +17,9 @@ if (!process.env.CI) {
  */
 export default defineConfig({
   testDir: './e2e',
+  // prod-smoke.spec.ts runs ONLY via playwright.prod-smoke.config.ts (manual prod
+  // smoke against the live site) — never in the normal local/CI E2E suite.
+  testIgnore: '**/prod-smoke.spec.ts',
 
   /* Run tests SERIALLY (not parallel) to ensure test isolation
    * CRITICAL: fullyParallel:false + workers:1 ensures:
@@ -80,7 +83,7 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: [/offline-.*\.spec\.ts/, /customer-insights\.spec\.ts/],
+      testIgnore: [/offline-.*\.spec\.ts/, /customer-insights\.spec\.ts/, /prod-smoke\.spec\.ts/],
       dependencies: ['setup'],
       teardown: 'cleanup',
     },
@@ -88,7 +91,7 @@ export default defineConfig({
     {
       name: 'mobile',
       use: { ...devices['Pixel 7'] },
-      testIgnore: [/offline-.*\.spec\.ts/, /customer-insights\.spec\.ts/],
+      testIgnore: [/offline-.*\.spec\.ts/, /customer-insights\.spec\.ts/, /prod-smoke\.spec\.ts/],
       dependencies: ['setup'],
       teardown: 'cleanup',
     },
