@@ -55,7 +55,7 @@ const providerMoreItems: MoreItem[] = [
   { href: "/provider/voice-log", label: "Logga arbete", icon: Mic, matchPrefix: "/provider/voice-log", featureFlag: "voice_logging", section: "Dagligt arbete" },
   { href: "/provider/customers", label: "Kunder", icon: Users, matchPrefix: "/provider/customers", section: "Dagligt arbete" },
   { href: "/provider/route-planning", label: "Ruttplanering", icon: Route, matchPrefix: "/provider/route", featureFlag: "route_planning", section: "Planering" },
-  { href: "/provider/announcements", label: "Rutt-annonser", icon: Megaphone, matchPrefix: "/provider/announcements", featureFlag: "route_announcements", section: "Planering" },
+  { href: "/provider/announcements", label: "Rutt-annonser", icon: Megaphone, matchPrefix: "/provider/announcements", section: "Planering" },
   { href: "/provider/due-for-service", label: "Besöksplanering", icon: Clock, matchPrefix: "/provider/due-for-service", section: "Planering" },
   { href: "/provider/group-bookings", label: "Gruppbokningar", icon: UserPlus, matchPrefix: "/provider/group-bookings", section: "Planering" },
   { href: "/provider/insights", label: "Insikter", icon: BarChart3, matchPrefix: "/provider/insights", section: "Mitt företag" },
@@ -79,7 +79,7 @@ const primaryNavItems: NavItem[] = [
 const secondaryNavItems: (NavItem & { section?: string })[] = [
   { href: "/provider/voice-log", label: "Logga arbete", matchPrefix: "/provider/voice-log", featureFlag: "voice_logging", section: "Dagligt arbete" },
   { href: "/provider/route-planning", label: "Ruttplanering", matchPrefix: "/provider/route", featureFlag: "route_planning", section: "Planering" },
-  { href: "/provider/announcements", label: "Rutt-annonser", matchPrefix: "/provider/announcements", featureFlag: "route_announcements", section: "Planering" },
+  { href: "/provider/announcements", label: "Rutt-annonser", matchPrefix: "/provider/announcements", section: "Planering" },
   { href: "/provider/due-for-service", label: "Besöksplanering", matchPrefix: "/provider/due-for-service", section: "Planering" },
   { href: "/provider/group-bookings", label: "Gruppbokningar", matchPrefix: "/provider/group-bookings", section: "Planering" },
   { href: "/provider/insights", label: "Insikter", matchPrefix: "/provider/insights", section: "Mitt företag" },

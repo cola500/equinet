@@ -28,20 +28,19 @@ import { test, expect } from './fixtures'
 const TOGGLE_FLAGS = [
   'voice_logging',
   'route_planning',
-  'route_announcements',
 ] as const
 
 // Provider nav items gated by feature flags (only those toggleable via admin)
 const PROVIDER_FLAG_NAV = [
   { flag: 'voice_logging', label: 'Logga arbete' },
   { flag: 'route_planning', label: 'Ruttplanering' },
-  { flag: 'route_announcements', label: 'Rutt-annonser' },
 ] as const
 
 // Provider nav items that are always visible (no feature flag)
 const PROVIDER_ENV_NAV = [
   'Besöksplanering',  // due_for_service: GA — no longer feature-flagged
   'Gruppbokningar',   // group_bookings: no longer feature-flagged, always visible
+  'Rutt-annonser',    // route_announcements: GA — no longer feature-flagged
 ] as const
 
 // Provider nav items that are always visible -- primary (direct links)
@@ -135,7 +134,6 @@ async function setAllFlags(page: import('@playwright/test').Page, value: boolean
 const FLAG_DEFAULTS: Record<string, boolean> = {
   voice_logging: true,
   route_planning: true,
-  route_announcements: true,
 }
 
 /** Restore flags to their code defaults */
@@ -350,34 +348,18 @@ test.describe('Feature Flag Toggle (Admin)', () => {
   })
 
   // ─── Fas 6: route_announcements ────────────────────────────────
+  // NOTE: route_announcements is now GA (no feature flag). Always visible.
 
-  test.describe('Fas 6: route_announcements toggle', () => {
+  test.describe('Fas 6: route_announcements (GA, no feature flag)', () => {
 
-    test('6.1 toggle ON: "Rutt-annonser" appears in provider nav', async ({ page }) => {
+    test('6.1 "Rutt-annonser" is always visible (GA feature)', async ({ page }) => {
       test.skip(test.info().project.name === 'mobile', 'Desktop nav test')
-
-      await loginAsAdmin(page)
-      await setAllFlags(page, false)
-      await setFlag(page, 'route_announcements', true)
 
       await gotoProviderDashboardWithFlags(page)
       await openProviderMoreDropdown(page)
 
       const nav = page.locator('nav.hidden.md\\:block')
       await expect(nav.getByRole('link', { name: 'Rutt-annonser' })).toBeVisible()
-    })
-
-    test('6.6 toggle OFF: "Rutt-annonser" disappears', async ({ page }) => {
-      test.skip(test.info().project.name === 'mobile', 'Desktop nav test')
-
-      await loginAsAdmin(page)
-      await setFlag(page, 'route_announcements', false)
-
-      await gotoProviderDashboardWithFlags(page)
-      await openProviderMoreDropdown(page)
-
-      const nav = page.locator('nav.hidden.md\\:block')
-      await expect(nav.getByRole('link', { name: 'Rutt-annonser' })).not.toBeVisible()
     })
   })
 

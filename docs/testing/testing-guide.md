@@ -244,9 +244,9 @@ sections:
 - [ ] Kartvy med stopp
 - [ ] Optimera ordning och restidsberakning
 
-### Rutt-annonser (route_announcements)
+### Rutt-annonser (GA, ingen flagga)
 
-- [ ] Menyval visas nar PA, doljs nar AV
+- [ ] Menyval alltid synligt (ingen flagga)
 - [ ] Skapa annons kopplad till rutt
 - [ ] Kunder ser annonser under "Lediga tider"
 - [ ] Kund kan boka via annons

@@ -41,7 +41,6 @@ vi.mock("@/components/providers/FeatureFlagProvider", () => ({
   useFeatureFlags: () => ({
     voice_logging: true,
     route_planning: true,
-    route_announcements: true,
     customer_insights: true,
   }),
 }))
