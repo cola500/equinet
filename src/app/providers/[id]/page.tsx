@@ -24,7 +24,6 @@ import { BookingFlowProvider, type BookingFlowContextValue } from "@/components/
 import { SeriesResultDialog } from "@/components/booking/SeriesResultDialog"
 import { FollowButton } from "@/components/follow/FollowButton"
 import { useFollowProvider } from "@/hooks/useFollowProvider"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { ProviderCardSkeleton } from "@/components/loading/ProviderCardSkeleton"
 import { clientLogger } from "@/lib/client-logger"
 import type { CustomerHorse } from "@/hooks/useBookingFlow"
@@ -104,7 +103,7 @@ export default function ProviderDetailPage() {
     providerBusinessName: provider?.businessName,
   })
 
-  const followProviderEnabled = useFeatureFlag("follow_provider")
+  const followProviderEnabled = true
   const follow = useFollowProvider({
     providerId: provider?.id || "",
     enabled: followProviderEnabled && isCustomer && !!provider,

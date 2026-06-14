@@ -3,7 +3,7 @@ title: "Manuell testningsguide"
 description: "Komplett checklista for manuell testning av Equinet -- alla floden, feature flags, mobil"
 category: testing
 status: active
-last_updated: 2026-06-13
+last_updated: 2026-06-14
 tags: [testing, manual, checklist, qa]
 sections:
   - Startsida och offentliga sidor
@@ -123,7 +123,7 @@ sections:
 - [ ] Visa och redigera personuppgifter
 - [ ] FAQ-sidan laddas
 - [ ] GDPR-export fungerar
-- [ ] Folj/avfolj leverantor [kraver follow_provider]
+- [ ] Folj/avfolj leverantor (GA, alltid tillgangligt)
 
 ---
 
@@ -244,9 +244,9 @@ sections:
 - [ ] Kartvy med stopp
 - [ ] Optimera ordning och restidsberakning
 
-### Rutt-annonser (route_announcements)
+### Rutt-annonser (GA, ingen flagga)
 
-- [ ] Menyval visas nar PA, doljs nar AV
+- [ ] Menyval alltid synligt (ingen flagga)
 - [ ] Skapa annons kopplad till rutt
 - [ ] Kunder ser annonser under "Lediga tider"
 - [ ] Kund kan boka via annons
@@ -289,13 +289,13 @@ sections:
 - [ ] Kund kan valja nytt datum/tid
 - [ ] Leverantor ser ombokningshistorik
 
-### Folj leverantor (follow_provider)
+### Folj leverantor (GA, ingen flagga)
 
 - [ ] Folj-knapp visas pa leverantorsprofil
 - [ ] Kund kan folja och avfolja
 - [ ] Notis vid ny rutt-annons i kundens kommun
 
-### Bevaka kommun (municipality_watch)
+### Bevaka kommun (GA, ingen flagga)
 
 - [ ] Bevakningsval visas i kundprofil
 - [ ] Valj kommun + tjanstetyp

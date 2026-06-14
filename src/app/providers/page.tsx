@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input"
 import { useAuth } from "@/hooks/useAuth"
 import { Header } from "@/components/layout/Header"
 import { ProviderCardSkeleton } from "@/components/loading/ProviderCardSkeleton"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { useDialogState } from "@/hooks/useDialogState"
 import { useGeoFiltering } from "@/hooks/useGeoFiltering"
 import { useFavoritesFilter } from "@/hooks/useFavoritesFilter"
@@ -50,7 +49,7 @@ export default function ProvidersPage() {
 function ProvidersContent() {
   const { user } = useAuth()
   const isCustomer = user?.userType === "customer"
-  const followEnabled = useFeatureFlag("follow_provider")
+  const followEnabled = true
   const searchParams = useSearchParams()
   const filterDrawer = useDialogState()
 

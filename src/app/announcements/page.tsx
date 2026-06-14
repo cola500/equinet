@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/hooks/useAuth"
 import { CustomerLayout } from "@/components/layout/CustomerLayout"
-import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { MunicipalitySelect } from "@/components/ui/municipality-select"
 import {
   Select,
@@ -55,7 +54,6 @@ interface Announcement {
 
 export default function AnnouncementsPage() {
   const { user } = useAuth()
-  const routeAnnouncementsEnabled = useFeatureFlag("route_announcements")
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -128,16 +126,6 @@ export default function AnnouncementsPage() {
 
   const hasActiveFilters = municipality || serviceType
 
-  if (!routeAnnouncementsEnabled) {
-    return (
-      <CustomerLayout>
-        <div className="max-w-6xl mx-auto py-12 text-center">
-          <h1 className="text-2xl font-bold mb-2">Rutt-annonser</h1>
-          <p className="text-gray-600">Rutt-annonser är inte tillgängliga just nu.</p>
-        </div>
-      </CustomerLayout>
-    )
-  }
 
   return (
     <CustomerLayout>

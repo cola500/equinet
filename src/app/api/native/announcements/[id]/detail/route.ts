@@ -9,7 +9,6 @@ import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 
 export async function GET(
   request: NextRequest,
@@ -38,10 +37,6 @@ export async function GET(
         )
       }
       throw error
-    }
-
-    if (!(await isFeatureEnabled("route_announcements"))) {
-      return NextResponse.json({ error: "Ej tillgänglig" }, { status: 404 })
     }
 
     if (!authUser.providerId) {

@@ -279,13 +279,6 @@ paths:
 - `src/app/provider/dashboard/page.tsx`
 - `src/components/layout/ProviderNav.tsx`
 
-### `route_announcements`
-
-- `src/app/announcements/page.tsx`
-- `src/app/api/native/announcements/[id]/detail/route.ts`
-- `src/app/api/native/announcements/route.ts`
-- `src/components/layout/ProviderNav.tsx`
-
 ### `customer_insights`
 
 - `src/app/api/provider/customers/[customerId]/insights/route.ts`
@@ -343,22 +336,6 @@ paths:
 - `src/hooks/useMutationSync.ts`
 - `src/hooks/useOfflineGuard.ts`
 - `src/hooks/usePendingMutation.ts`
-
-### `follow_provider`
-
-- `src/app/api/follows/[providerId]/route.ts`
-- `src/app/api/follows/route.ts`
-- `src/app/api/route-orders/route.ts`
-- `src/app/providers/[id]/page.tsx`
-- `src/app/providers/page.tsx`
-
-### `municipality_watch`
-
-- `src/app/api/municipality-watches/[id]/route.ts`
-- `src/app/api/municipality-watches/route.ts`
-- `src/app/api/route-orders/route.ts`
-- `src/app/customer/profile/page.tsx`
-- `src/domain/notification/RouteAnnouncementNotifierFactory.ts`
 
 ### `provider_subscription`
 

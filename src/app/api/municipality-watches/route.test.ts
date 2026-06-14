@@ -76,21 +76,6 @@ describe("POST /api/municipality-watches", () => {
     expect(response.status).toBe(403)
   })
 
-  it("should return 404 when feature flag is disabled", async () => {
-    vi.mocked(getAuthUser).mockResolvedValue({
-      id: "u1", email: "", userType: "customer", isAdmin: false,
-      providerId: null, stableId: null, authMethod: "supabase" as const,
-    })
-    const { isFeatureEnabled } = await import("@/lib/feature-flags")
-    vi.mocked(isFeatureEnabled).mockResolvedValue(false)
-
-    const response = await POST(makeRequest("POST", {
-      municipality: "Kungsbacka",
-      serviceTypeName: "Hovslagning",
-    }))
-    expect(response.status).toBe(404)
-  })
-
   it("should return 400 for invalid JSON", async () => {
     vi.mocked(getAuthUser).mockResolvedValue({
       id: "u1", email: "", userType: "customer", isAdmin: false,

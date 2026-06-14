@@ -123,8 +123,6 @@ export default defineConfig({
         FEATURE_SELF_RESCHEDULE: 'true',
         FEATURE_CUSTOMER_INSIGHTS: 'true',
         FEATURE_OFFLINE_MODE: 'true',
-        FEATURE_FOLLOW_PROVIDER: 'true',
-        FEATURE_MUNICIPALITY_WATCH: 'true',
         FEATURE_CUSTOMER_INVITE: 'true',
         FEATURE_STRIPE_PAYMENTS: 'true',
         ALLOW_TEST_ENDPOINTS: 'true',
