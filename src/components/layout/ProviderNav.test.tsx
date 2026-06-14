@@ -73,12 +73,22 @@ describe("ProviderNav", () => {
     delete process.env.NEXT_PUBLIC_DEMO_MODE
   })
 
-  it("should render desktop nav links when online", () => {
+  it("should render desktop primary nav links when online", () => {
     render(<ProviderNav />)
 
-    expect(screen.getByText("Översikt")).toBeInTheDocument()
     expect(screen.getByText("Kalender")).toBeInTheDocument()
     expect(screen.getByText("Bokningar")).toBeInTheDocument()
+    // Översikt moved out of the primary nav into the (collapsed) "Mer" dropdown.
+    expect(screen.queryByText("Översikt")).not.toBeInTheDocument()
+  })
+
+  it("should expose Översikt inside the desktop 'Mer' dropdown", () => {
+    render(<ProviderNav />)
+
+    // Hidden until the dropdown opens
+    expect(screen.queryByText("Översikt")).not.toBeInTheDocument()
+    fireEvent.click(screen.getByText("Mer"))
+    expect(screen.getByText("Översikt")).toBeInTheDocument()
   })
 
   it("should allow navigation when online", () => {
@@ -121,25 +131,26 @@ describe("ProviderNav", () => {
 
   it("should allow click on active page link when offline", () => {
     vi.mocked(useOnlineStatus).mockReturnValue(false)
-    vi.mocked(usePathname).mockReturnValue("/provider/dashboard")
+    vi.mocked(usePathname).mockReturnValue("/provider/calendar")
 
     render(<ProviderNav />)
 
-    const dashboardLink = screen.getByText("Översikt")
-    fireEvent.click(dashboardLink)
+    const calendarLink = screen.getByText("Kalender")
+    fireEvent.click(calendarLink)
 
     expect(toast.error).not.toHaveBeenCalled()
   })
 
-  it("should prefetch main tabs when offline_mode is enabled", () => {
+  it("should prefetch offline-safe primary tabs when offline_mode is enabled", () => {
     vi.mocked(useFeatureFlags).mockReturnValue({ offline_mode: true })
 
     render(<ProviderNav />)
 
-    expect(mockPrefetch).toHaveBeenCalledWith("/provider/dashboard")
+    // Översikt is no longer a primary tab, so it's no longer prefetched.
     expect(mockPrefetch).toHaveBeenCalledWith("/provider/calendar")
     expect(mockPrefetch).toHaveBeenCalledWith("/provider/bookings")
-    expect(mockPrefetch).toHaveBeenCalledTimes(3)
+    expect(mockPrefetch).not.toHaveBeenCalledWith("/provider/dashboard")
+    expect(mockPrefetch).toHaveBeenCalledTimes(2)
   })
 
   it("should NOT prefetch when offline_mode is disabled", () => {
@@ -186,7 +197,7 @@ describe("ProviderNav", () => {
         return init?.headers && (init.headers as Record<string, string>)["RSC"] === "1"
       }
     )
-    expect(rscCalls.length).toBeGreaterThanOrEqual(3)
+    expect(rscCalls.length).toBeGreaterThanOrEqual(2)
 
     // Verify headers do NOT include Next-Router-Prefetch
     for (const call of rscCalls) {
@@ -248,17 +259,26 @@ describe("ProviderNav", () => {
       ])
     })
 
-    it("non-demo mode: mobile tabs unchanged (providerTabs)", () => {
+    it("non-demo mode: mobile tabs are Kalender, Bokningar, Meddelanden (Översikt moved to Mer)", () => {
       vi.mocked(useFeatureFlags).mockReturnValue({ messaging: true })
 
       render(<ProviderNav />)
 
       expect(mockBottomTabBar.props?.tabs.map((t) => t.href)).toEqual([
-        "/provider/dashboard",
         "/provider/calendar",
         "/provider/bookings",
         "/provider/messages",
       ])
+    })
+
+    it("non-demo mode: Översikt lives first in the mobile Mer drawer", () => {
+      vi.mocked(useFeatureFlags).mockReturnValue({ messaging: true })
+
+      render(<ProviderNav />)
+
+      const moreHrefs = mockBottomTabBar.props?.moreItems.map((i) => i.href) ?? []
+      expect(moreHrefs).toContain("/provider/dashboard")
+      expect(moreHrefs[0]).toBe("/provider/dashboard")
     })
   })
 })

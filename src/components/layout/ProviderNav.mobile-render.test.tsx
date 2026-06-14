@@ -46,15 +46,16 @@ describe("ProviderNav mobile bottom bar (rendered, real BottomTabBar)", () => {
     expect(within(nav).getByRole("button", { name: /Mer/ })).toBeTruthy()
   })
 
-  it("non-demo mode renders the unchanged 4 providerTabs", () => {
+  it("non-demo mode renders 3 primary tabs (Översikt moved to Mer)", () => {
     mockFlags.current = { messaging: true }
     const { container } = render(<ProviderNav />)
 
     expect(bottomBarLinkLabels(container)).toEqual([
-      "Översikt",
       "Kalender",
       "Bokningar",
       "Meddelanden",
     ])
+    const nav = container.querySelector("nav.fixed") as HTMLElement
+    expect(within(nav).getByRole("button", { name: /Mer/ })).toBeTruthy()
   })
 })
