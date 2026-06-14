@@ -30,14 +30,6 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: true,
     category: "provider",
   },
-  route_announcements: {
-    key: "route_announcements",
-    label: "Rutt-annonser",
-    description: "Publicera och hantera rutt-annonser",
-    defaultEnabled: true,
-    clientVisible: true,
-    category: "provider",
-  },
   customer_insights: {
     key: "customer_insights",
     label: "Kundinsikter",

@@ -38,7 +38,6 @@ describe("GET /api/feature-flags", () => {
     expect(data.flags).toEqual({
       voice_logging: true,
       route_planning: true,
-      route_announcements: true,
       customer_insights: true,
       offline_mode: true,
       provider_subscription: false,

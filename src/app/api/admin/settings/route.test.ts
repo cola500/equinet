@@ -19,7 +19,6 @@ vi.mock("@/lib/feature-flags", async (importOriginal) => {
     getFeatureFlags: vi.fn().mockResolvedValue({
       voice_logging: true,
       route_planning: true,
-      route_announcements: true,
       customer_insights: true,
       recurring_bookings: false,
     }),
@@ -121,7 +120,6 @@ describe("GET /api/admin/settings", () => {
     expect(data.featureFlagStates).toEqual({
       voice_logging: true,
       route_planning: true,
-      route_announcements: true,
       customer_insights: true,
       recurring_bookings: false,
     })

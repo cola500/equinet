@@ -279,13 +279,6 @@ paths:
 - `src/app/provider/dashboard/page.tsx`
 - `src/components/layout/ProviderNav.tsx`
 
-### `route_announcements`
-
-- `src/app/announcements/page.tsx`
-- `src/app/api/native/announcements/[id]/detail/route.ts`
-- `src/app/api/native/announcements/route.ts`
-- `src/components/layout/ProviderNav.tsx`
-
 ### `customer_insights`
 
 - `src/app/api/provider/customers/[customerId]/insights/route.ts`

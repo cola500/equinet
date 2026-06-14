@@ -33,7 +33,7 @@ describe("feature-flags", () => {
   describe("isFeatureEnabled", () => {
     it("returns default value when no override exists", async () => {
       expect(await isFeatureEnabled("voice_logging")).toBe(true)
-      expect(await isFeatureEnabled("route_announcements")).toBe(true)
+      expect(await isFeatureEnabled("route_planning")).toBe(true)
     })
 
     it("returns false for unknown flag", async () => {
@@ -41,26 +41,26 @@ describe("feature-flags", () => {
     })
 
     it("env variable overrides default", async () => {
-      process.env.FEATURE_ROUTE_ANNOUNCEMENTS = "true"
-      expect(await isFeatureEnabled("route_announcements")).toBe(true)
+      process.env.FEATURE_ROUTE_PLANNING = "true"
+      expect(await isFeatureEnabled("route_planning")).toBe(true)
 
       process.env.FEATURE_VOICE_LOGGING = "false"
       expect(await isFeatureEnabled("voice_logging")).toBe(false)
     })
 
     it("DB override overrides default", async () => {
-      await mockRepo.upsert("route_announcements", true)
+      await mockRepo.upsert("route_planning", true)
       await mockRepo.upsert("voice_logging", false)
 
       // Both overrides should be visible (single cache fetch)
-      expect(await isFeatureEnabled("route_announcements")).toBe(true)
+      expect(await isFeatureEnabled("route_planning")).toBe(true)
       expect(await isFeatureEnabled("voice_logging")).toBe(false)
     })
 
     it("env variable overrides DB", async () => {
-      process.env.FEATURE_ROUTE_ANNOUNCEMENTS = "false"
-      await mockRepo.upsert("route_announcements", true)
-      expect(await isFeatureEnabled("route_announcements")).toBe(false)
+      process.env.FEATURE_ROUTE_PLANNING = "false"
+      await mockRepo.upsert("route_planning", true)
+      expect(await isFeatureEnabled("route_planning")).toBe(false)
 
       process.env.FEATURE_VOICE_LOGGING = "true"
       await mockRepo.upsert("voice_logging", false)
@@ -74,7 +74,6 @@ describe("feature-flags", () => {
       expect(flags).toEqual({
         voice_logging: true,
         route_planning: true,
-        route_announcements: true,
         customer_insights: true,
         offline_mode: true,
         provider_subscription: false,
@@ -86,9 +85,9 @@ describe("feature-flags", () => {
     })
 
     it("reflects DB overrides", async () => {
-      await mockRepo.upsert("route_announcements", true)
+      await mockRepo.upsert("route_planning", true)
       const flags = await getFeatureFlags()
-      expect(flags.route_announcements).toBe(true)
+      expect(flags.route_planning).toBe(true)
     })
 
     it("reflects env overrides", async () => {
@@ -132,15 +131,15 @@ describe("feature-flags", () => {
       const flags = await getFeatureFlags()
       // Should return defaults without crashing
       expect(flags.voice_logging).toBe(true)
-      expect(flags.route_announcements).toBe(true)
+      expect(flags.route_planning).toBe(true)
     })
   })
 
   describe("setFeatureFlagOverride", () => {
     it("writes to repository", async () => {
-      await setFeatureFlagOverride("route_announcements", "true")
+      await setFeatureFlagOverride("route_planning", "true")
 
-      const flag = await mockRepo.findByKey("route_announcements")
+      const flag = await mockRepo.findByKey("route_planning")
       expect(flag).not.toBeNull()
       expect(flag!.enabled).toBe(true)
     })
@@ -150,38 +149,38 @@ describe("feature-flags", () => {
       await getFeatureFlags()
 
       // Override a flag
-      await setFeatureFlagOverride("route_announcements", "true")
+      await setFeatureFlagOverride("route_planning", "true")
 
       // Should see the override immediately (cache invalidated)
       const flags = await getFeatureFlags()
-      expect(flags.route_announcements).toBe(true)
+      expect(flags.route_planning).toBe(true)
     })
 
     it("throws descriptive error on DB failure", async () => {
       vi.spyOn(mockRepo, "upsert").mockRejectedValueOnce(new Error("Connection refused"))
 
       await expect(
-        setFeatureFlagOverride("route_announcements", "true")
-      ).rejects.toThrow("Kunde inte uppdatera flaggan route_announcements: Connection refused")
+        setFeatureFlagOverride("route_planning", "true")
+      ).rejects.toThrow("Kunde inte uppdatera flaggan route_planning: Connection refused")
     })
   })
 
   describe("removeFeatureFlagOverride", () => {
     it("sets flag to default value in repository", async () => {
-      await setFeatureFlagOverride("route_announcements", "true")
-      await removeFeatureFlagOverride("route_announcements")
+      await setFeatureFlagOverride("route_planning", "true")
+      await removeFeatureFlagOverride("route_planning")
 
-      // route_announcements default is true
+      // route_planning default is true
       const flags = await getFeatureFlags()
-      expect(flags.route_announcements).toBe(true)
+      expect(flags.route_planning).toBe(true)
     })
 
     it("throws descriptive error on DB failure", async () => {
       vi.spyOn(mockRepo, "upsert").mockRejectedValueOnce(new Error("Timeout"))
 
       await expect(
-        removeFeatureFlagOverride("route_announcements")
-      ).rejects.toThrow("Kunde inte uppdatera flaggan route_announcements: Timeout")
+        removeFeatureFlagOverride("route_planning")
+      ).rejects.toThrow("Kunde inte uppdatera flaggan route_planning: Timeout")
     })
   })
 
@@ -222,28 +221,28 @@ describe("feature-flags", () => {
     })
 
     it("DB row overrides code default", async () => {
-      // route_announcements defaults to true; DB row turns it off
-      await mockRepo.upsert("route_announcements", false)
+      // route_planning defaults to true; DB row turns it off
+      await mockRepo.upsert("route_planning", false)
 
       const flags = await getFeatureFlags()
 
-      expect(flags.route_announcements).toBe(false)
+      expect(flags.route_planning).toBe(false)
     })
 
     it("setFeatureFlagOverride changes the effective value", async () => {
-      await setFeatureFlagOverride("route_announcements", "false")
-      expect((await getFeatureFlags()).route_announcements).toBe(false)
+      await setFeatureFlagOverride("route_planning", "false")
+      expect((await getFeatureFlags()).route_planning).toBe(false)
 
-      await setFeatureFlagOverride("route_announcements", "true")
-      expect((await getFeatureFlags()).route_announcements).toBe(true)
+      await setFeatureFlagOverride("route_planning", "true")
+      expect((await getFeatureFlags()).route_planning).toBe(true)
     })
 
     it("removeFeatureFlagOverride resets to code default", async () => {
-      await setFeatureFlagOverride("route_announcements", "false")
-      expect((await getFeatureFlags()).route_announcements).toBe(false)
+      await setFeatureFlagOverride("route_planning", "false")
+      expect((await getFeatureFlags()).route_planning).toBe(false)
 
-      await removeFeatureFlagOverride("route_announcements")
-      expect((await getFeatureFlags()).route_announcements).toBe(true)
+      await removeFeatureFlagOverride("route_planning")
+      expect((await getFeatureFlags()).route_planning).toBe(true)
     })
   })
 })
