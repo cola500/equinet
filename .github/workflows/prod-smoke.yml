@@ -13,9 +13,10 @@ name: Production Smoke Test
 # KNOWN BLOCKER (confirmed locally 2026-06-13): production sits behind the Vercel
 # Security Checkpoint (Attack Challenge Mode). Headless Playwright from a datacenter
 # IP is blocked at the challenge and never reaches the app. To unblock, ONE of:
-#   (a) Create a Vercel Firewall *bypass rule* that skips the challenge for requests
-#       carrying header `x-vercel-protection-bypass: <secret>`, then set that secret as
+#   (a) Create a Vercel WAF Custom Rule (action: bypass / bypassSystem) that matches
+#       requests carrying header `x-prod-smoke-bypass: <secret>`, then set that secret as
 #       the optional GitHub Secret PROD_SMOKE_BYPASS_SECRET (the config sends the header).
+#       NB: we use a dedicated header, not the reserved `x-vercel-protection-bypass`.
 #   (b) Run from a self-hosted runner whose static IP is allowlisted in the firewall.
 #   (c) Temporarily disable Attack Challenge Mode during the smoke window.
 # Without one of these the run fails at `waitPastCheckpoint`.

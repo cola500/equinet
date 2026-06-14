@@ -12,10 +12,12 @@ import { defineConfig, devices } from '@playwright/test';
 const PROD_URL = process.env.PROD_SMOKE_URL || 'https://equinet.johanlindengard.com';
 
 // Optional bypass for the Vercel Security Checkpoint (Attack Challenge Mode), which
-// blocks headless browsers from datacenter IPs. When set, every request carries this
-// header — pair it with a Vercel Firewall *bypass rule* that skips the challenge for
-// requests presenting the matching `x-vercel-protection-bypass` value. Without it the
-// run will fail at the checkpoint (confirmed locally 2026-06-13). No-op if unset.
+// blocks headless browsers from datacenter IPs. When set, every request carries the
+// `x-prod-smoke-bypass` header — pair it with a Vercel WAF *Custom Rule* that bypasses
+// system mitigations (bypassSystem) for requests whose `x-prod-smoke-bypass` value
+// matches this secret. (We use a dedicated header, NOT `x-vercel-protection-bypass`,
+// which is reserved for Vercel Deployment Protection.) Without it the run fails at the
+// checkpoint (confirmed locally 2026-06-13). No-op if unset.
 const BYPASS_SECRET = process.env.PROD_SMOKE_BYPASS_SECRET;
 
 export default defineConfig({
@@ -32,12 +34,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     ...(BYPASS_SECRET
-      ? {
-          extraHTTPHeaders: {
-            'x-vercel-protection-bypass': BYPASS_SECRET,
-            'x-vercel-set-bypass-cookie': 'true',
-          },
-        }
+      ? { extraHTTPHeaders: { 'x-prod-smoke-bypass': BYPASS_SECRET } }
       : {}),
   },
   projects: [
