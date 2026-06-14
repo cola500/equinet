@@ -13,8 +13,7 @@ import { futureWeekday } from './setup/e2e-utils'
  * Tests the full flow: customer follows provider -> provider announces route ->
  * customer gets in-app notification (generic or personalized with overdue horse).
  *
- * Feature flags required: FEATURE_FOLLOW_PROVIDER=true
- * (set in .env + playwright.config.ts). due_for_service is GA (no flag needed).
+ * follow_provider and due_for_service are GA (no feature flags) — always on.
  */
 
 // ─── Helpers ──────────────────────────────────────────────────────
@@ -41,23 +40,6 @@ async function loginAsProvider(page: import('@playwright/test').Page) {
   await page.getByLabel('Lösenord', { exact: true }).fill('ProviderPass123!')
   await page.getByRole('button', { name: /logga in/i }).click()
   await expect(page).toHaveURL(/\/provider\/dashboard/, { timeout: 15000 })
-}
-
-async function loginAsAdmin(page: import('@playwright/test').Page) {
-  await page.context().clearCookies()
-  await resetRateLimit(page)
-  await page.goto('/login')
-  await page.getByLabel(/email/i).fill('admin@example.com')
-  await page.getByLabel('Lösenord', { exact: true }).fill('AdminPass123!')
-  await page.getByRole('button', { name: /logga in/i }).click()
-  await expect(page).toHaveURL(/\/(dashboard|admin|providers)/, { timeout: 15000 })
-}
-
-async function setFlag(page: import('@playwright/test').Page, flag: string, value: boolean) {
-  const response = await page.request.patch('/api/admin/settings', {
-    data: { key: `feature_${flag}`, value: String(value) },
-  })
-  expect(response.ok()).toBeTruthy()
 }
 
 async function syncClientFlags(page: import('@playwright/test').Page) {
@@ -147,7 +129,7 @@ async function waitForNotification(
 
 test.describe('Route Announcement Notifications', () => {
 
-  test.beforeAll(async ({ browser }) => {
+  test.beforeAll(async () => {
     await cleanupFollowData()
     await cleanupSpecData('route-notif')
 
@@ -158,16 +140,9 @@ test.describe('Route Announcement Notifications', () => {
       where: { id: base.customerId },
       data: { municipality: 'Göteborg' },
     })
-
-    // Enable feature flags via admin API
-    const context = await browser.newContext()
-    const page = await context.newPage()
-    await loginAsAdmin(page)
-    await setFlag(page, 'follow_provider', true)
-    await context.close()
   })
 
-  test.afterAll(async ({ browser }) => {
+  test.afterAll(async () => {
     await cleanupFollowData()
     await cleanupSpecData('route-notif')
 
@@ -178,13 +153,6 @@ test.describe('Route Announcement Notifications', () => {
       where: { id: base.customerId },
       data: { municipality: null },
     })
-
-    // Restore feature flags
-    const context = await browser.newContext()
-    const page = await context.newPage()
-    await loginAsAdmin(page)
-    await setFlag(page, 'follow_provider', false)
-    await context.close()
   })
 
   test.beforeEach(async ({ page }) => {

@@ -54,22 +54,6 @@ export const FEATURE_FLAGS: Record<string, FeatureFlag> = {
     clientVisible: true,
     category: "shared",
   },
-  follow_provider: {
-    key: "follow_provider",
-    label: "Följ leverantör",
-    description: "Kunder kan följa leverantörer och få notiser vid nya rutt-annonser",
-    defaultEnabled: true,
-    clientVisible: true,
-    category: "customer",
-  },
-  municipality_watch: {
-    key: "municipality_watch",
-    label: "Bevaka kommun",
-    description: "Kunder kan bevaka kommun + tjänstetyp och få notiser vid nya rutt-annonser",
-    defaultEnabled: true,
-    clientVisible: true,
-    category: "customer",
-  },
   provider_subscription: {
     key: "provider_subscription",
     label: "Leverantörsprenumeration",

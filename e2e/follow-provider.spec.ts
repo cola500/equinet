@@ -10,10 +10,8 @@ import { cleanupFollowData } from './setup/seed-helpers'
  * - Municipality selection in customer profile
  * - Provider cannot see FollowButton (customer-only)
  *
- * NOTE: Feature flag is enabled via admin API in beforeAll.
- * Follow state is managed via UI clicks (not Prisma seeding) to avoid
- * dev mode module-isolation issues where different API route instances
- * may have different feature flag state.
+ * NOTE: follow_provider is GA (no feature flag) — the feature is always on.
+ * Follow state is managed via UI clicks (not Prisma seeding).
  */
 
 // ─── Helpers ──────────────────────────────────────────────────────
@@ -40,23 +38,6 @@ async function loginAsProvider(page: import('@playwright/test').Page) {
   await page.getByLabel('Lösenord', { exact: true }).fill('ProviderPass123!')
   await page.getByRole('button', { name: /logga in/i }).click()
   await expect(page).toHaveURL(/\/provider\/dashboard/, { timeout: 15000 })
-}
-
-async function loginAsAdmin(page: import('@playwright/test').Page) {
-  await page.context().clearCookies()
-  await resetRateLimit(page)
-  await page.goto('/login')
-  await page.getByLabel(/email/i).fill('admin@example.com')
-  await page.getByLabel('Lösenord', { exact: true }).fill('AdminPass123!')
-  await page.getByRole('button', { name: /logga in/i }).click()
-  await expect(page).toHaveURL(/\/(dashboard|admin|providers)/, { timeout: 15000 })
-}
-
-async function setFlag(page: import('@playwright/test').Page, flag: string, value: boolean) {
-  const response = await page.request.patch('/api/admin/settings', {
-    data: { key: `feature_${flag}`, value: String(value) },
-  })
-  expect(response.ok()).toBeTruthy()
 }
 
 async function syncClientFlags(page: import('@playwright/test').Page) {
@@ -124,35 +105,12 @@ async function ensureFollowing(page: import('@playwright/test').Page) {
 
 test.describe('Follow Provider', () => {
 
-  test.beforeAll(async ({ browser }) => {
+  test.beforeAll(async () => {
     await cleanupFollowData()
-
-    // Enable follow_provider via admin API
-    const context = await browser.newContext()
-    const page = await context.newPage()
-    await resetRateLimit(page)
-    await page.goto('/login')
-    await page.getByLabel(/email/i).fill('admin@example.com')
-    await page.getByLabel('Lösenord', { exact: true }).fill('AdminPass123!')
-    await page.getByRole('button', { name: /logga in/i }).click()
-    await expect(page).toHaveURL(/\/(dashboard|admin|providers)/, { timeout: 15000 })
-    await setFlag(page, 'follow_provider', true)
-    await context.close()
   })
 
-  test.afterAll(async ({ browser }) => {
+  test.afterAll(async () => {
     await cleanupFollowData()
-
-    const context = await browser.newContext()
-    const page = await context.newPage()
-    await resetRateLimit(page)
-    await page.goto('/login')
-    await page.getByLabel(/email/i).fill('admin@example.com')
-    await page.getByLabel('Lösenord', { exact: true }).fill('AdminPass123!')
-    await page.getByRole('button', { name: /logga in/i }).click()
-    await expect(page).toHaveURL(/\/(dashboard|admin|providers)/, { timeout: 15000 })
-    await setFlag(page, 'follow_provider', false)
-    await context.close()
   })
 
   test.beforeEach(async ({ page }) => {

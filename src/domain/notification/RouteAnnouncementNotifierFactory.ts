@@ -7,12 +7,9 @@ import { followRepository } from "@/infrastructure/persistence/follow/FollowRepo
 import { municipalityWatchRepository } from "@/infrastructure/persistence/municipality-watch/MunicipalityWatchRepository"
 import { emailService } from "@/lib/email/email-service"
 import { prisma } from "@/lib/prisma"
-import { isFeatureEnabled } from "@/lib/feature-flags"
 import { PrismaDueForServiceLookup } from "@/domain/due-for-service/DueForServiceLookup"
 
 export async function createRouteAnnouncementNotifier(): Promise<RouteAnnouncementNotifier> {
-  const municipalityWatchEnabled = await isFeatureEnabled("municipality_watch")
-
   return new RouteAnnouncementNotifier({
     followRepo: followRepository,
     notificationService,
@@ -56,8 +53,6 @@ export async function createRouteAnnouncementNotifier(): Promise<RouteAnnounceme
       },
     },
     dueForServiceLookup: new PrismaDueForServiceLookup(),
-    watchRepo: municipalityWatchEnabled
-      ? municipalityWatchRepository
-      : undefined,
+    watchRepo: municipalityWatchRepository,
   })
 }

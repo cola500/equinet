@@ -34,7 +34,7 @@ interface Profile {
 export default function CustomerProfilePage() {
   const router = useRouter()
   const { isLoading, isCustomer, isStableOwner } = useAuth()
-  const municipalityWatchEnabled = useFeatureFlag("municipality_watch")
+  const municipalityWatchEnabled = true
   const stableEnabled = useFeatureFlag("stable_profiles")
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isEditing, setIsEditing] = useState(false)

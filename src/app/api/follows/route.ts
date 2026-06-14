@@ -9,7 +9,7 @@ const followSchema = z.object({
 
 // POST /api/follows - Follow a provider
 export const POST = withApiHandler(
-  { auth: "customer", featureFlag: "follow_provider", schema: followSchema },
+  { auth: "customer", schema: followSchema },
   async ({ user, body }) => {
     const service = createFollowService()
     const result = await service.follow(user.userId, body.providerId)
@@ -33,7 +33,7 @@ export const POST = withApiHandler(
 
 // GET /api/follows - List followed providers
 export const GET = withApiHandler(
-  { auth: "customer", featureFlag: "follow_provider" },
+  { auth: "customer" },
   async ({ user }) => {
     const service = createFollowService()
     const follows = await service.getFollowedProviders(user.userId)

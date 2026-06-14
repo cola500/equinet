@@ -9,7 +9,7 @@ type RouteContext = {
 // DELETE /api/follows/:providerId - Unfollow a provider
 export async function DELETE(request: NextRequest, context: RouteContext) {
   return withApiHandler(
-    { auth: "customer", featureFlag: "follow_provider" },
+    { auth: "customer" },
     async ({ user }) => {
       const { providerId } = await context.params
 
@@ -24,7 +24,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 // GET /api/follows/:providerId - Check follow status
 export async function GET(request: NextRequest, context: RouteContext) {
   return withApiHandler(
-    { auth: "any", featureFlag: "follow_provider" },
+    { auth: "any" },
     async ({ user }) => {
       const { providerId } = await context.params
 
