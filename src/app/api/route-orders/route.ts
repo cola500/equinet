@@ -318,21 +318,15 @@ async function handleProviderAnnouncement(body: unknown, session: { user: { id: 
     }
   })
 
-  // Fire-and-forget: notify followers and/or municipality watchers
-  const [followEnabled, watchEnabled] = await Promise.all([
-    isFeatureEnabled("follow_provider"),
-    isFeatureEnabled("municipality_watch"),
-  ])
-  if (followEnabled || watchEnabled) {
-    createRouteAnnouncementNotifier()
-      .then((notifier) => notifier.notifyFollowersOfNewRoute(announcement.id))
-      .catch((err) =>
-        logger.error(
-          "Failed to notify followers/watchers",
-          err instanceof Error ? err : new Error(String(err))
-        )
+  // Fire-and-forget: notify followers and municipality watchers
+  createRouteAnnouncementNotifier()
+    .then((notifier) => notifier.notifyFollowersOfNewRoute(announcement.id))
+    .catch((err) =>
+      logger.error(
+        "Failed to notify followers/watchers",
+        err instanceof Error ? err : new Error(String(err))
       )
-  }
+    )
 
   return NextResponse.json(announcement, { status: 201 })
 }

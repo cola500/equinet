@@ -344,22 +344,6 @@ paths:
 - `src/hooks/useOfflineGuard.ts`
 - `src/hooks/usePendingMutation.ts`
 
-### `follow_provider`
-
-- `src/app/api/follows/[providerId]/route.ts`
-- `src/app/api/follows/route.ts`
-- `src/app/api/route-orders/route.ts`
-- `src/app/providers/[id]/page.tsx`
-- `src/app/providers/page.tsx`
-
-### `municipality_watch`
-
-- `src/app/api/municipality-watches/[id]/route.ts`
-- `src/app/api/municipality-watches/route.ts`
-- `src/app/api/route-orders/route.ts`
-- `src/app/customer/profile/page.tsx`
-- `src/domain/notification/RouteAnnouncementNotifierFactory.ts`
-
 ### `provider_subscription`
 
 - `src/app/api/provider/subscription/checkout/route.ts`

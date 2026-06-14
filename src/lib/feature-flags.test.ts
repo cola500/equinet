@@ -77,8 +77,6 @@ describe("feature-flags", () => {
         route_announcements: true,
         customer_insights: true,
         offline_mode: true,
-        follow_provider: true,
-        municipality_watch: true,
         provider_subscription: false,
         push_notifications: false,
         stable_profiles: false,

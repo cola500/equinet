@@ -10,7 +10,7 @@ const watchSchema = z.object({
 
 // POST /api/municipality-watches - Create a new municipality watch
 export const POST = withApiHandler(
-  { auth: "customer", featureFlag: "municipality_watch", schema: watchSchema },
+  { auth: "customer", schema: watchSchema },
   async ({ user, body }) => {
     const service = createMunicipalityWatchService()
     const result = await service.addWatch(
@@ -37,7 +37,7 @@ export const POST = withApiHandler(
 
 // GET /api/municipality-watches - List customer's watches
 export const GET = withApiHandler(
-  { auth: "customer", featureFlag: "municipality_watch" },
+  { auth: "customer" },
   async ({ user }) => {
     const service = createMunicipalityWatchService()
     const watches = await service.getWatches(user.userId)

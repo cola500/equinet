@@ -4,7 +4,7 @@ import { createMunicipalityWatchService } from "@/domain/municipality-watch/Muni
 
 // DELETE /api/municipality-watches/:id - Remove a municipality watch
 export const DELETE = withApiHandler(
-  { auth: "customer", featureFlag: "municipality_watch" },
+  { auth: "customer" },
   async ({ user, request }) => {
     const id = request.nextUrl.pathname.split("/").pop()!
 
