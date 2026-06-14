@@ -44,13 +44,13 @@ interface MoreItem extends MoreMenuItem {
 }
 
 const providerTabs: TabItem[] = [
-  { href: "/provider/dashboard", label: "Översikt", icon: LayoutDashboard, offlineSafe: true },
   { href: "/provider/calendar", label: "Kalender", icon: CalendarDays, offlineSafe: true },
   { href: "/provider/bookings", label: "Bokningar", icon: ClipboardList, offlineSafe: true },
   { href: "/provider/messages", label: "Meddelanden", icon: MessageSquare, matchPrefix: "/provider/messages" },
 ]
 
 const providerMoreItems: MoreItem[] = [
+  { href: "/provider/dashboard", label: "Översikt", icon: LayoutDashboard, section: "Dagligt arbete" },
   { href: "/provider/services", label: "Mina tjänster", icon: Stethoscope, section: "Dagligt arbete" },
   { href: "/provider/voice-log", label: "Logga arbete", icon: Mic, matchPrefix: "/provider/voice-log", featureFlag: "voice_logging", section: "Dagligt arbete" },
   { href: "/provider/customers", label: "Kunder", icon: Users, matchPrefix: "/provider/customers", section: "Dagligt arbete" },
@@ -66,7 +66,6 @@ const providerMoreItems: MoreItem[] = [
 
 // Primary nav items always visible on desktop (max 6)
 const primaryNavItems: NavItem[] = [
-  { href: "/provider/dashboard", label: "Översikt", offlineSafe: true },
   { href: "/provider/calendar", label: "Kalender", offlineSafe: true },
   { href: "/provider/bookings", label: "Bokningar", offlineSafe: true },
   { href: "/provider/messages", label: "Meddelanden", matchPrefix: "/provider/messages" },
@@ -77,6 +76,7 @@ const primaryNavItems: NavItem[] = [
 
 // Secondary nav items in "Mer" dropdown on desktop
 const secondaryNavItems: (NavItem & { section?: string })[] = [
+  { href: "/provider/dashboard", label: "Översikt", offlineSafe: true, section: "Dagligt arbete" },
   { href: "/provider/voice-log", label: "Logga arbete", matchPrefix: "/provider/voice-log", featureFlag: "voice_logging", section: "Dagligt arbete" },
   { href: "/provider/route-planning", label: "Ruttplanering", matchPrefix: "/provider/route", featureFlag: "route_planning", section: "Planering" },
   { href: "/provider/announcements", label: "Rutt-annonser", matchPrefix: "/provider/announcements", section: "Planering" },

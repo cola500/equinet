@@ -43,9 +43,9 @@ const PROVIDER_ENV_NAV = [
   'Rutt-annonser',    // route_announcements: GA — no longer feature-flagged
 ] as const
 
-// Provider nav items that are always visible -- primary (direct links)
+// Provider nav items that are always visible -- primary (direct links).
+// Översikt moved into the "Mer" dropdown (see PROVIDER_SECONDARY_ALWAYS_NAV).
 const PROVIDER_PRIMARY_NAV = [
-  'Översikt',
   'Kalender',
   'Bokningar',
   'Mina tjänster',
@@ -55,6 +55,7 @@ const PROVIDER_PRIMARY_NAV = [
 
 // Provider nav items that are always visible -- secondary (inside "Mer" dropdown)
 const PROVIDER_SECONDARY_ALWAYS_NAV = [
+  'Översikt',
   'Insikter',
   'Min profil',
 ] as const
