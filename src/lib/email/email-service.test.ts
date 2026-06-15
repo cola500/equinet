@@ -15,9 +15,6 @@ describe("EmailService runtime toggle", () => {
   })
 
   it("uses mock mode when runtime setting disable_emails is true", async () => {
-    // Production so the env-safety guard does not block first — this test
-    // isolates the runtime disable_emails setting.
-    vi.stubEnv("VERCEL_ENV", "production")
     // Clear RESEND_API_KEY so we can isolate the runtime setting test
     vi.stubEnv("RESEND_API_KEY", "re_valid_key_123")
     vi.stubEnv("DISABLE_EMAILS", "")
@@ -38,8 +35,6 @@ describe("EmailService runtime toggle", () => {
   })
 
   it("env DISABLE_EMAILS takes priority over runtime setting", async () => {
-    // Production so the env-safety guard does not block first.
-    vi.stubEnv("VERCEL_ENV", "production")
     vi.stubEnv("DISABLE_EMAILS", "true")
     vi.stubEnv("RESEND_API_KEY", "re_valid_key_123")
 
@@ -59,7 +54,7 @@ describe("EmailService runtime toggle", () => {
   })
 })
 
-describe("EmailService env-safety blocker", () => {
+describe("EmailService demo-mode blocker", () => {
   beforeEach(() => {
     clearRuntimeSettings()
     vi.unstubAllEnvs()
@@ -67,8 +62,8 @@ describe("EmailService env-safety blocker", () => {
     vi.resetModules()
   })
 
-  it("blocks email send in a staging-safe environment, returns mock success", async () => {
-    vi.stubEnv("VERCEL_ENV", "preview")
+  it("blocks email send when NEXT_PUBLIC_DEMO_MODE=true, returns mock success", async () => {
+    vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true")
     vi.stubEnv("RESEND_API_KEY", "re_valid_key_123")
     vi.stubEnv("DISABLE_EMAILS", "")
 
@@ -87,7 +82,7 @@ describe("EmailService env-safety blocker", () => {
   })
 
   it("logs [DEMO_EMAIL_BLOCKED] with recipient and subject when blocking", async () => {
-    vi.stubEnv("VERCEL_ENV", "preview")
+    vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true")
     vi.stubEnv("RESEND_API_KEY", "re_valid_key_123")
 
     // Import the logger from the *fresh* module graph (after resetModules)
@@ -112,8 +107,8 @@ describe("EmailService env-safety blocker", () => {
     })
   })
 
-  it("blocks even when Resend is properly configured, in a staging-safe env", async () => {
-    vi.stubEnv("VERCEL_ENV", "preview")
+  it("demo-mode blocks even when Resend is properly configured", async () => {
+    vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true")
     vi.stubEnv("RESEND_API_KEY", "re_valid_key_123")
     vi.stubEnv("DISABLE_EMAILS", "")
 
@@ -132,26 +127,8 @@ describe("EmailService env-safety blocker", () => {
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 
-  it("follows environment, not demo: blocks in preview even with NEXT_PUBLIC_DEMO_MODE unset", async () => {
-    vi.stubEnv("VERCEL_ENV", "preview")
+  it("does not block when NEXT_PUBLIC_DEMO_MODE is unset (normal env)", async () => {
     vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "")
-    vi.stubEnv("RESEND_API_KEY", "re_valid_key_123")
-    vi.stubEnv("DISABLE_EMAILS", "")
-
-    const { emailService } = await import("./email-service")
-    const result = await emailService.send({
-      to: "x@example.com",
-      subject: "x",
-      html: "<p>x</p>",
-    })
-
-    // Demo is off but the environment is staging-safe → still blocked.
-    expect(result.success).toBe(true)
-    expect(result.messageId).toMatch(/^demo-blocked-/)
-  })
-
-  it("does not block in production (real side effects allowed)", async () => {
-    vi.stubEnv("VERCEL_ENV", "production")
     vi.stubEnv("RESEND_API_KEY", "")
     vi.stubEnv("DISABLE_EMAILS", "")
 
@@ -162,7 +139,7 @@ describe("EmailService env-safety blocker", () => {
       html: "<p>x</p>",
     })
 
-    // Falls back to mock mode (no API key) — NOT env-blocked
+    // Falls back to mock mode (no API key) — NOT demo-blocked
     expect(result.success).toBe(true)
     expect(result.messageId).toMatch(/^mock-/)
     expect(result.messageId).not.toMatch(/^demo-blocked-/)
