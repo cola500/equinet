@@ -27,10 +27,6 @@ describe("PushDeliveryService", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.unstubAllEnvs()
-    // Default to production so the env-safety guard does not block normal
-    // delivery tests; the env-safety describe overrides with a safe env.
-    vi.stubEnv("VERCEL_ENV", "production")
     mockIsFeatureEnabled.mockResolvedValue(true)
     // Create service without APNs client (test mode)
     service = new PushDeliveryService()
@@ -100,29 +96,24 @@ describe("PushDeliveryService", () => {
     })
   })
 
-  describe("env-safety blocker", () => {
+  describe("demo-mode blocker", () => {
     beforeEach(() => {
       vi.unstubAllEnvs()
-      vi.stubEnv("VERCEL_ENV", "preview")
     })
 
-    it("blocks delivery in a staging-safe environment and does not query device tokens", async () => {
+    it("blocks delivery when NEXT_PUBLIC_DEMO_MODE=true and does not query device tokens", async () => {
+      vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true")
+
       await service.sendToUser("user-1", payload)
 
       expect(prisma.deviceToken.findMany).not.toHaveBeenCalled()
       expect(mockIsFeatureEnabled).not.toHaveBeenCalled()
     })
 
-    it("blocks delivery for every recipient via sendToUsers in a staging-safe env", async () => {
+    it("blocks delivery for every recipient via sendToUsers in demo mode", async () => {
+      vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true")
+
       await service.sendToUsers(["a", "b", "c"], payload)
-
-      expect(prisma.deviceToken.findMany).not.toHaveBeenCalled()
-    })
-
-    it("follows environment, not demo: blocks in preview even with NEXT_PUBLIC_DEMO_MODE unset", async () => {
-      vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "")
-
-      await service.sendToUser("user-1", payload)
 
       expect(prisma.deviceToken.findMany).not.toHaveBeenCalled()
     })
