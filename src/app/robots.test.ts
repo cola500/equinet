@@ -6,8 +6,8 @@ describe("robots.ts", () => {
     vi.resetModules()
   })
 
-  it("disallows all crawlers in demo mode", async () => {
-    vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true")
+  it("disallows all crawlers in a staging-safe environment", async () => {
+    vi.stubEnv("VERCEL_ENV", "preview")
     const robots = (await import("./robots")).default
     const result = robots()
 
@@ -15,8 +15,8 @@ describe("robots.ts", () => {
     expect(result.sitemap).toBeUndefined()
   })
 
-  it("uses production rules with sitemap when demo mode is off", async () => {
-    vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "")
+  it("uses production rules with sitemap in production", async () => {
+    vi.stubEnv("VERCEL_ENV", "production")
     const robots = (await import("./robots")).default
     const result = robots()
 
@@ -26,5 +26,14 @@ describe("robots.ts", () => {
       disallow: ["/api/", "/admin/", "/provider/", "/stable/"],
     })
     expect(result.sitemap).toBe("https://equinet-app.vercel.app/sitemap.xml")
+  })
+
+  it("follows environment, not demo: disallows in preview even with NEXT_PUBLIC_DEMO_MODE unset", async () => {
+    vi.stubEnv("VERCEL_ENV", "preview")
+    vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "")
+    const robots = (await import("./robots")).default
+    const result = robots()
+
+    expect(result.rules).toEqual([{ userAgent: "*", disallow: "/" }])
   })
 })
