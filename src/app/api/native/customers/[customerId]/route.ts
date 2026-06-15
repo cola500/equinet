@@ -10,7 +10,7 @@ import { getAuthUser } from "@/lib/auth-dual"
 import { prisma } from "@/lib/prisma"
 import { logger } from "@/lib/logger"
 import { rateLimiters, getClientIP, RateLimitServiceError } from "@/lib/rate-limit"
-import { isDemoMode } from "@/lib/demo-mode"
+import { isStagingSafe } from "@/lib/environment"
 
 const updateCustomerSchema = z.object({
   firstName: z.string().min(1).max(100),
@@ -149,8 +149,10 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Ej inloggad" }, { status: 401 })
     }
 
-    // 2. Demo-mode guard: block destructive operations on seed data
-    if (isDemoMode()) {
+    // 2. Environment-safety guard: block destructive operations on seed data
+    // in any non-production environment (staging/preview/local). Driven by the
+    // environment, not by demo session — see isStagingSafe().
+    if (isStagingSafe()) {
       const { customerId } = await context.params
       logger.info("[DEMO_DELETE_BLOCKED]", {
         userId: authUser.id,

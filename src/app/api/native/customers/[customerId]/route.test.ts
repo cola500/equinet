@@ -169,6 +169,10 @@ describe("PUT /api/native/customers/[customerId]", () => {
 describe("DELETE /api/native/customers/[customerId]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.unstubAllEnvs()
+    // Default to production so the env-safety guard does not no-op the
+    // destructive happy-path tests; the env-safety describe overrides.
+    vi.stubEnv("VERCEL_ENV", "production")
     mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "supabase" as const })
     mockFindProvider.mockResolvedValue(mockProvider as never)
     mockRateLimit.mockResolvedValue(true)
@@ -220,14 +224,13 @@ describe("DELETE /api/native/customers/[customerId]", () => {
     expect(res.status).toBe(500)
   })
 
-  describe("demo-mode guard", () => {
+  describe("env-safety guard", () => {
     beforeEach(() => {
       vi.unstubAllEnvs()
+      vi.stubEnv("VERCEL_ENV", "preview")
     })
 
-    it("returns 403 in demo mode without touching the database", async () => {
-      vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true")
-
+    it("returns 403 in a staging-safe environment without touching the database", async () => {
       const res = await DELETE(createDeleteRequest(), routeContext)
 
       expect(res.status).toBe(403)
@@ -238,13 +241,21 @@ describe("DELETE /api/native/customers/[customerId]", () => {
       expect(mockDeleteUser).not.toHaveBeenCalled()
     })
 
-    it("still requires auth in demo mode (401 wins over 403)", async () => {
-      vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true")
+    it("still requires auth in a staging-safe env (401 wins over 403)", async () => {
       mockAuth.mockResolvedValue(null)
 
       const res = await DELETE(createDeleteRequest(), routeContext)
 
       expect(res.status).toBe(401)
+    })
+
+    it("follows environment, not demo: no-ops in preview even with NEXT_PUBLIC_DEMO_MODE unset", async () => {
+      vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "")
+
+      const res = await DELETE(createDeleteRequest(), routeContext)
+
+      expect(res.status).toBe(403)
+      expect(mockDeleteLink).not.toHaveBeenCalled()
     })
   })
 })

@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
-import { isDemoMode } from "@/lib/demo-mode";
+import { isStagingSafe } from "@/lib/environment";
 
 export default function robots(): MetadataRoute.Robots {
-  // Demo/staging environments must not be indexed.
-  if (isDemoMode()) {
+  // Non-production environments (staging/preview/local) must not be indexed.
+  // Driven by the environment, not by demo session — see isStagingSafe().
+  if (isStagingSafe()) {
     return {
       rules: [{ userAgent: "*", disallow: "/" }],
     };
