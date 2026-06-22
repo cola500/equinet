@@ -169,6 +169,10 @@ describe("PUT /api/native/customers/[customerId]", () => {
 describe("DELETE /api/native/customers/[customerId]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.unstubAllEnvs()
+    // Reach the real deletion path: the environment-safety guard no-ops the
+    // destructive DELETE unless this is the live production runtime.
+    vi.stubEnv("IS_LIVE_PRODUCTION", "true")
     mockAuth.mockResolvedValue({ id: "user-1", email: "test@example.com", userType: "provider", isAdmin: false, providerId: "provider-1", stableId: null, authMethod: "supabase" as const })
     mockFindProvider.mockResolvedValue(mockProvider as never)
     mockRateLimit.mockResolvedValue(true)
@@ -220,14 +224,14 @@ describe("DELETE /api/native/customers/[customerId]", () => {
     expect(res.status).toBe(500)
   })
 
-  describe("demo-mode guard", () => {
+  describe("environment-safety guard", () => {
     beforeEach(() => {
+      // Clear IS_LIVE_PRODUCTION set by the outer beforeEach → default safe.
       vi.unstubAllEnvs()
     })
 
-    it("returns 403 in demo mode without touching the database", async () => {
-      vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true")
-
+    it("returns 403 when not live production (default safe) without touching the database", async () => {
+      // No IS_LIVE_PRODUCTION → safe → destructive DELETE no-ops with 403.
       const res = await DELETE(createDeleteRequest(), routeContext)
 
       expect(res.status).toBe(403)
@@ -238,8 +242,18 @@ describe("DELETE /api/native/customers/[customerId]", () => {
       expect(mockDeleteUser).not.toHaveBeenCalled()
     })
 
-    it("still requires auth in demo mode (401 wins over 403)", async () => {
-      vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true")
+    it("stays safe on staging's runtime: VERCEL_ENV=production WITHOUT IS_LIVE_PRODUCTION returns 403", async () => {
+      // Regression for #419: staging reports VERCEL_ENV=production, yet the
+      // destructive DELETE must stay a no-op. RED against the reverted #419 guard.
+      vi.stubEnv("VERCEL_ENV", "production")
+
+      const res = await DELETE(createDeleteRequest(), routeContext)
+
+      expect(res.status).toBe(403)
+      expect(mockDeleteUser).not.toHaveBeenCalled()
+    })
+
+    it("still requires auth before the safety guard (401 wins over 403)", async () => {
       mockAuth.mockResolvedValue(null)
 
       const res = await DELETE(createDeleteRequest(), routeContext)
