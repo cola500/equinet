@@ -27,6 +27,10 @@ describe("PushDeliveryService", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.unstubAllEnvs()
+    // Reach the real delivery path: the environment-safety guard blocks all
+    // outbound push unless this is the live production runtime.
+    vi.stubEnv("IS_LIVE_PRODUCTION", "true")
     mockIsFeatureEnabled.mockResolvedValue(true)
     // Create service without APNs client (test mode)
     service = new PushDeliveryService()
@@ -96,13 +100,24 @@ describe("PushDeliveryService", () => {
     })
   })
 
-  describe("demo-mode blocker", () => {
+  describe("environment-safety blocker", () => {
     beforeEach(() => {
+      // Clear IS_LIVE_PRODUCTION set by the outer beforeEach → default safe.
       vi.unstubAllEnvs()
     })
 
-    it("blocks delivery when NEXT_PUBLIC_DEMO_MODE=true and does not query device tokens", async () => {
-      vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true")
+    it("blocks delivery when not live production (default safe) and does not query device tokens", async () => {
+      // No IS_LIVE_PRODUCTION → safe → blocked.
+      await service.sendToUser("user-1", payload)
+
+      expect(prisma.deviceToken.findMany).not.toHaveBeenCalled()
+      expect(mockIsFeatureEnabled).not.toHaveBeenCalled()
+    })
+
+    it("stays safe on staging's runtime: VERCEL_ENV=production WITHOUT IS_LIVE_PRODUCTION blocks delivery", async () => {
+      // Regression for #419: staging reports VERCEL_ENV=production, yet push
+      // must still be blocked. RED against the reverted #419 guard.
+      vi.stubEnv("VERCEL_ENV", "production")
 
       await service.sendToUser("user-1", payload)
 
@@ -110,9 +125,7 @@ describe("PushDeliveryService", () => {
       expect(mockIsFeatureEnabled).not.toHaveBeenCalled()
     })
 
-    it("blocks delivery for every recipient via sendToUsers in demo mode", async () => {
-      vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true")
-
+    it("blocks delivery for every recipient via sendToUsers when not live production", async () => {
       await service.sendToUsers(["a", "b", "c"], payload)
 
       expect(prisma.deviceToken.findMany).not.toHaveBeenCalled()

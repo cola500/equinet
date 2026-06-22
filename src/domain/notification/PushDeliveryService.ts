@@ -7,7 +7,7 @@
 import { prisma } from "@/lib/prisma"
 import { isFeatureEnabled } from "@/lib/feature-flags"
 import { logger } from "@/lib/logger"
-import { isDemoMode } from "@/lib/demo-mode"
+import { isStagingSafe } from "@/lib/environment"
 
 export interface PushPayload {
   title: string
@@ -30,10 +30,11 @@ export class PushDeliveryService {
    */
   async sendToUser(userId: string, payload: PushPayload): Promise<void> {
     try {
-      // Demo-mode guard: block all outbound push when the app runs as a public
-      // demo. Symmetric to the email-blocker in EmailService.send(). Returns
-      // silently so fire-and-forget callers see no behaviour change.
-      if (isDemoMode()) {
+      // Environment-safety guard: block all outbound push unless this is the
+      // real production runtime (IS_LIVE_PRODUCTION=true). Symmetric to the
+      // email-blocker in EmailService.send(). Returns silently so fire-and-forget
+      // callers see no behaviour change. Log tag kept stable for observability.
+      if (isStagingSafe()) {
         logger.info("[DEMO_PUSH_BLOCKED]", { userId, title: payload.title })
         return
       }
