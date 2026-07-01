@@ -2,8 +2,8 @@
 title: "Enabler Epic: Prod-lik staging med demo per session"
 description: "Koppla loss miljösäkerhet från demo-presentation så staging kan köra prod-lik verifiering medan demo aktiveras per session via demo-knapparna"
 category: idea
-status: draft
-last_updated: 2026-06-22
+status: active
+last_updated: 2026-07-01
 tags: [enabler-epic, staging, demo-mode, environment, discovery]
 depends_on:
   - docs/operations/staging-environment-setup.md
@@ -243,6 +243,34 @@ Cookie + context-provider; byt presentations-call-sites från `isDemoMode()` til
 - **Risk att bevaka:** SSR/hydration-mismatch om klient och server är oense om
   demo-state.
 
+> **Uppdelad i 2a + 2b (PO-beslut 2026-07-01).** Kartläggningen visade att
+> Slice 2 buntar en tredje concern: **demo-ENTRÉ** (persona-kort på landning,
+> demo-knappar, dölj registrera/glömt på login) är pre-auth/pre-cookie och kan
+> INTE gatas på `isDemoSession()` (falskt före login) — den ska gatas på
+> `isStagingSafe()`. Presentationen delades därför från entré-affordancen.
+
+#### Slice 2a (KLAR): Demo-session-infra + provider-arbetsyta
+Infrastruktur (`isDemoSession()`-cookie + SSR→context, speglar
+`FeatureFlagProvider`), `DemoLoginButton` sätter `equinet-demo`-cookien, Header-
+logout rensar den. Migrerade provider-arbetsytan (`ProviderNav`, 11
+`router.replace`-redirect-sidor, 6 gating-sidor) från `isDemoMode()`/
+`isDemoModeWithFlags()` → `useDemoSession()`.
+
+- **Status:** Klar — PR #432, merge `780e89e6`, mergad till `staging`.
+- **Staging-verifierat (2026-07-01):** vanlig provider-login (formulär) → full,
+  prod-lik arbetsyta (alla sidor nåbara, `equinet-demo` ej satt); demo-knapp →
+  demo-session (cookie satt, 4-tabbars demo-nav, `/provider/reviews` redirectar
+  till profil); logout rensar cookien; ny vanlig login blir inte demo; refresh
+  bevarar state utan hydration-fel. Slice 1-säkerhetsguarden fortsatt grön
+  (`robots.txt` = `Disallow: /` live ⇒ `isStagingSafe() === true`, vilket driver
+  alla fyra säkerhets-call-sites).
+
+#### Slice 2b (återstår): Auth-front-door + entré-affordance
+Login-sida, registrera/glömt-lösenord, `Header`/`BugReportFab`/`DevBanner`, och
+omdesign av entré-affordancen till `isStagingSafe()`-gating (demo-knappar syns på
+staging men aldrig på prod). Här landar "registrera/glömt synliga för vanlig
+login".
+
 ### Slice 3 (~30 min): Flippa staging till prod-lik default
 Sätt `NEXT_PUBLIC_DEMO_MODE=false` (eller pensionera variabeln) på staging via
 Vercel REST API. Demo lever nu enbart via knapparna.
@@ -319,3 +347,18 @@ backas ut (PR #420) — rotorsak: `VERCEL_ENV` skiljer inte staging från prod. 
 `IS_LIVE_PRODUCTION`-signal). Ingen ny implementation, inga env-ändringar, ingen
 merge/deploy genomförd. Nästa steg: PO-godkännande att starta om Slice 1 enligt
 korrigerad design ovan.
+
+**Status 2026-07-01:**
+- **Slice 1 KLAR** — korrigerad `IS_LIVE_PRODUCTION`-design implementerad och
+  mergad till `staging` (PR #428). Alla 4 säkerhets-call-sites använder
+  `isStagingSafe()`; regressionstestet (`VERCEL_ENV=production` utan
+  `IS_LIVE_PRODUCTION` → safe) grönt.
+- **Slice 2 uppdelad i 2a + 2b** (PO-beslut) — se Slice-sektionen.
+- **Slice 2a KLAR** — PR #432, merge `780e89e6`, mergad till `staging` och
+  verifierad live på `equinet-staging.johanlindengard.com`: vanlig provider-login
+  ger full/prod-lik arbetsyta, demo-knapp ger demo-session, logout/refresh
+  verifierat, Slice 1-säkerhetsguarden fortsatt grön (`robots.txt = Disallow: /`).
+- **Prod oförändrad.** Ingen env-ändring gjord (`IS_LIVE_PRODUCTION` ännu inte
+  satt på prod; `NEXT_PUBLIC_DEMO_MODE` oförändrad på staging).
+- **Nästa steg:** Slice 2b (auth-front-door + entré-affordance), därefter Slice 3
+  (flippa `NEXT_PUBLIC_DEMO_MODE=false` på staging). Ingen av dessa påbörjad.
