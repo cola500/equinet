@@ -28,8 +28,8 @@ import { BookingNotesSection } from "@/components/booking/BookingNotesSection"
 import { Calendar, Mic } from "lucide-react"
 import { EmptyState } from "@/components/ui/empty-state"
 import Link from "next/link"
-import { useFeatureFlag, useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
-import { isDemoModeWithFlags } from "@/lib/demo-mode"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
@@ -122,7 +122,7 @@ function ProviderBookingsContent() {
   const [isCancelling, setIsCancelling] = useState(false)
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
-  const demo = isDemoModeWithFlags(useFeatureFlags())
+  const demo = useDemoSession()
   const { guardMutation } = useOfflineGuard()
 
   // Sync filter to URL (guard with isOnline to avoid RSC request when offline)

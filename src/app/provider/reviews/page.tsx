@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
-import { isDemoMode } from "@/lib/demo-mode"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 import { useProviderProfile } from "@/hooks/useProviderProfile"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -26,7 +26,7 @@ import { clientLogger } from "@/lib/client-logger"
 export default function ProviderReviewsPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
-  const demo = isDemoMode()
+  const demo = useDemoSession()
 
   // Redirect away from reviews in demo mode
   useEffect(() => {

@@ -21,7 +21,7 @@ import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 import { GenericListSkeleton } from "@/components/loading/GenericListSkeleton"
 import { clientLogger } from "@/lib/client-logger"
-import { isDemoMode } from "@/lib/demo-mode"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 
 interface RouteStop {
   id: string
@@ -54,7 +54,7 @@ interface Announcement {
 export default function ProviderAnnouncementsPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
-  const demo = isDemoMode()
+  const demo = useDemoSession()
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [cancelId, setCancelId] = useState<string | null>(null)
   const { guardMutation } = useOfflineGuard()

@@ -22,7 +22,7 @@ import { OfflineNotAvailable } from "@/components/ui/OfflineNotAvailable"
 import { optimizeRoute, type Location } from "@/lib/route-optimizer"
 import { getRoute } from "@/lib/routing"
 import { clientLogger } from "@/lib/client-logger"
-import { isDemoMode } from "@/lib/demo-mode"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 
 // Dynamic import to avoid SSR issues with Leaflet
 const RouteMapVisualization = dynamic(
@@ -34,7 +34,7 @@ export default function RoutePlanningPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
   const isOnline = useOnlineStatus()
-  const demo = isDemoMode()
+  const demo = useDemoSession()
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set())
   const [isCreatingRoute, setIsCreatingRoute] = useState(false)
 

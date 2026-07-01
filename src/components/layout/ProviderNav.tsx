@@ -23,10 +23,11 @@ import {
 } from "lucide-react"
 import { BottomTabBar, type TabItem, type MoreMenuItem } from "./BottomTabBar"
 import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { useBookings } from "@/hooks/useBookings"
 import useSWR from "swr"
-import { isDemoModeWithFlags, DEMO_ALLOWED_PATHS, DEMO_PRIMARY_PATHS, DEMO_MORE_PATHS } from "@/lib/demo-mode"
+import { DEMO_ALLOWED_PATHS, DEMO_PRIMARY_PATHS, DEMO_MORE_PATHS } from "@/lib/demo-mode"
 import type { LucideIcon } from "lucide-react"
 import { toast } from "sonner"
 
@@ -159,7 +160,7 @@ export function ProviderNav() {
   const moreRef = useRef<HTMLDivElement>(null)
   const { bookings } = useBookings()
   const pendingCount = (bookings as Array<{ status: string }>).filter((b) => b.status === "pending").length
-  const demo = isDemoModeWithFlags(flags)
+  const demo = useDemoSession()
 
   const { data: unreadData } = useSWR<{ count: number }>(
     !demo ? "/api/provider/conversations/unread-count" : null,

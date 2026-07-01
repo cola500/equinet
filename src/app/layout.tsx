@@ -11,7 +11,9 @@ import { CookieNotice } from "@/components/layout/CookieNotice";
 import { BugReportFab } from "@/components/provider/BugReportFab";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { DemoSessionProvider } from "@/components/providers/DemoSessionProvider";
 import { getFeatureFlags } from "@/lib/feature-flags";
+import { readDemoSession } from "@/lib/demo-session-server";
 import { isDemoMode } from "@/lib/demo-mode";
 
 const inter = Inter({
@@ -44,6 +46,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const initialFlags = await getFeatureFlags()
+  const initialDemoSession = await readDemoSession()
+  // NOTE: isDemoMode() still gates the BugReportFab below — that is a front-door
+  // surface handled in Slice 2b, deliberately left on the build-time flag here.
   const demo = isDemoMode()
 
   return (
@@ -52,17 +57,19 @@ export default async function RootLayout({
         <DevBanner />
         <SessionProvider>
           <FeatureFlagProvider initialFlags={initialFlags}>
-            <SWRProvider>
-              <div className="min-h-screen flex flex-col">
-                <main className="flex-1">
-                  {children}
-                </main>
-                <Footer />
-              </div>
-              <Toaster />
-              <CookieNotice />
-              {!demo && <BugReportFab />}
-            </SWRProvider>
+            <DemoSessionProvider initialDemoSession={initialDemoSession}>
+              <SWRProvider>
+                <div className="min-h-screen flex flex-col">
+                  <main className="flex-1">
+                    {children}
+                  </main>
+                  <Footer />
+                </div>
+                <Toaster />
+                <CookieNotice />
+                {!demo && <BugReportFab />}
+              </SWRProvider>
+            </DemoSessionProvider>
           </FeatureFlagProvider>
         </SessionProvider>
         <Analytics />
