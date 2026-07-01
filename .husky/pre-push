@@ -1,4 +1,6 @@
-. "$HOME/.nvm/nvm.sh" 2>/dev/null
+# Load nvm if present (guarded: husky runs this hook under `sh -e`, so an
+# unguarded `.` on a missing file would abort the whole hook with exit 1).
+[ -f "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh"
 
 # No branch protection pre-launch. Dev merges and pushes to main directly.
 # Re-enable branch protection before onboarding provider #2.
