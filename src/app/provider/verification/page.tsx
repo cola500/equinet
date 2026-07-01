@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
-import { isDemoMode } from "@/lib/demo-mode"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { useDialogState } from "@/hooks/useDialogState"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
@@ -111,7 +111,7 @@ export default function ProviderVerificationPage() {
   const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
   const isOnline = useOnlineStatus()
-  const demo = isDemoMode()
+  const demo = useDemoSession()
 
   // Redirect away from verification in demo mode
   useEffect(() => {

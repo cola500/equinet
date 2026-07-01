@@ -16,8 +16,8 @@ import { toast } from "sonner"
 import { OnboardingChecklist } from "@/components/provider/OnboardingChecklist"
 import { OnboardingWelcome } from "@/components/provider/OnboardingWelcome"
 import { StarRating } from "@/components/review/StarRating"
-import { useFeatureFlag, useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
-import { isDemoModeWithFlags } from "@/lib/demo-mode"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 import { CalendarDays, Users, CalendarRange, Map, Mic, ChevronDown, Package } from "lucide-react"
 import { EmptyState } from "@/components/ui/empty-state"
 import { DashboardSkeleton } from "@/components/loading/DashboardSkeleton"
@@ -53,8 +53,7 @@ export default function ProviderDashboard() {
     hasServiceArea: boolean
   } | null>(null)
   const [showCharts, setShowCharts] = useState<boolean | null>(null)
-  const allFlags = useFeatureFlags()
-  const demo = isDemoModeWithFlags(allFlags)
+  const demo = useDemoSession()
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
   const isRoutePlanningEnabled = useFeatureFlag("route_planning")
   const pendingCount = bookings.filter((b) => b.status === "pending").length

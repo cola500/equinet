@@ -6,8 +6,8 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { addWeeks, subWeeks, addDays, subDays, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"
 import { Mic, Info } from "lucide-react"
 import { toast } from "sonner"
-import { useFeatureFlag, useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
-import { isDemoModeWithFlags } from "@/lib/demo-mode"
+import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { FirstUseTooltip } from "@/components/ui/first-use-tooltip"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
@@ -77,7 +77,7 @@ function CalendarContent() {
   const [prefillDate, setPrefillDate] = useState<string | undefined>()
   const [prefillTime, setPrefillTime] = useState<string | undefined>()
   const isVoiceLoggingEnabled = useFeatureFlag("voice_logging")
-  const demo = isDemoModeWithFlags(useFeatureFlags())
+  const demo = useDemoSession()
   const { isOnline, guardMutation } = useOfflineGuard()
   const [legendOpen, setLegendOpen] = useState(false)
 

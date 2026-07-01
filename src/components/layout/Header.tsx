@@ -17,6 +17,7 @@ import { NotificationBell } from "@/components/notification/NotificationBell"
 import { notifyNativeLogout } from "@/lib/native-bridge"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { isDemoMode } from "@/lib/demo-mode"
+import { clearDemoSessionCookie } from "@/lib/demo-session"
 
 interface HeaderProps {
   hideSecondaryNav?: boolean
@@ -29,6 +30,8 @@ export function Header({ hideSecondaryNav = false }: HeaderProps) {
 
   const handleLogout = async () => {
     notifyNativeLogout()
+    // Leave any demo session on logout so the next login starts prod-like.
+    clearDemoSessionCookie()
     const supabase = createSupabaseBrowserClient()
     await supabase.auth.signOut()
     window.location.href = "/"

@@ -56,6 +56,33 @@ describe("DemoLoginButton", () => {
     })
   })
 
+  it("opts the session into demo presentation on successful login", async () => {
+    document.cookie = "equinet-demo=; path=/; Max-Age=0"
+    mockSignInWithPassword.mockResolvedValue({ error: null })
+    render(<DemoLoginButton />)
+
+    fireEvent.click(screen.getByRole("button", { name: /se demo som leverantör/i }))
+
+    await waitFor(() => {
+      expect(document.cookie).toContain("equinet-demo=true")
+    })
+  })
+
+  it("does not set the demo cookie when login fails", async () => {
+    document.cookie = "equinet-demo=; path=/; Max-Age=0"
+    mockSignInWithPassword.mockResolvedValue({
+      error: { message: "Invalid login credentials" },
+    })
+    render(<DemoLoginButton />)
+
+    fireEvent.click(screen.getByRole("button", { name: /se demo som leverantör/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/kunde inte starta demo/i)).toBeInTheDocument()
+    })
+    expect(document.cookie).not.toContain("equinet-demo=true")
+  })
+
   it("shows loading state during login", async () => {
     mockSignInWithPassword.mockImplementation(
       () => new Promise((resolve) => setTimeout(() => resolve({ error: null }), 100))

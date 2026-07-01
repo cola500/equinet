@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
-import { isDemoMode } from "@/lib/demo-mode"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { OfflineErrorState } from "@/components/ui/OfflineErrorState"
 import { Button } from "@/components/ui/button"
@@ -40,7 +40,7 @@ export default function ProviderRoutesPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
   const isOnline = useOnlineStatus()
-  const demo = isDemoMode()
+  const demo = useDemoSession()
   const [routes, setRoutes] = useState<Route[]>([])
   const [isLoadingRoutes, setIsLoadingRoutes] = useState(true)
   const [error, setError] = useState<string | null>(null)

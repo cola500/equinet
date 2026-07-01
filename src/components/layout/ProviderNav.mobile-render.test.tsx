@@ -20,19 +20,27 @@ vi.mock("@/components/providers/FeatureFlagProvider", () => ({
   useFeatureFlags: () => mockFlags.current,
 }))
 
+const { mockDemo } = vi.hoisted(() => ({ mockDemo: { current: false } }))
+vi.mock("@/components/providers/DemoSessionProvider", () => ({
+  useDemoSession: () => mockDemo.current,
+}))
+
 function bottomBarLinkLabels(container: HTMLElement): string[] {
   const nav = container.querySelector("nav.fixed") as HTMLElement
   return within(nav).getAllByRole("link").map((a) => a.textContent?.trim() ?? "")
 }
 
 describe("ProviderNav mobile bottom bar (rendered, real BottomTabBar)", () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockDemo.current = false
+  })
   afterEach(() => {
-    delete process.env.NEXT_PUBLIC_DEMO_MODE
+    mockDemo.current = false
   })
 
   it("demo mode renders exactly 4 primary tabs + a Mer button", () => {
-    process.env.NEXT_PUBLIC_DEMO_MODE = "true"
+    mockDemo.current = true
     mockFlags.current = { messaging: true }
     const { container } = render(<ProviderNav />)
 

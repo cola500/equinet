@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
-import { isDemoMode } from "@/lib/demo-mode"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { Button } from "@/components/ui/button"
 import {
@@ -23,7 +23,7 @@ export default function ProviderExportPage() {
   const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
   const isOnline = useOnlineStatus()
-  const demo = isDemoMode()
+  const demo = useDemoSession()
   const [isExporting, setIsExporting] = useState<string | null>(null)
 
   // Redirect away from export in demo mode (checked before auth)
