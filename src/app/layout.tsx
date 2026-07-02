@@ -12,8 +12,10 @@ import { BugReportFab } from "@/components/provider/BugReportFab";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { DemoSessionProvider } from "@/components/providers/DemoSessionProvider";
+import { StagingSafeProvider } from "@/components/providers/StagingSafeProvider";
 import { getFeatureFlags } from "@/lib/feature-flags";
 import { readDemoSession } from "@/lib/demo-session-server";
+import { isStagingSafe } from "@/lib/environment";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -46,6 +48,7 @@ export default async function RootLayout({
 }>) {
   const initialFlags = await getFeatureFlags()
   const initialDemoSession = await readDemoSession()
+  const initialStagingSafe = isStagingSafe()
 
   return (
     <html lang="sv">
@@ -54,17 +57,19 @@ export default async function RootLayout({
         <SessionProvider>
           <FeatureFlagProvider initialFlags={initialFlags}>
             <DemoSessionProvider initialDemoSession={initialDemoSession}>
-              <SWRProvider>
-                <div className="min-h-screen flex flex-col">
-                  <main className="flex-1">
-                    {children}
-                  </main>
-                  <Footer />
-                </div>
-                <Toaster />
-                <CookieNotice />
-                {!initialDemoSession && <BugReportFab />}
-              </SWRProvider>
+              <StagingSafeProvider initialStagingSafe={initialStagingSafe}>
+                <SWRProvider>
+                  <div className="min-h-screen flex flex-col">
+                    <main className="flex-1">
+                      {children}
+                    </main>
+                    <Footer />
+                  </div>
+                  <Toaster />
+                  <CookieNotice />
+                  {!initialDemoSession && <BugReportFab />}
+                </SWRProvider>
+              </StagingSafeProvider>
             </DemoSessionProvider>
           </FeatureFlagProvider>
         </SessionProvider>

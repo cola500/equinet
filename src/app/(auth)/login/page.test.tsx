@@ -18,9 +18,9 @@ vi.mock("@/lib/native-bridge", () => ({
   requestMobileTokenForNative: () => mockRequestMobileToken(),
 }))
 
-// Mock demo mode
-vi.mock("@/lib/demo-mode", () => ({
-  isDemoMode: vi.fn().mockReturnValue(false),
+// Mock the client staging-safe signal (Slice 3a: demo-entry visibility gate)
+vi.mock("@/components/providers/StagingSafeProvider", () => ({
+  useStagingSafe: vi.fn().mockReturnValue(false),
 }))
 
 // Mock client logger
@@ -48,14 +48,14 @@ vi.mock("sonner", () => ({
 }))
 
 import LoginPage from "./page"
-import { isDemoMode } from "@/lib/demo-mode"
-const mockIsDemoMode = vi.mocked(isDemoMode)
+import { useStagingSafe } from "@/components/providers/StagingSafeProvider"
+const mockUseStagingSafe = vi.mocked(useStagingSafe)
 
 describe("Login Page", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockSearchParams = new URLSearchParams()
-    mockIsDemoMode.mockReturnValue(false)
+    mockUseStagingSafe.mockReturnValue(false)
   })
 
   function renderLogin() {
@@ -71,25 +71,28 @@ describe("Login Page", () => {
       expect(screen.getByRole("button", { name: "Logga in" })).toBeInTheDocument()
     })
 
-    it("shows register link when not in demo mode", () => {
+    it("always shows register and forgot password links (prod-like entry, Slice 2b)", () => {
+      // Register/forgot are unconditional so a normal staging login sees the
+      // prod-like entry. Independent of the staging-safe / demo signal.
       renderLogin()
 
       expect(screen.getByText("Registrera dig här")).toBeInTheDocument()
       expect(screen.getByText("Glömt lösenord?")).toBeInTheDocument()
     })
 
-    it("still shows register and forgot password links in demo mode (prod-like entry, Slice 2b)", () => {
-      // Slice 2b: register/forgot are always visible so a normal staging login
-      // sees the prod-like entry. Demo affordances live alongside, not instead.
-      mockIsDemoMode.mockReturnValue(true)
+    it("still shows register and forgot when staging-safe (demo affordances live alongside)", () => {
+      mockUseStagingSafe.mockReturnValue(true)
       renderLogin()
 
       expect(screen.getByText("Registrera dig här")).toBeInTheDocument()
       expect(screen.getByText("Glömt lösenord?")).toBeInTheDocument()
     })
 
-    it("shows both demo login buttons in demo mode", () => {
-      mockIsDemoMode.mockReturnValue(true)
+    it("shows both demo login buttons when staging-safe (Slice 3a)", () => {
+      // Slice 3a: demo-entry visibility follows isStagingSafe (env), not
+      // NEXT_PUBLIC_DEMO_MODE. staging-safe=true → buttons show — this holds even
+      // after the Slice 3b flip of NEXT_PUBLIC_DEMO_MODE=false on staging.
+      mockUseStagingSafe.mockReturnValue(true)
       renderLogin()
 
       expect(
@@ -100,7 +103,8 @@ describe("Login Page", () => {
       ).toBeInTheDocument()
     })
 
-    it("hides demo login buttons when not in demo mode", () => {
+    it("hides demo login buttons on live production (not staging-safe)", () => {
+      mockUseStagingSafe.mockReturnValue(false)
       renderLogin()
 
       expect(
@@ -176,7 +180,7 @@ describe("Login Page", () => {
     it("redirects to /dashboard in demo mode when no callbackUrl", async () => {
       // Login must not hardcode a role-specific demo redirect. /dashboard
       // routes per userType (demo provider → calendar, customer → /hem).
-      mockIsDemoMode.mockReturnValue(true)
+      mockUseStagingSafe.mockReturnValue(true)
       mockSignInWithPassword.mockResolvedValue({
         data: { user: { id: "u1" }, session: { access_token: "tok" } },
         error: null,
@@ -195,7 +199,7 @@ describe("Login Page", () => {
     })
 
     it("demo mode still honors a valid callbackUrl over the dashboard default", async () => {
-      mockIsDemoMode.mockReturnValue(true)
+      mockUseStagingSafe.mockReturnValue(true)
       mockSearchParams = new URLSearchParams("callbackUrl=/provider/bookings")
       mockSignInWithPassword.mockResolvedValue({
         data: { user: { id: "u1" }, session: { access_token: "tok" } },
