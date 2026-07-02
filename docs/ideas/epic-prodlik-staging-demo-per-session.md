@@ -370,9 +370,20 @@ default**; demo lever enbart via knapparna (`isStagingSafe()`-gatade i 3a).
 #### Slice 3c (prod-paritet): `IS_LIVE_PRODUCTION=true` + `staging→main`-merge
 Stänger den latenta prod-risken från Väg A och för hela arkitekturen till prod.
 
+> **All implementation är klar** (Slice 1/2a/2b/3a kod + Slice 3b staging-env,
+> verifierade live på staging). Slice 3c innehåller **ingen kodändring** — det som
+> återstår är en **kontrollerad release-operation** (env + merge).
+>
+> **➡️ Följ [Slice 3c Release Runbook](../operations/slice-3c-release-runbook.md)**
+> för den fullständiga, reproducerbara release-processen: förutsättningar,
+> exakt körordning, 8-punkts smoke test, rollback-plan och acceptance criteria.
+
+Sammanfattning (detaljer i runbooken):
+
 1. Sätt `IS_LIVE_PRODUCTION=true` på `equinet-app` (prod) via Vercel REST API
    (`type:"plain"`), verifiera med `vercel env pull --environment=production`.
-2. Merge `staging→main` (bring Slice 1/2a/2b/3a till prod).
+2. Merge `staging→main` (bring Slice 1/2a/2b/3a till prod; lös
+   `backlog.md`-konflikten).
 3. Verifiera på prod: riktiga mejl/push fortsatt aktiva, indexerbar, inga
    demo-knappar.
 
@@ -515,4 +526,9 @@ korrigerad design ovan.
 - **Spärr kvar:** `staging→main`/prod är spärrad tills **Slice 3c** —
   `IS_LIVE_PRODUCTION=true` måste sättas på riktig production (och verifieras) före
   någon merge till main, annars läcker demo-knappar ut på prod.
-- **Nästa steg:** Slice 3c när prod-release är aktuell.
+- **All implementation klar.** Slice 1/2a/2b/3a (kod) + 3b (staging-env) är
+  levererade och verifierade på staging. Inget kodarbete återstår i epiken.
+- **Nästa steg:** Slice 3c är en **kontrollerad release-operation** (env + merge),
+  inte kod. Körs enligt
+  [Slice 3c Release Runbook](../operations/slice-3c-release-runbook.md) när
+  prod-release är aktuell.
