@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { useVoiceWorkLog } from "@/hooks/useVoiceWorkLog"
-import { isDemoMode } from "@/lib/demo-mode"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -33,7 +33,7 @@ import { InfoPopover } from "@/components/ui/info-popover"
 export default function VoiceLogPage() {
   const router = useRouter()
   const { isLoading, isProvider } = useAuth()
-  const demo = isDemoMode()
+  const demo = useDemoSession()
 
   useEffect(() => {
     if (demo) {

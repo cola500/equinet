@@ -14,14 +14,20 @@ import { toast } from "sonner"
 import { ErrorState } from "@/components/ui/error-state"
 import { useRetry } from "@/hooks/useRetry"
 import { clientLogger } from "@/lib/client-logger"
-import { isDemoMode } from "@/lib/demo-mode"
+import { useStagingSafe } from "@/components/providers/StagingSafeProvider"
 import { DemoLoginButton } from "@/components/landing/DemoLoginButton"
 import { DEMO_PERSONAS } from "@/components/landing/demo-personas"
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const demo = isDemoMode()
+  // Demo-button VISIBILITY is gated on the environment-safety signal
+  // (isStagingSafe → non-production), read client-side via context (Slice 3a).
+  // This survives the Slice 3b flip of NEXT_PUBLIC_DEMO_MODE=false on staging,
+  // where isDemoMode() would be false but isStagingSafe() stays true. On live
+  // production (IS_LIVE_PRODUCTION=true) it is false → no demo buttons.
+  // Register/forgot below are unconditional (prod-like entry, Slice 2b).
+  const showDemoEntry = useStagingSafe()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -152,7 +158,6 @@ function LoginForm() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Lösenord</Label>
-                {!demo && (
                 <Link
                   href="/forgot-password"
                   className="text-sm text-primary hover:text-primary/80"
@@ -160,7 +165,6 @@ function LoginForm() {
                 >
                   Glömt lösenord?
                 </Link>
-                )}
               </div>
               <div className="relative">
                 <Input
@@ -192,7 +196,6 @@ function LoginForm() {
               {isLoading ? "Loggar in..." : "Logga in"}
             </Button>
 
-            {!demo && (
             <div className="text-center text-sm text-gray-600">
               Har du inget konto?{" "}
               <Link
@@ -202,11 +205,10 @@ function LoginForm() {
                 Registrera dig här
               </Link>
             </div>
-            )}
           </form>
           )}
 
-          {demo && (
+          {showDemoEntry && (
             <div className="mt-6 border-t pt-6 space-y-3">
               <p className="text-center text-sm text-gray-500">
                 Eller utforska demon direkt

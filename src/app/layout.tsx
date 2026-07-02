@@ -11,8 +11,11 @@ import { CookieNotice } from "@/components/layout/CookieNotice";
 import { BugReportFab } from "@/components/provider/BugReportFab";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { DemoSessionProvider } from "@/components/providers/DemoSessionProvider";
+import { StagingSafeProvider } from "@/components/providers/StagingSafeProvider";
 import { getFeatureFlags } from "@/lib/feature-flags";
-import { isDemoMode } from "@/lib/demo-mode";
+import { readDemoSession } from "@/lib/demo-session-server";
+import { isStagingSafe } from "@/lib/environment";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -44,7 +47,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const initialFlags = await getFeatureFlags()
-  const demo = isDemoMode()
+  const initialDemoSession = await readDemoSession()
+  const initialStagingSafe = isStagingSafe()
 
   return (
     <html lang="sv">
@@ -52,17 +56,21 @@ export default async function RootLayout({
         <DevBanner />
         <SessionProvider>
           <FeatureFlagProvider initialFlags={initialFlags}>
-            <SWRProvider>
-              <div className="min-h-screen flex flex-col">
-                <main className="flex-1">
-                  {children}
-                </main>
-                <Footer />
-              </div>
-              <Toaster />
-              <CookieNotice />
-              {!demo && <BugReportFab />}
-            </SWRProvider>
+            <DemoSessionProvider initialDemoSession={initialDemoSession}>
+              <StagingSafeProvider initialStagingSafe={initialStagingSafe}>
+                <SWRProvider>
+                  <div className="min-h-screen flex flex-col">
+                    <main className="flex-1">
+                      {children}
+                    </main>
+                    <Footer />
+                  </div>
+                  <Toaster />
+                  <CookieNotice />
+                  {!initialDemoSession && <BugReportFab />}
+                </SWRProvider>
+              </StagingSafeProvider>
+            </DemoSessionProvider>
           </FeatureFlagProvider>
         </SessionProvider>
         <Analytics />

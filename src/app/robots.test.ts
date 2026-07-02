@@ -6,8 +6,8 @@ describe("robots.ts", () => {
     vi.resetModules()
   })
 
-  it("disallows all crawlers in demo mode", async () => {
-    vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "true")
+  it("disallows all crawlers when not live production (default safe)", async () => {
+    // No IS_LIVE_PRODUCTION → safe → noindex.
     const robots = (await import("./robots")).default
     const result = robots()
 
@@ -15,8 +15,20 @@ describe("robots.ts", () => {
     expect(result.sitemap).toBeUndefined()
   })
 
-  it("uses production rules with sitemap when demo mode is off", async () => {
-    vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "")
+  it("stays noindex on staging's runtime: VERCEL_ENV=production WITHOUT IS_LIVE_PRODUCTION", async () => {
+    // Regression for #419: staging reports VERCEL_ENV=production but must not be
+    // indexable. RED against the reverted #419 guard, which flipped robots.txt
+    // to indexable on staging.
+    vi.stubEnv("VERCEL_ENV", "production")
+    const robots = (await import("./robots")).default
+    const result = robots()
+
+    expect(result.rules).toEqual([{ userAgent: "*", disallow: "/" }])
+    expect(result.sitemap).toBeUndefined()
+  })
+
+  it("uses production rules with sitemap in live production (IS_LIVE_PRODUCTION=true)", async () => {
+    vi.stubEnv("IS_LIVE_PRODUCTION", "true")
     const robots = (await import("./robots")).default
     const result = robots()
 

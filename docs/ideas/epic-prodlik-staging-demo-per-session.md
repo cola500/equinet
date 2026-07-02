@@ -2,8 +2,8 @@
 title: "Enabler Epic: Prod-lik staging med demo per session"
 description: "Koppla loss miljösäkerhet från demo-presentation så staging kan köra prod-lik verifiering medan demo aktiveras per session via demo-knapparna"
 category: idea
-status: draft
-last_updated: 2026-06-22
+status: active
+last_updated: 2026-07-02
 tags: [enabler-epic, staging, demo-mode, environment, discovery]
 depends_on:
   - docs/operations/staging-environment-setup.md
@@ -243,12 +243,156 @@ Cookie + context-provider; byt presentations-call-sites från `isDemoMode()` til
 - **Risk att bevaka:** SSR/hydration-mismatch om klient och server är oense om
   demo-state.
 
-### Slice 3 (~30 min): Flippa staging till prod-lik default
-Sätt `NEXT_PUBLIC_DEMO_MODE=false` (eller pensionera variabeln) på staging via
-Vercel REST API. Demo lever nu enbart via knapparna.
+> **Uppdelad i 2a + 2b (PO-beslut 2026-07-01).** Kartläggningen visade att
+> Slice 2 buntar en tredje concern: **demo-ENTRÉ** (persona-kort på landning,
+> demo-knappar, dölj registrera/glömt på login) är pre-auth/pre-cookie och kan
+> INTE gatas på `isDemoSession()` (falskt före login) — den ska gatas på
+> `isStagingSafe()`. Presentationen delades därför från entré-affordancen.
 
-> **Ordningskrav:** Slice 1 MÅSTE vara levererad och verifierad före Slice 3,
-> annars läcker säkerheten.
+#### Slice 2a (KLAR): Demo-session-infra + provider-arbetsyta
+Infrastruktur (`isDemoSession()`-cookie + SSR→context, speglar
+`FeatureFlagProvider`), `DemoLoginButton` sätter `equinet-demo`-cookien, Header-
+logout rensar den. Migrerade provider-arbetsytan (`ProviderNav`, 11
+`router.replace`-redirect-sidor, 6 gating-sidor) från `isDemoMode()`/
+`isDemoModeWithFlags()` → `useDemoSession()`.
+
+- **Status:** Klar — PR #432, merge `780e89e6`, mergad till `staging`.
+- **Staging-verifierat (2026-07-01):** vanlig provider-login (formulär) → full,
+  prod-lik arbetsyta (alla sidor nåbara, `equinet-demo` ej satt); demo-knapp →
+  demo-session (cookie satt, 4-tabbars demo-nav, `/provider/reviews` redirectar
+  till profil); logout rensar cookien; ny vanlig login blir inte demo; refresh
+  bevarar state utan hydration-fel. Slice 1-säkerhetsguarden fortsatt grön
+  (`robots.txt` = `Disallow: /` live ⇒ `isStagingSafe() === true`, vilket driver
+  alla fyra säkerhets-call-sites).
+
+#### Slice 2b (KLAR): Auth-front-door prod-lik
+Gjorde entréupplevelsen prod-lik för en vanlig staging-login: login-sidans
+"Registrera dig här" + "Glömt lösenord?" är nu **alltid synliga**, och `Header`
+(registrera-knapp, `NotificationBell`, stall-/admin-länkar) + `layout`
+(`BugReportFab`) följer nu **sessionen** (`useDemoSession`/`initialDemoSession`)
+istället för build-flaggan. `DevBanner` behövde ingen ändring (redan `null` på
+staging via `NODE_ENV`).
+
+- **Status:** Klar — PR #433, merge `a24eb336`, mergad till `staging`.
+- **Staging-verifierat (2026-07-02):** login-sidan visar register/glömt +
+  demo-knappar; vanlig form-login → prod-lik header (NotificationBell synlig),
+  ingen demo-cookie; demo-knapp → demo-session (cookie satt, NotificationBell
+  dold, 4-tabbars demo-nav); logout rensar cookien; Slice 1-guarden grön
+  (`robots.txt = Disallow: /`).
+
+> **Uppskjutet till Slice 3 (PO-beslut 2026-07-01):** demo-knapparnas/landningens
+> VISIBILITY stannar på `isDemoMode` (`NEXT_PUBLIC_DEMO_MODE`) — det enda som idag
+> skiljer staging (true) från prod (false). Omdesignen till `isStagingSafe()`-
+> gating kan INTE göras säkert innan `IS_LIVE_PRODUCTION=true` satts på prod
+> (annars läcker demo-knappar ut på production). Den env-operationen är Slice 3.
+
+**Kvarvarande in-app demo-presentation (ej front-door, ej i 2a/2b):**
+`HelpCenter.tsx` (demo-hjälpsektion) och `first-use-tooltip.tsx` (coachmarks) läser
+fortfarande `isDemoMode()`. De hör inte till entrén; migrera vid behov ihop med
+Slice 3-arbetet.
+
+### Slice 3: Staging prod-lik som default (uppdelad 3a/3b/3c)
+
+> **Omdefinierad efter discovery 2026-07-02.** Den ursprungliga "~30 min, flippa
+> `NEXT_PUBLIC_DEMO_MODE=false`" var för grund. Discovery visade att Slice 3
+> innehåller **tre olika koncern** — kod, staging-env och prod-paritet — som inte
+> får blandas (särskilt inte staging-flip och prod-risk i samma steg).
+
+#### Nuläge (discovery 2026-07-02)
+
+- **Env (härlett via observerbart beteende — bekräfta med `vercel env pull`):**
+  staging `NEXT_PUBLIC_DEMO_MODE=true`, `IS_LIVE_PRODUCTION` osatt
+  (`robots.txt = Disallow:/` ⇒ `isStagingSafe()=true`); prod
+  `NEXT_PUBLIC_DEMO_MODE=false`, `IS_LIVE_PRODUCTION` osatt.
+- **Prod-koden (`main`) saknar hela arkitekturen:** 0 `isStagingSafe`, 0
+  `IS_LIVE_PRODUCTION`, ingen `demo-session.ts`, ingen `environment.ts`. Divergens
+  **main +5 / staging +15**. Att sätta `IS_LIVE_PRODUCTION=true` på prod nu vore
+  en **no-op** (prod-koden läser den inte).
+- **Demo-knapparna överlever INTE en `NEXT_PUBLIC_DEMO_MODE=false`-flip med
+  nuvarande kod:** synligheten gatas på `isDemoMode()` i `login/page.tsx` (client,
+  `{demo && <DemoLoginButton/>}`) och `page.tsx` landning (server,
+  `demoMode ? kort : CTA`). Flippen döljer dem → **kodändring krävs** (Slice 3a).
+
+#### Vägval
+
+**Väg A — staging-only:** deploya demo-entré→`isStagingSafe()`-koden **bara till
+staging** + flippa staging-env. Uppnår målet (staging prod-lik, demo via knappar
+eftersom `isStagingSafe()=true` på staging). Rör inte prod, ingen prod-env-op.
+**Latent risk:** om koden senare merge:as till `main` **utan** att
+`IS_LIVE_PRODUCTION=true` först satts på prod → demo-knappar **läcker ut på
+production** (`isStagingSafe()=true` även på prod när flaggan är osatt). Måste
+dokumenteras som hård spärr på `staging→main`-merge.
+
+**Väg B — prod-paritet (mer korrekt slutläge):** sätt `IS_LIVE_PRODUCTION=true` på
+prod **först** (verifierad REST-API-op), merge:a sedan `staging→main` så prod får
+Slice 1/2a/2b/3a. Då är `isStagingSafe()=false` på prod → demo-knappar dolda,
+riktiga mejl/push/indexering bevaras. **Kräver noggrann ordning:** sätts inte
+prod-env först blir prod "för säker" (blockerar riktiga mejl/push, blir
+icke-indexerbar = prod-regression). Fail-safe gör felet ofarligt (för säker, inte
+osäker) men det är ändå en synlig regression.
+
+#### Slice 3a (kod): demo-entré-synlighet → `isStagingSafe()` + klient-signal
+Byt demo-knapparnas/persona-kortens synlighet från `isDemoMode()` till
+`isStagingSafe()`. Landningen (`page.tsx`) är server-komponent → kan läsa
+`isStagingSafe()` direkt. `login/page.tsx` är client → behöver en klient-exponerad
+signal (ny context-provider seedad från layout server-side, samma SSR→context-
+mönster som `DemoSessionProvider`/`FeatureFlagProvider`). TDD som Slice 2a/2b.
+Deploya till **staging** (via PR mot `staging`). Prod orört (main saknar koden).
+
+- **Värde:** möjliggör att knapparna överlever env-flippen.
+- **Beroende:** inga env-ändringar; ingen prod-påverkan.
+
+#### Slice 3b (KLAR): flippa `NEXT_PUBLIC_DEMO_MODE=false` på staging
+Satte `NEXT_PUBLIC_DEMO_MODE=false` på staging-projektet (`equinet-staging-app`,
+target production) via Vercel REST API (surgical `PATCH` av `value` på env-id,
+type `plain`) + redeploy (build-time-inlinad var). Staging är nu **prod-lik som
+default**; demo lever enbart via knapparna (`isStagingSafe()`-gatade i 3a).
+
+- **Status:** Klar 2026-07-02. Endast staging-env; `IS_LIVE_PRODUCTION` orört;
+  ingen kod, ingen prod-ändring.
+- **Verifierat live (`NEXT_PUBLIC_DEMO_MODE=false`):** demo-knappar syns
+  fortfarande (login + landning) via `isStagingSafe`; vanlig login → prod-lik app
+  utan demo-session; demo-knapp leverantör → demo-session + demo-nav; demo-knapp
+  kund → `/hem` + demo-session; logout rensar; refresh bevarar state utan
+  hydration-fel. **Slice 1-guarden oförändrad** — `robots.txt = Disallow: /` kvar
+  (säkerheten frikopplad från demo-flaggan, styrs av `isStagingSafe`). Env
+  bekräftad via REST-GET + `vercel env pull --environment=production`.
+- **Ordningskrav:** 3a var levererad och verifierad före 3b (annars hade
+  demo-knapparna försvunnit).
+- **Rollback:** återställ `NEXT_PUBLIC_DEMO_MODE=true` via REST API + `vercel env
+  pull`; Vercel instant rollback som backup.
+
+> **Spärr kvar tills Slice 3c:** demo-entré gatas på `isStagingSafe()`, som är
+> `true` även på prod tills `IS_LIVE_PRODUCTION=true` sätts där. Koden lever bara
+> på `staging` → prod orört. **`staging→main`-merge får INTE ske före Slice 3c:s
+> prod-env-op** (annars läcker demo-knappar ut på production).
+
+#### Slice 3c (prod-paritet): `IS_LIVE_PRODUCTION=true` + `staging→main`-merge
+Stänger den latenta prod-risken från Väg A och för hela arkitekturen till prod.
+
+> **All implementation är klar** (Slice 1/2a/2b/3a kod + Slice 3b staging-env,
+> verifierade live på staging). Slice 3c innehåller **ingen kodändring** — det som
+> återstår är en **kontrollerad release-operation** (env + merge).
+>
+> **➡️ Följ [Slice 3c Release Runbook](../operations/slice-3c-release-runbook.md)**
+> för den fullständiga, reproducerbara release-processen: förutsättningar,
+> exakt körordning, 8-punkts smoke test, rollback-plan och acceptance criteria.
+
+Sammanfattning (detaljer i runbooken):
+
+1. Sätt `IS_LIVE_PRODUCTION=true` på `equinet-app` (prod) via Vercel REST API
+   (`type:"plain"`), verifiera med `vercel env pull --environment=production`.
+2. Merge `staging→main` (bring Slice 1/2a/2b/3a till prod; lös
+   `backlog.md`-konflikten).
+3. Verifiera på prod: riktiga mejl/push fortsatt aktiva, indexerbar, inga
+   demo-knappar.
+
+- **Ordningskrav (kritiskt):** steg 1 före steg 2:s deploy. Annars blir prod "för
+  säker" (mejl/push blockeras) tills flaggan sätts.
+- **Görs när vi är redo för prod** — inte kopplat till 3a/3b:s staging-leverans.
+
+> **Ordningskrav (hela Slice 3):** Slice 1 MÅSTE vara levererad (klar). Sekvens:
+> **3a → 3b → 3c**. 3c körs separat när prod-release är aktuell.
 
 ---
 
@@ -319,3 +463,72 @@ backas ut (PR #420) — rotorsak: `VERCEL_ENV` skiljer inte staging från prod. 
 `IS_LIVE_PRODUCTION`-signal). Ingen ny implementation, inga env-ändringar, ingen
 merge/deploy genomförd. Nästa steg: PO-godkännande att starta om Slice 1 enligt
 korrigerad design ovan.
+
+**Status 2026-07-01:**
+- **Slice 1 KLAR** — korrigerad `IS_LIVE_PRODUCTION`-design implementerad och
+  mergad till `staging` (PR #428). Alla 4 säkerhets-call-sites använder
+  `isStagingSafe()`; regressionstestet (`VERCEL_ENV=production` utan
+  `IS_LIVE_PRODUCTION` → safe) grönt.
+- **Slice 2 uppdelad i 2a + 2b** (PO-beslut) — se Slice-sektionen.
+- **Slice 2a KLAR** — PR #432, merge `780e89e6`, mergad till `staging` och
+  verifierad live på `equinet-staging.johanlindengard.com`: vanlig provider-login
+  ger full/prod-lik arbetsyta, demo-knapp ger demo-session, logout/refresh
+  verifierat, Slice 1-säkerhetsguarden fortsatt grön (`robots.txt = Disallow: /`).
+- **Prod oförändrad.** Ingen env-ändring gjord (`IS_LIVE_PRODUCTION` ännu inte
+  satt på prod; `NEXT_PUBLIC_DEMO_MODE` oförändrad på staging).
+- **Nästa steg:** Slice 2b (auth-front-door + entré-affordance), därefter Slice 3
+  (flippa `NEXT_PUBLIC_DEMO_MODE=false` på staging). Ingen av dessa påbörjad.
+
+**Status 2026-07-02:**
+- **Slice 2b KLAR** — PR #433, merge `a24eb336`, mergad till `staging` och
+  verifierad live: login-sidan visar register/glömt-lösenord + demo-knappar;
+  vanlig login → prod-lik header (NotificationBell synlig), ingen demo-cookie;
+  demo-knapp → demo-session (NotificationBell dold, demo-nav); logout rensar
+  cookien; Slice 1-guarden grön (`robots.txt = Disallow: /`).
+- **Uppskjutet till Slice 3:** demo-knapparnas/landningens visibility stannar på
+  `isDemoMode` — bytet till `isStagingSafe()` kräver `IS_LIVE_PRODUCTION=true` på
+  prod (annars läcker demo-knappar ut på production).
+- **Prod oförändrad.** Ingen env-ändring gjord.
+- **Nästa steg:** Slice 3 — sätt `IS_LIVE_PRODUCTION=true` på prod (verifierad
+  env-op), byt demo-entré-visibility till `isStagingSafe()`, flippa
+  `NEXT_PUBLIC_DEMO_MODE=false` på staging. Ej påbörjad.
+
+**Status 2026-07-02 (Slice 3 discovery/dry-run):**
+- **Slice 3 uppdelad i 3a/3b/3c** (PO-beslut) — se Slice-sektionen. Motiv:
+  Slice 3 innehåller kod + staging-env + prod-paritet; staging-flip och prod-risk
+  får inte blandas i samma steg.
+- **Fynd:** prod-koden (`main`) saknar hela arkitekturen (0 `isStagingSafe`, 0
+  `IS_LIVE_PRODUCTION`, ingen `demo-session.ts`/`environment.ts`; main +5 /
+  staging +15). Att sätta `IS_LIVE_PRODUCTION=true` på prod nu = no-op. Demo-
+  knapparna överlever inte en env-flip med nuvarande kod (synlighet på
+  `isDemoMode()`).
+- **Vägval dokumenterat:** Väg A (staging-only, latent prod-läckrisk vid framtida
+  `staging→main`-merge) vs Väg B (prod-paritet, kräver ordnad prod-env-op).
+- **Rekommendation:** kör **3a** (kod, staging) → **3b** (env-flip staging) →
+  **3c** (prod-paritet: `IS_LIVE_PRODUCTION=true` + `staging→main`-merge) när vi
+  är redo för prod.
+- **Ingen ändring gjord i discovery** — read-only. Inga env-/kod-ändringar, ingen
+  merge/deploy.
+
+**Status 2026-07-02 (Slice 3a + 3b levererade):**
+- **Slice 3a KLAR** — demo-entré-synlighet flyttad `isDemoMode()` → `isStagingSafe()`
+  (ny `StagingSafeProvider` för client-signal). PR #434, merge `e9238cb3`. Verifierad
+  live på staging.
+- **Slice 3b KLAR** — `NEXT_PUBLIC_DEMO_MODE=false` satt på staging-projektet
+  (target production) via Vercel REST API + redeploy (`dpl_C6fRJWgJsabGiMJrfn2tcysQYBnW`).
+  **Staging är nu prod-lik som default.** Verifierat live: demo-knappar syns
+  fortfarande via `isStagingSafe` trots flaggan=false; vanlig login sätter ingen
+  demo-session; demo-knappar (leverantör + kund) sätter demo-session; logout rensar;
+  Slice 1-guarden fortsatt verifierad (`robots.txt = Disallow: /`). Env bekräftad via
+  REST-GET + `vercel env pull`.
+- **Production fortfarande orörd.** `IS_LIVE_PRODUCTION` orört (saknas överallt).
+  Ingen kod-, prod- eller merge-ändring.
+- **Spärr kvar:** `staging→main`/prod är spärrad tills **Slice 3c** —
+  `IS_LIVE_PRODUCTION=true` måste sättas på riktig production (och verifieras) före
+  någon merge till main, annars läcker demo-knappar ut på prod.
+- **All implementation klar.** Slice 1/2a/2b/3a (kod) + 3b (staging-env) är
+  levererade och verifierade på staging. Inget kodarbete återstår i epiken.
+- **Nästa steg:** Slice 3c är en **kontrollerad release-operation** (env + merge),
+  inte kod. Körs enligt
+  [Slice 3c Release Runbook](../operations/slice-3c-release-runbook.md) när
+  prod-release är aktuell.

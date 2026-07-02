@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Header } from "@/components/layout/Header"
 import { HorseIcon } from "@/components/icons/HorseIcon"
 import { AnnouncementPreview } from "@/components/AnnouncementPreview"
-import { isDemoMode } from "@/lib/demo-mode"
+import { isStagingSafe } from "@/lib/environment"
 import { DemoLoginButton } from "@/components/landing/DemoLoginButton"
 import { DEMO_PERSONAS } from "@/components/landing/demo-personas"
 
@@ -134,7 +134,10 @@ const faqItems = [
 // --- Page ---
 
 export default function Home() {
-  const demoMode = isDemoMode()
+  // Demo-entry (persona cards) shows in non-production environments (Slice 3a):
+  // survives the Slice 3b NEXT_PUBLIC_DEMO_MODE=false flip on staging, hidden on
+  // live production (IS_LIVE_PRODUCTION=true). Server component reads it directly.
+  const showDemoEntry = isStagingSafe()
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[oklch(0.96_0.02_80)] to-white">
@@ -151,7 +154,7 @@ export default function Home() {
             Hitta hovslagare, veterinär eller terapeut.
             Boka direkt. Få en påminnelse innan det är dags igen.
           </p>
-          {demoMode ? (
+          {showDemoEntry ? (
             <div className="flex flex-col items-center gap-6 px-4 sm:px-0">
               <div className="text-center">
                 <p className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
