@@ -21,6 +21,11 @@ import { DEMO_PERSONAS } from "@/components/landing/demo-personas"
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  // Demo-button VISIBILITY stays on isDemoMode (NEXT_PUBLIC_DEMO_MODE): it is the
+  // only signal that currently distinguishes staging (true) from prod (false).
+  // It cannot move to isStagingSafe until IS_LIVE_PRODUCTION=true is set on prod
+  // (would otherwise leak demo buttons onto production) — that env step is Slice 3.
+  // Register/forgot below are unconditional (prod-like entry, Slice 2b).
   const demo = isDemoMode()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -152,7 +157,6 @@ function LoginForm() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Lösenord</Label>
-                {!demo && (
                 <Link
                   href="/forgot-password"
                   className="text-sm text-primary hover:text-primary/80"
@@ -160,7 +164,6 @@ function LoginForm() {
                 >
                   Glömt lösenord?
                 </Link>
-                )}
               </div>
               <div className="relative">
                 <Input
@@ -192,7 +195,6 @@ function LoginForm() {
               {isLoading ? "Loggar in..." : "Logga in"}
             </Button>
 
-            {!demo && (
             <div className="text-center text-sm text-gray-600">
               Har du inget konto?{" "}
               <Link
@@ -202,7 +204,6 @@ function LoginForm() {
                 Registrera dig här
               </Link>
             </div>
-            )}
           </form>
           )}
 

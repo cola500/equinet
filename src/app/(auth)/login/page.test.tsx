@@ -78,12 +78,14 @@ describe("Login Page", () => {
       expect(screen.getByText("Glömt lösenord?")).toBeInTheDocument()
     })
 
-    it("hides register and forgot password links in demo mode", () => {
+    it("still shows register and forgot password links in demo mode (prod-like entry, Slice 2b)", () => {
+      // Slice 2b: register/forgot are always visible so a normal staging login
+      // sees the prod-like entry. Demo affordances live alongside, not instead.
       mockIsDemoMode.mockReturnValue(true)
       renderLogin()
 
-      expect(screen.queryByText("Registrera dig här")).not.toBeInTheDocument()
-      expect(screen.queryByText("Glömt lösenord?")).not.toBeInTheDocument()
+      expect(screen.getByText("Registrera dig här")).toBeInTheDocument()
+      expect(screen.getByText("Glömt lösenord?")).toBeInTheDocument()
     })
 
     it("shows both demo login buttons in demo mode", () => {
