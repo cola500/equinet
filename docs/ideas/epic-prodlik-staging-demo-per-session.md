@@ -291,12 +291,82 @@ staging via `NODE_ENV`).
 fortfarande `isDemoMode()`. De hör inte till entrén; migrera vid behov ihop med
 Slice 3-arbetet.
 
-### Slice 3 (~30 min): Flippa staging till prod-lik default
-Sätt `NEXT_PUBLIC_DEMO_MODE=false` (eller pensionera variabeln) på staging via
-Vercel REST API. Demo lever nu enbart via knapparna.
+### Slice 3: Staging prod-lik som default (uppdelad 3a/3b/3c)
 
-> **Ordningskrav:** Slice 1 MÅSTE vara levererad och verifierad före Slice 3,
-> annars läcker säkerheten.
+> **Omdefinierad efter discovery 2026-07-02.** Den ursprungliga "~30 min, flippa
+> `NEXT_PUBLIC_DEMO_MODE=false`" var för grund. Discovery visade att Slice 3
+> innehåller **tre olika koncern** — kod, staging-env och prod-paritet — som inte
+> får blandas (särskilt inte staging-flip och prod-risk i samma steg).
+
+#### Nuläge (discovery 2026-07-02)
+
+- **Env (härlett via observerbart beteende — bekräfta med `vercel env pull`):**
+  staging `NEXT_PUBLIC_DEMO_MODE=true`, `IS_LIVE_PRODUCTION` osatt
+  (`robots.txt = Disallow:/` ⇒ `isStagingSafe()=true`); prod
+  `NEXT_PUBLIC_DEMO_MODE=false`, `IS_LIVE_PRODUCTION` osatt.
+- **Prod-koden (`main`) saknar hela arkitekturen:** 0 `isStagingSafe`, 0
+  `IS_LIVE_PRODUCTION`, ingen `demo-session.ts`, ingen `environment.ts`. Divergens
+  **main +5 / staging +15**. Att sätta `IS_LIVE_PRODUCTION=true` på prod nu vore
+  en **no-op** (prod-koden läser den inte).
+- **Demo-knapparna överlever INTE en `NEXT_PUBLIC_DEMO_MODE=false`-flip med
+  nuvarande kod:** synligheten gatas på `isDemoMode()` i `login/page.tsx` (client,
+  `{demo && <DemoLoginButton/>}`) och `page.tsx` landning (server,
+  `demoMode ? kort : CTA`). Flippen döljer dem → **kodändring krävs** (Slice 3a).
+
+#### Vägval
+
+**Väg A — staging-only:** deploya demo-entré→`isStagingSafe()`-koden **bara till
+staging** + flippa staging-env. Uppnår målet (staging prod-lik, demo via knappar
+eftersom `isStagingSafe()=true` på staging). Rör inte prod, ingen prod-env-op.
+**Latent risk:** om koden senare merge:as till `main` **utan** att
+`IS_LIVE_PRODUCTION=true` först satts på prod → demo-knappar **läcker ut på
+production** (`isStagingSafe()=true` även på prod när flaggan är osatt). Måste
+dokumenteras som hård spärr på `staging→main`-merge.
+
+**Väg B — prod-paritet (mer korrekt slutläge):** sätt `IS_LIVE_PRODUCTION=true` på
+prod **först** (verifierad REST-API-op), merge:a sedan `staging→main` så prod får
+Slice 1/2a/2b/3a. Då är `isStagingSafe()=false` på prod → demo-knappar dolda,
+riktiga mejl/push/indexering bevaras. **Kräver noggrann ordning:** sätts inte
+prod-env först blir prod "för säker" (blockerar riktiga mejl/push, blir
+icke-indexerbar = prod-regression). Fail-safe gör felet ofarligt (för säker, inte
+osäker) men det är ändå en synlig regression.
+
+#### Slice 3a (kod): demo-entré-synlighet → `isStagingSafe()` + klient-signal
+Byt demo-knapparnas/persona-kortens synlighet från `isDemoMode()` till
+`isStagingSafe()`. Landningen (`page.tsx`) är server-komponent → kan läsa
+`isStagingSafe()` direkt. `login/page.tsx` är client → behöver en klient-exponerad
+signal (ny context-provider seedad från layout server-side, samma SSR→context-
+mönster som `DemoSessionProvider`/`FeatureFlagProvider`). TDD som Slice 2a/2b.
+Deploya till **staging** (via PR mot `staging`). Prod orört (main saknar koden).
+
+- **Värde:** möjliggör att knapparna överlever env-flippen.
+- **Beroende:** inga env-ändringar; ingen prod-påverkan.
+
+#### Slice 3b (env, staging): flippa `NEXT_PUBLIC_DEMO_MODE=false`
+Sätt `NEXT_PUBLIC_DEMO_MODE=false` på staging via Vercel REST API
+(`POST`, korrekt typ) + verifiera med `vercel env pull --environment=preview`.
+Staging blir prod-lik default; demo lever via knapparna (nu på `isStagingSafe()`).
+
+- **Ordningskrav:** 3a MÅSTE vara levererad och verifierad på staging före 3b,
+  annars försvinner demo-knapparna.
+- **Rollback:** återställ `NEXT_PUBLIC_DEMO_MODE=true` via REST API + `vercel env
+  pull`; Vercel instant rollback som backup.
+
+#### Slice 3c (prod-paritet): `IS_LIVE_PRODUCTION=true` + `staging→main`-merge
+Stänger den latenta prod-risken från Väg A och för hela arkitekturen till prod.
+
+1. Sätt `IS_LIVE_PRODUCTION=true` på `equinet-app` (prod) via Vercel REST API
+   (`type:"plain"`), verifiera med `vercel env pull --environment=production`.
+2. Merge `staging→main` (bring Slice 1/2a/2b/3a till prod).
+3. Verifiera på prod: riktiga mejl/push fortsatt aktiva, indexerbar, inga
+   demo-knappar.
+
+- **Ordningskrav (kritiskt):** steg 1 före steg 2:s deploy. Annars blir prod "för
+  säker" (mejl/push blockeras) tills flaggan sätts.
+- **Görs när vi är redo för prod** — inte kopplat till 3a/3b:s staging-leverans.
+
+> **Ordningskrav (hela Slice 3):** Slice 1 MÅSTE vara levererad (klar). Sekvens:
+> **3a → 3b → 3c**. 3c körs separat när prod-release är aktuell.
 
 ---
 
@@ -396,3 +466,20 @@ korrigerad design ovan.
 - **Nästa steg:** Slice 3 — sätt `IS_LIVE_PRODUCTION=true` på prod (verifierad
   env-op), byt demo-entré-visibility till `isStagingSafe()`, flippa
   `NEXT_PUBLIC_DEMO_MODE=false` på staging. Ej påbörjad.
+
+**Status 2026-07-02 (Slice 3 discovery/dry-run):**
+- **Slice 3 uppdelad i 3a/3b/3c** (PO-beslut) — se Slice-sektionen. Motiv:
+  Slice 3 innehåller kod + staging-env + prod-paritet; staging-flip och prod-risk
+  får inte blandas i samma steg.
+- **Fynd:** prod-koden (`main`) saknar hela arkitekturen (0 `isStagingSafe`, 0
+  `IS_LIVE_PRODUCTION`, ingen `demo-session.ts`/`environment.ts`; main +5 /
+  staging +15). Att sätta `IS_LIVE_PRODUCTION=true` på prod nu = no-op. Demo-
+  knapparna överlever inte en env-flip med nuvarande kod (synlighet på
+  `isDemoMode()`).
+- **Vägval dokumenterat:** Väg A (staging-only, latent prod-läckrisk vid framtida
+  `staging→main`-merge) vs Väg B (prod-paritet, kräver ordnad prod-env-op).
+- **Rekommendation:** kör **3a** (kod, staging) → **3b** (env-flip staging) →
+  **3c** (prod-paritet: `IS_LIVE_PRODUCTION=true` + `staging→main`-merge) när vi
+  är redo för prod.
+- **Ingen ändring gjord i discovery** — read-only. Inga env-/kod-ändringar, ingen
+  merge/deploy.
