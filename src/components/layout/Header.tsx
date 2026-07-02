@@ -16,7 +16,8 @@ import { CustomerNav } from "./CustomerNav"
 import { NotificationBell } from "@/components/notification/NotificationBell"
 import { notifyNativeLogout } from "@/lib/native-bridge"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
-import { isDemoMode } from "@/lib/demo-mode"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
+import { clearDemoSessionCookie } from "@/lib/demo-session"
 
 interface HeaderProps {
   hideSecondaryNav?: boolean
@@ -25,10 +26,15 @@ interface HeaderProps {
 export function Header({ hideSecondaryNav = false }: HeaderProps) {
   const { user, isAuthenticated, isLoading, isProvider, isCustomer, isAdmin, isStableOwner } = useAuth()
   const stableEnabled = useFeatureFlag("stable_profiles")
-  const demo = isDemoMode()
+  // Header demo-hiding follows the SESSION (Slice 2a/2b): a normal login sees the
+  // prod-like header (register, notification bell, stable/admin per role); only a
+  // demo-session (equinet-demo cookie) hides them. Prod has no cookie → prod-like.
+  const demo = useDemoSession()
 
   const handleLogout = async () => {
     notifyNativeLogout()
+    // Leave any demo session on logout so the next login starts prod-like.
+    clearDemoSessionCookie()
     const supabase = createSupabaseBrowserClient()
     await supabase.auth.signOut()
     window.location.href = "/"

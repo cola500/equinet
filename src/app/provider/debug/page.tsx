@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
-import { isDemoMode } from "@/lib/demo-mode"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { DebugLogViewer } from "@/components/provider/DebugLogViewer"
 
@@ -12,7 +12,7 @@ export default function DebugPage() {
   const router = useRouter()
   const { isProvider, isLoading } = useAuth()
   const offlineMode = useFeatureFlag("offline_mode")
-  const demo = isDemoMode()
+  const demo = useDemoSession()
 
   // Redirect away from debug in demo mode
   useEffect(() => {

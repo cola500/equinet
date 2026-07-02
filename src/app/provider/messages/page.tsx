@@ -8,8 +8,7 @@ import { MessageSquare } from "lucide-react"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
-import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
-import { isDemoModeWithFlags } from "@/lib/demo-mode"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 
 function formatMessageTime(dateStr: string): string {
   const date = new Date(dateStr)
@@ -39,7 +38,7 @@ export default function ProviderMessagesPage() {
     "/api/provider/conversations",
     { refreshInterval: 30000 }
   )
-  const demo = isDemoModeWithFlags(useFeatureFlags())
+  const demo = useDemoSession()
 
   const items = data?.items ?? []
 

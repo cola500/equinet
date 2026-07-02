@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Kanonisk backlog för Equinet. Alla kända stories, uppgifter och beslut. status.md pekar hit; roadmap.md är den strategiska vyn."
 category: sprint
 status: active
-last_updated: 2026-06-29
+last_updated: 2026-07-02
 tags: [backlog, roadmap, planning]
 sections:
   - Aktiva produktspår
@@ -294,6 +294,7 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Konsolidera meta-rules-filer | 2-4h | 5 filer (team-workflow, autonomous-sprint, tech-lead, parallel-sessions, auto-assign, ~1200 rader) dokumenterar samma tema. Ingen refereras från CLAUDE.md Snabbreferens. Slå ihop, arkivera resten till `docs/archive/rules/`. *(Process-beslut.)* |
 | MessagingDialog öppnar ej i headless Playwright (S50-0) | 30 min | `onClick` triggas men `open`-state flippar ej i headless. API-kedjan funkar → inte prod-blocker. Undersök `--headed` + verkliga browsers. |
 | iOS WebView login-bypass för mobile-mcp (S50-0) | 45 min | WKWebView `<input type=password>` = `SecureTextField`, XCUITest kan inte skriva. Utforska: pre-seed session via API + deep link, biometri-bypass, Keychain AutoFill. Utan detta kan iOS login-flöde inte E2E-testas. |
+| **Developer Experience: pinna och standardisera Node-version** | 30-60 min | **Problem:** lokalt kör vissa flöden Node 26 medan CI/tester förväntar sig Node 20 (`.github/workflows/quality-gates.yml` → `node-version: '20'`). Node 26:s experimentella `localStorage`-global kraschar ~32 jsdom-tester (`Cannot read properties of undefined (reading 'getItem')`) och tvingar `check:all`/push under `node@20` + `--no-verify`. **Förslag:** (1) lägg till/uppdatera `.nvmrc` till Node 20 LTS; (2) lägg till `engines` i `package.json` om det saknas; (3) säkerställ att Husky/pre-push-hooks använder samma Node-version eller ger tydligt fel; (4) dokumentera setup-kommandot för ny dator. Sågs under Slice 2a/2b (2026-07). |
 
 ---
 

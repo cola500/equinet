@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
+import { setDemoSessionCookie } from "@/lib/demo-session"
 import { Button } from "@/components/ui/button"
 import { DEMO_PERSONAS } from "./demo-personas"
 
@@ -45,6 +46,11 @@ export function DemoLoginButton({
         setError("Kunde inte starta demo — kontakta oss om problemet kvarstår.")
         return
       }
+
+      // Opt this browser session into demo presentation. Set BEFORE the refresh
+      // so the re-run of the server layout reads the cookie and seeds
+      // DemoSessionProvider with `true`.
+      setDemoSessionCookie()
 
       router.push(redirectTo)
       router.refresh()

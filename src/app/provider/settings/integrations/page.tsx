@@ -26,7 +26,7 @@ import {
 import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { ProfileSkeleton } from "@/components/loading/ProfileSkeleton"
-import { isDemoMode } from "@/lib/demo-mode"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 
 interface FortnoxStatus {
   connected: boolean
@@ -53,7 +53,7 @@ function IntegrationsContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { isLoading: authLoading, isProvider } = useAuth()
-  const demo = isDemoMode()
+  const demo = useDemoSession()
   const [fortnoxStatus, setFortnoxStatus] = useState<FortnoxStatus>({
     connected: false,
   })

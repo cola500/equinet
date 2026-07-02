@@ -6,7 +6,7 @@
  */
 
 import { logger } from "@/lib/logger"
-import { isDemoMode } from "@/lib/demo-mode"
+import { isStagingSafe } from "@/lib/environment"
 
 interface EmailOptions {
   to: string
@@ -39,11 +39,12 @@ class EmailService {
   }
 
   async send(options: EmailOptions): Promise<SendResult> {
-    // Demo-mode guard: block all outbound email when the app runs as a public
-    // demo. Seed data uses realistic-looking addresses (gmail, hotmail, …) so
-    // sending would deliver to real MX records. Returns mock success so UI
-    // flows continue to look normal.
-    if (isDemoMode()) {
+    // Environment-safety guard: block all outbound email unless this is the
+    // real production runtime (IS_LIVE_PRODUCTION=true). Staging/local/test seed
+    // data uses realistic-looking addresses (gmail, hotmail, …) so sending would
+    // deliver to real MX records. Returns mock success so UI flows continue to
+    // look normal. Log tag / messageId prefix kept stable for observability.
+    if (isStagingSafe()) {
       logger.info("[DEMO_EMAIL_BLOCKED]", {
         to: options.to,
         subject: options.subject,

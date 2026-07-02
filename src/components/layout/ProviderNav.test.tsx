@@ -24,6 +24,10 @@ vi.mock("@/components/providers/FeatureFlagProvider", () => ({
   useFeatureFlags: vi.fn(() => ({})),
 }))
 
+vi.mock("@/components/providers/DemoSessionProvider", () => ({
+  useDemoSession: vi.fn(() => false),
+}))
+
 // Mock BottomTabBar since it's tested separately — capture props to assert mobile nav
 const { mockBottomTabBar } = vi.hoisted(() => ({
   mockBottomTabBar: { props: null as { tabs: { href: string }[]; moreItems: { href: string }[] } | null },
@@ -38,6 +42,7 @@ vi.mock("./BottomTabBar", () => ({
 import { usePathname } from "next/navigation"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { useFeatureFlags } from "@/components/providers/FeatureFlagProvider"
+import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 
 // Reset module-level guard between tests
 async function resetRscCacheGuard() {
@@ -54,6 +59,7 @@ describe("ProviderNav", () => {
     vi.mocked(useOnlineStatus).mockReturnValue(true)
     vi.mocked(usePathname).mockReturnValue("/provider/dashboard")
     vi.mocked(useFeatureFlags).mockReturnValue({})
+    vi.mocked(useDemoSession).mockReturnValue(false)
     // Reset module-level guard
     await resetRscCacheGuard()
     // Mock window.location for hard navigation tests
@@ -229,7 +235,7 @@ describe("ProviderNav", () => {
 
   describe("mobile bottom tab bar (Slice 1)", () => {
     it("demo mode: shows exactly 4 primary tabs (Kalender, Kunder, Tjänster, Meddelanden)", () => {
-      process.env.NEXT_PUBLIC_DEMO_MODE = "true"
+      vi.mocked(useDemoSession).mockReturnValue(true)
       vi.mocked(useFeatureFlags).mockReturnValue({ messaging: true })
 
       render(<ProviderNav />)
@@ -244,7 +250,7 @@ describe("ProviderNav", () => {
     })
 
     it("demo mode: Mer drawer holds the 5 moved items (Översikt, Bokningar, Insikter, Profil, Hjälp)", () => {
-      process.env.NEXT_PUBLIC_DEMO_MODE = "true"
+      vi.mocked(useDemoSession).mockReturnValue(true)
       vi.mocked(useFeatureFlags).mockReturnValue({ messaging: true })
 
       render(<ProviderNav />)
