@@ -14,19 +14,20 @@ import { toast } from "sonner"
 import { ErrorState } from "@/components/ui/error-state"
 import { useRetry } from "@/hooks/useRetry"
 import { clientLogger } from "@/lib/client-logger"
-import { isDemoMode } from "@/lib/demo-mode"
+import { useStagingSafe } from "@/components/providers/StagingSafeProvider"
 import { DemoLoginButton } from "@/components/landing/DemoLoginButton"
 import { DEMO_PERSONAS } from "@/components/landing/demo-personas"
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  // Demo-button VISIBILITY stays on isDemoMode (NEXT_PUBLIC_DEMO_MODE): it is the
-  // only signal that currently distinguishes staging (true) from prod (false).
-  // It cannot move to isStagingSafe until IS_LIVE_PRODUCTION=true is set on prod
-  // (would otherwise leak demo buttons onto production) — that env step is Slice 3.
+  // Demo-button VISIBILITY is gated on the environment-safety signal
+  // (isStagingSafe → non-production), read client-side via context (Slice 3a).
+  // This survives the Slice 3b flip of NEXT_PUBLIC_DEMO_MODE=false on staging,
+  // where isDemoMode() would be false but isStagingSafe() stays true. On live
+  // production (IS_LIVE_PRODUCTION=true) it is false → no demo buttons.
   // Register/forgot below are unconditional (prod-like entry, Slice 2b).
-  const demo = isDemoMode()
+  const showDemoEntry = useStagingSafe()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -207,7 +208,7 @@ function LoginForm() {
           </form>
           )}
 
-          {demo && (
+          {showDemoEntry && (
             <div className="mt-6 border-t pt-6 space-y-3">
               <p className="text-center text-sm text-gray-500">
                 Eller utforska demon direkt

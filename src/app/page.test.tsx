@@ -1,6 +1,8 @@
 import { renderToString } from "react-dom/server"
 import { describe, it, expect, vi } from "vitest"
 import Home from "./page"
+import { isStagingSafe } from "@/lib/environment"
+const mockIsStagingSafe = vi.mocked(isStagingSafe)
 
 vi.mock("@/components/layout/Header", () => ({
   Header: () => <header data-testid="mock-header" />,
@@ -35,8 +37,8 @@ vi.mock("@/components/landing/DemoLoginButton", () => ({
   DemoLoginButton: () => <button>Demo</button>,
 }))
 
-vi.mock("@/lib/demo-mode", () => ({
-  isDemoMode: () => false,
+vi.mock("@/lib/environment", () => ({
+  isStagingSafe: vi.fn(() => false),
 }))
 
 describe("Kategori-ikoner på landningssidan", () => {
@@ -77,5 +79,22 @@ describe("Landningssidan FAQ — SSR-integritet", () => {
     const html = renderToString(<Home />)
 
     expect(html).toContain("<details")
+  })
+})
+
+describe("Landningssidan demo-entré (Slice 3a: isStagingSafe-gating)", () => {
+  it("visar demo-persona-kort när staging-safe (icke-prod)", () => {
+    mockIsStagingSafe.mockReturnValue(true)
+    const html = renderToString(<Home />)
+    // Demo-hero (persona-kort) i stället för normal registrera-CTA
+    expect(html).toContain("Utforska appen")
+    expect(html).not.toContain("Registrera dig gratis")
+  })
+
+  it("visar normal registrera-CTA på live-produktion (ej staging-safe)", () => {
+    mockIsStagingSafe.mockReturnValue(false)
+    const html = renderToString(<Home />)
+    expect(html).toContain("Registrera dig gratis")
+    expect(html).not.toContain("Utforska appen")
   })
 })
