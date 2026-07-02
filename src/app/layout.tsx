@@ -14,7 +14,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { DemoSessionProvider } from "@/components/providers/DemoSessionProvider";
 import { getFeatureFlags } from "@/lib/feature-flags";
 import { readDemoSession } from "@/lib/demo-session-server";
-import { isDemoMode } from "@/lib/demo-mode";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -47,9 +46,6 @@ export default async function RootLayout({
 }>) {
   const initialFlags = await getFeatureFlags()
   const initialDemoSession = await readDemoSession()
-  // NOTE: isDemoMode() still gates the BugReportFab below — that is a front-door
-  // surface handled in Slice 2b, deliberately left on the build-time flag here.
-  const demo = isDemoMode()
 
   return (
     <html lang="sv">
@@ -67,7 +63,7 @@ export default async function RootLayout({
                 </div>
                 <Toaster />
                 <CookieNotice />
-                {!demo && <BugReportFab />}
+                {!initialDemoSession && <BugReportFab />}
               </SWRProvider>
             </DemoSessionProvider>
           </FeatureFlagProvider>
