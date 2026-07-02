@@ -25,7 +25,11 @@ sections:
 
 > **Enabler epic** (teknisk möjliggörare), inte produktfeature. Slicas för att
 > kunna levereras och verifieras stegvis utan att äventyra stagings säkerhet mot
-> omvärlden. Discovery genomförd 2026-06-15 — **ingen implementation ännu.**
+> omvärlden.
+>
+> ## ✅ SLUTFÖRD 2026-07-02
+> Alla slices (1, 2a, 2b, 3a, 3b, 3c) levererade, verifierade och **live i
+> production**. Staging och main är i paritet. Se Slice 3c + Status nedan.
 
 ## Mål
 
@@ -370,26 +374,33 @@ default**; demo lever enbart via knapparna (`isStagingSafe()`-gatade i 3a).
 #### Slice 3c (prod-paritet): `IS_LIVE_PRODUCTION=true` + `staging→main`-merge
 Stänger den latenta prod-risken från Väg A och för hela arkitekturen till prod.
 
-> **All implementation är klar** (Slice 1/2a/2b/3a kod + Slice 3b staging-env,
-> verifierade live på staging). Slice 3c innehåller **ingen kodändring** — det som
-> återstår är en **kontrollerad release-operation** (env + merge).
->
-> **➡️ Följ [Slice 3c Release Runbook](../operations/slice-3c-release-runbook.md)**
-> för den fullständiga, reproducerbara release-processen: förutsättningar,
-> exakt körordning, 8-punkts smoke test, rollback-plan och acceptance criteria.
+**KLAR 2026-07-02** — kördes enligt
+[Slice 3c Release Runbook](../operations/slice-3c-release-runbook.md).
 
-Sammanfattning (detaljer i runbooken):
+- **`IS_LIVE_PRODUCTION=true` satt och verifierat i production** (`equinet-app`,
+  target production, type plain) via Vercel REST API. Bekräftat med REST-GET +
+  `vercel env pull --environment=production` (`IS_LIVE_PRODUCTION="true"`,
+  `NEXT_PUBLIC_DEMO_MODE="false"`).
+- **`staging → main` mergad** — release-PR #435 (löste `backlog.md`-konflikten),
+  full CI grön inkl. tunga E2E/Offline-jobb. Merge commit `6553c5ea`.
+- **Production deploy READY** — `dpl_J9jvjBvZqb8GMAW77EUNWYYzTdDE`
+  (commit `6553c5ea`), live på `equinet.johanlindengard.com`.
+- **Production smoke godkänd:** startsida normal; login prod-lik (form +
+  register/glömt); `robots.txt` **indexerbar** (`Allow: /`) ⇒ `isStagingSafe()=
+  false` ⇒ alla fyra säkerhets-guards i live-läge (mejl/push/native-delete aktiva).
+- **Demo-knappar läcker INTE i prod** — 0 demo-knappar på login + landning
+  (`isStagingSafe()=false`).
+- **Staging och main i paritet** — hela arkitekturen (Slice 1/2a/2b/3a) är nu på
+  main/prod.
 
-1. Sätt `IS_LIVE_PRODUCTION=true` på `equinet-app` (prod) via Vercel REST API
-   (`type:"plain"`), verifiera med `vercel env pull --environment=production`.
-2. Merge `staging→main` (bring Slice 1/2a/2b/3a till prod; lös
-   `backlog.md`-konflikten).
-3. Verifiera på prod: riktiga mejl/push fortsatt aktiva, indexerbar, inga
-   demo-knappar.
+**Medvetet ej körda tester (icke-destruktivt):**
+- Inloggat prod-flöde (provider calendar) — demo-konton finns bara på stagings
+  Supabase; inga riktiga prod-credentials hanterades. Login-*sidan* verifierad.
+- Faktisk native-delete på prod — skulle röra riktig kunddata. Guard-tillståndet
+  bevisat via robots-proxyn i stället.
 
-- **Ordningskrav (kritiskt):** steg 1 före steg 2:s deploy. Annars blir prod "för
-  säker" (mejl/push blockeras) tills flaggan sätts.
-- **Görs när vi är redo för prod** — inte kopplat till 3a/3b:s staging-leverans.
+**Rollback-kandidat (föregående prod-deploy):** `dpl_2stK1bn6SvZPFsQaL4VWAPE8Jyfx`
+(Vercel Instant Rollback).
 
 > **Ordningskrav (hela Slice 3):** Slice 1 MÅSTE vara levererad (klar). Sekvens:
 > **3a → 3b → 3c**. 3c körs separat när prod-release är aktuell.
@@ -532,3 +543,17 @@ korrigerad design ovan.
   inte kod. Körs enligt
   [Slice 3c Release Runbook](../operations/slice-3c-release-runbook.md) när
   prod-release är aktuell.
+
+**Status 2026-07-02 (Slice 3c KLAR — EPIKEN SLUTFÖRD):**
+- **Slice 3c KLAR.** `IS_LIVE_PRODUCTION=true` satt och verifierat i production;
+  `staging → main` mergad (PR #435, merge `6553c5ea`); prod-deploy
+  `dpl_J9jvjBvZqb8GMAW77EUNWYYzTdDE` **READY**; production smoke **godkänd**
+  (startsida, login, robots indexerbar, demo-knappar dolda).
+- **Demo-knappar läcker inte i prod** (`isStagingSafe()=false`).
+- **Staging och main i paritet** — hela epiken är live i production.
+- **Medvetet ej körda:** inloggat prod-flöde + faktisk native-delete (kräver
+  prod-credentials/-data, icke-destruktivt utelämnade; guard-tillstånd bevisat via
+  robots-proxy).
+- **Rollback-kandidat:** `dpl_2stK1bn6SvZPFsQaL4VWAPE8Jyfx`.
+- **Epiken är slutförd.** Inget återstår. Se `docs/operations/slice-3c-release-runbook.md`
+  för framtida referens/rollback.
