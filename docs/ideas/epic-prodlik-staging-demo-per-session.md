@@ -3,7 +3,7 @@ title: "Enabler Epic: Prod-lik staging med demo per session"
 description: "Koppla loss miljösäkerhet från demo-presentation så staging kan köra prod-lik verifiering medan demo aktiveras per session via demo-knapparna"
 category: idea
 status: active
-last_updated: 2026-07-01
+last_updated: 2026-07-02
 tags: [enabler-epic, staging, demo-mode, environment, discovery]
 depends_on:
   - docs/operations/staging-environment-setup.md
@@ -265,11 +265,31 @@ logout rensar den. Migrerade provider-arbetsytan (`ProviderNav`, 11
   (`robots.txt` = `Disallow: /` live ⇒ `isStagingSafe() === true`, vilket driver
   alla fyra säkerhets-call-sites).
 
-#### Slice 2b (återstår): Auth-front-door + entré-affordance
-Login-sida, registrera/glömt-lösenord, `Header`/`BugReportFab`/`DevBanner`, och
-omdesign av entré-affordancen till `isStagingSafe()`-gating (demo-knappar syns på
-staging men aldrig på prod). Här landar "registrera/glömt synliga för vanlig
-login".
+#### Slice 2b (KLAR): Auth-front-door prod-lik
+Gjorde entréupplevelsen prod-lik för en vanlig staging-login: login-sidans
+"Registrera dig här" + "Glömt lösenord?" är nu **alltid synliga**, och `Header`
+(registrera-knapp, `NotificationBell`, stall-/admin-länkar) + `layout`
+(`BugReportFab`) följer nu **sessionen** (`useDemoSession`/`initialDemoSession`)
+istället för build-flaggan. `DevBanner` behövde ingen ändring (redan `null` på
+staging via `NODE_ENV`).
+
+- **Status:** Klar — PR #433, merge `a24eb336`, mergad till `staging`.
+- **Staging-verifierat (2026-07-02):** login-sidan visar register/glömt +
+  demo-knappar; vanlig form-login → prod-lik header (NotificationBell synlig),
+  ingen demo-cookie; demo-knapp → demo-session (cookie satt, NotificationBell
+  dold, 4-tabbars demo-nav); logout rensar cookien; Slice 1-guarden grön
+  (`robots.txt = Disallow: /`).
+
+> **Uppskjutet till Slice 3 (PO-beslut 2026-07-01):** demo-knapparnas/landningens
+> VISIBILITY stannar på `isDemoMode` (`NEXT_PUBLIC_DEMO_MODE`) — det enda som idag
+> skiljer staging (true) från prod (false). Omdesignen till `isStagingSafe()`-
+> gating kan INTE göras säkert innan `IS_LIVE_PRODUCTION=true` satts på prod
+> (annars läcker demo-knappar ut på production). Den env-operationen är Slice 3.
+
+**Kvarvarande in-app demo-presentation (ej front-door, ej i 2a/2b):**
+`HelpCenter.tsx` (demo-hjälpsektion) och `first-use-tooltip.tsx` (coachmarks) läser
+fortfarande `isDemoMode()`. De hör inte till entrén; migrera vid behov ihop med
+Slice 3-arbetet.
 
 ### Slice 3 (~30 min): Flippa staging till prod-lik default
 Sätt `NEXT_PUBLIC_DEMO_MODE=false` (eller pensionera variabeln) på staging via
@@ -362,3 +382,17 @@ korrigerad design ovan.
   satt på prod; `NEXT_PUBLIC_DEMO_MODE` oförändrad på staging).
 - **Nästa steg:** Slice 2b (auth-front-door + entré-affordance), därefter Slice 3
   (flippa `NEXT_PUBLIC_DEMO_MODE=false` på staging). Ingen av dessa påbörjad.
+
+**Status 2026-07-02:**
+- **Slice 2b KLAR** — PR #433, merge `a24eb336`, mergad till `staging` och
+  verifierad live: login-sidan visar register/glömt-lösenord + demo-knappar;
+  vanlig login → prod-lik header (NotificationBell synlig), ingen demo-cookie;
+  demo-knapp → demo-session (NotificationBell dold, demo-nav); logout rensar
+  cookien; Slice 1-guarden grön (`robots.txt = Disallow: /`).
+- **Uppskjutet till Slice 3:** demo-knapparnas/landningens visibility stannar på
+  `isDemoMode` — bytet till `isStagingSafe()` kräver `IS_LIVE_PRODUCTION=true` på
+  prod (annars läcker demo-knappar ut på production).
+- **Prod oförändrad.** Ingen env-ändring gjord.
+- **Nästa steg:** Slice 3 — sätt `IS_LIVE_PRODUCTION=true` på prod (verifierad
+  env-op), byt demo-entré-visibility till `isStagingSafe()`, flippa
+  `NEXT_PUBLIC_DEMO_MODE=false` på staging. Ej påbörjad.
