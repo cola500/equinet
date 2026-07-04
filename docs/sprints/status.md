@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-06-07
+last_updated: 2026-07-03
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -18,7 +18,7 @@ sections:
 
 ## Aktiv sprint
 
-> **Nuläge (2026-06-07):** Ingen numrerad sprint pågår. Arbetet sedan S67 körs som **ad-hoc slices** (t.ex. Dagens rutt, CI-gate på staging, backlog-hygien — PR #367–373) och spåras i den kanoniska **[backlog.md](backlog.md)** ("Aktiva produktspår" + "Arkiv / Done"). Senast avslutade numrerade sprint: **S67**.
+> **Nuläge (2026-07-03):** Ingen numrerad sprint pågår. Arbetet körs som **ad-hoc slices** och spåras i den kanoniska **[backlog.md](backlog.md)** ("Aktiva produktspår" + "Arkiv / Done"). **Senast avslutat:** enabler-epiken *Prod-lik staging med demo per session* (Slice 1–3c) — **live i prod 2026-07-02**, staging och main i paritet. Se [epic-prodlik-staging-demo-per-session.md](../ideas/epic-prodlik-staging-demo-per-session.md) + [slice-3c-release-runbook.md](../operations/slice-3c-release-runbook.md). **Nästa prioriterade initiativ:** se [backlog.md "Aktiva produktspår"](backlog.md#aktiva-produktspår). Senast avslutade numrerade sprint: **S67**.
 
 **Sprint 67** — iOS staging capability via separat Vercel-projekt. **KLAR 2026-05-09.** Se [sprint-67-ios-staging-capability.md](sprint-67-ios-staging-capability.md).
 
@@ -203,7 +203,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| (ingen aktiv -- väntar på S43-1 Pilot) | - | - | - | - |
+| (ingen aktiv session) | - | - | - | - |
 
 ## Beslut
 
@@ -219,6 +219,8 @@ sections:
 > Alla items — aktiva produktspår, kö, parkerat, PO-beslut och arkiv — finns i backlog.md.
 
 ## Blockerare
+
+> **Kanonisk blockerar-lista finns i [backlog.md "Blockerare"](backlog.md#blockerare-väntar-på-johan).** Undvik att duplicera här — nedan är bara den historiska huvudblockern.
 
 | Blocker | Paverkar | Agare | Status |
 |---------|---------|-------|--------|

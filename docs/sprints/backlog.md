@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Kanonisk backlog för Equinet. Alla kända stories, uppgifter och beslut. status.md pekar hit; roadmap.md är den strategiska vyn."
 category: sprint
 status: active
-last_updated: 2026-07-02
+last_updated: 2026-07-03
 tags: [backlog, roadmap, planning]
 sections:
   - Aktiva produktspår
@@ -35,18 +35,26 @@ sections:
 
 > **Kanonisk backlog.** `docs/sprints/status.md` pekar hit (ingen duplicering där).
 > `docs/roadmap.md` är den strategiska vyn. Prioritetsordning inom varje kategori.
-> Senast genomgången: **2026-06-07** (backlog-hygien — konsolidering + arkiv).
+> Senast genomgången: **2026-07-03** (backlog-hygien efter prod-lik-staging-epiken — epik arkiverad, initiativ omprioriterade).
 
 ---
 
 ## Aktiva produktspår
 
-Vad vi faktiskt driver just nu (allt annat nedan är kö, parkerat eller arkiv):
+Vad vi faktiskt driver just nu (allt annat nedan är kö, parkerat eller arkiv).
+Strategisk motivering för ordningen: se roadmap ["Nästa rekommenderade initiativ"](../roadmap.md#nästa-rekommenderade-initiativ) (2026-07-03).
 
-- **Live-betalningar** — härda Stripe test-mode → live. Öppna trådar i [Live-betalningar](#live-betalningar-production-readiness) + [Plattformshärdning](#plattformshärdning-pre-live). Enda hårda blockern är **Stripe företagsverifiering** (ägare: Stripe/Johan), inte kod.
-- **Demovärdig webb / staging** — Dagens rutt levererat (MVP + riktig körsträcka + demo-seed), CI-gate på staging-PR:er aktiv. Kvar: besöksplats-modell → Stall-epic (discovery).
+**Prioriterad ordning (2026-07-03):**
 
-**Vilande tills beslut/blocker löses** (ej aktivt drivna): Messaging-epic, Fortnox-fakturering, native kundupplevelse, ruttplanering live (Mapbox-token), provider subscription. Se [Kräver PO-beslut](#kräver-po-beslut).
+1. **DX / Node-version-standardisering** — pinna Node 20 (`.nvmrc` + `engines`) så lokalt och CI konvergerar. Rad i [Process & tech-debt](#process--tech-debt-vid-tillfälle). Låser upp friktionsfri utveckling för allt annat nedan. ~30–60 min.
+2. **Dependency maintenance** — 23 kvarvarande npm-advisories + eftersläpande majors. Rad i [Kvalitet och säkerhet](#kvalitet-och-säkerhet). Görs medvetet **före** live-betalning så att Stripe/Supabase-yta är färsk innan pengar flödar.
+3. **Live-betalningar** — härda Stripe test-mode → live. Öppna trådar i [Live-betalningar](#live-betalningar-production-readiness) + [Plattformshärdning](#plattformshärdning-pre-live). Enda hårda blockern är **Stripe företagsverifiering** (ägare: Stripe/Johan), inte kod.
+4. **Förbättrad leverantörssökning / discovery** — strukturerad `providerCategory` + Mapbox-token så kärnvärdet "hitta leverantör" fungerar. Rader i [Sökning och discovery](#sökning-och-discovery) + [Features som kräver arbete](#features-som-kräver-arbete-innan-lansering).
+5. **Pre-booking messaging** — kund kan kontakta leverantör innan bokning finns (Slice 5). Rad i [Messaging-epic](#messaging-epic-post-launch); infrastrukturen finns redan.
+
+**Nyligen avslutat:** *Prod-lik staging med demo per session* (enabler-epic) — **live i prod 2026-07-02**, staging och main i paritet. Se [Arkiv / Done](#arkiv--done) + [epic-prodlik-staging-demo-per-session.md](../ideas/epic-prodlik-staging-demo-per-session.md). Kvar från det spåret: besöksplats-modell → Stall-epic (discovery), samt migrering av kvarvarande `isDemoMode()`-anrop (se [Process & tech-debt](#process--tech-debt-vid-tillfälle)).
+
+**Vilande tills beslut/blocker löses** (ej aktivt drivna): Fortnox-fakturering, native kundupplevelse, ruttplanering live (Mapbox-token), provider subscription. Se [Kräver PO-beslut](#kräver-po-beslut).
 
 ---
 
@@ -286,7 +294,6 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 
 | Item | Effort | Beskrivning |
 |------|--------|-------------|
-| **✅ LÖST 2026-06-12: Offline E2E Smoke RLS-grant-fel (blockerade prod-release)** | klart (PR fix/offline-e2e-rls-grants) | **Rotorsak (bekräftad lokalt):** `anon`/`authenticated`/`service_role`-tabellgrants på Booking/Notification/Service kom **enbart** från Supabase **default privileges** (auto-grant vid table-skapande) — inga explicita grants i migrationerna. Default privileges applieras **icke-deterministiskt** i CI (race mellan `supabase start`-init och `prisma migrate deploy`); förlorar racet → Prisma-skapade tabeller får inga grants → `permission denied for table Booking/Notification/Service` → `offline-mutations.spec.ts:230` timeoutar (bokningskort renderar ej). Inte orsakat av messaging-releasen. Passerade på #398 = vann racet. **Lösning:** explicita `GRANT ... TO anon/authenticated/service_role` på alla public-tabeller + `ALTER DEFAULT PRIVILEGES` i slutet av `supabase/auth-triggers.sql` (applieras efter migrate deploy via `--url` i CI); RLS skyddar fortfarande raderna. Bonus: `--schema` på `npm run setup` (lokal determinism). Verifierat lokalt: revoke → permission denied reproducerat → applicera auth-triggers.sql → grants återställda. **Offline-smoke-bekräftelse sker via #404-rerun** (offline-smoke körs bara på base=main). |
 | Review-matris: auth-UI-gap (S47-0) | 15 min | `src/components/auth/**/*.tsx` matchar bara `ui-component` → saknar security-reviewer trots säkerhets-yta. Lägg rad i `.claude/rules/review-matrix.md`. |
 | Docs-sync: environments.md + .env.local-gotcha | 30-45 min | environments.md säger Docker PostgreSQL men vi använder Supabase CLI sedan S17-7. Dokumentera `.env.local`-fallgropen. |
 | Versionera `.claude/skills/` (ta bort gitignore-rad) | 1-2h | 13 skills är otracked/osynkade. Granska kvalitet → ta bort `.gitignore`-rad → committa. Trade-off: förlorar per-dev-anpassade skills. *(Process-beslut.)* |
@@ -294,7 +301,8 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Konsolidera meta-rules-filer | 2-4h | 5 filer (team-workflow, autonomous-sprint, tech-lead, parallel-sessions, auto-assign, ~1200 rader) dokumenterar samma tema. Ingen refereras från CLAUDE.md Snabbreferens. Slå ihop, arkivera resten till `docs/archive/rules/`. *(Process-beslut.)* |
 | MessagingDialog öppnar ej i headless Playwright (S50-0) | 30 min | `onClick` triggas men `open`-state flippar ej i headless. API-kedjan funkar → inte prod-blocker. Undersök `--headed` + verkliga browsers. |
 | iOS WebView login-bypass för mobile-mcp (S50-0) | 45 min | WKWebView `<input type=password>` = `SecureTextField`, XCUITest kan inte skriva. Utforska: pre-seed session via API + deep link, biometri-bypass, Keychain AutoFill. Utan detta kan iOS login-flöde inte E2E-testas. |
-| **Developer Experience: pinna och standardisera Node-version** | 30-60 min | **Problem:** lokalt kör vissa flöden Node 26 medan CI/tester förväntar sig Node 20 (`.github/workflows/quality-gates.yml` → `node-version: '20'`). Node 26:s experimentella `localStorage`-global kraschar ~32 jsdom-tester (`Cannot read properties of undefined (reading 'getItem')`) och tvingar `check:all`/push under `node@20` + `--no-verify`. **Förslag:** (1) lägg till/uppdatera `.nvmrc` till Node 20 LTS; (2) lägg till `engines` i `package.json` om det saknas; (3) säkerställ att Husky/pre-push-hooks använder samma Node-version eller ger tydligt fel; (4) dokumentera setup-kommandot för ny dator. Sågs under Slice 2a/2b (2026-07). |
+| **Developer Experience: pinna och standardisera Node-version** *(Aktivt spår #1)* | 30-60 min | **Problem:** lokalt kör vissa flöden Node 26 medan CI/tester förväntar sig Node 20 (`.github/workflows/quality-gates.yml` → `node-version: '20'`). Node 26:s experimentella `localStorage`-global kraschar ~32 jsdom-tester (`Cannot read properties of undefined (reading 'getItem')`) och tvingar `check:all`/push under `node@20` + `--no-verify`. **Förslag:** (1) lägg till/uppdatera `.nvmrc` till Node 20 LTS; (2) lägg till `engines` i `package.json` om det saknas; (3) säkerställ att Husky/pre-push-hooks använder samma Node-version eller ger tydligt fel; (4) dokumentera setup-kommandot för ny dator. Sågs under Slice 2a/2b (2026-07). |
+| **Migrera kvarvarande `isDemoMode()` → `isDemoSession()`/`isStagingSafe()`** | 30-45 min | **Uppföljning från prod-lik-staging-epiken.** `HelpCenter.tsx` och `first-use-tooltip.tsx` läser fortfarande gamla globala `isDemoMode()` i stället för den nya per-session-signalen. Epiken flaggade detta som "migrera vid behov" men lämnade ingen backlog-rad. Nu när arkitekturen är i prod är detta en avgränsad städ-uppgift. Verifiera att inga fler `isDemoMode()`-anrop antar global staging-demo. |
 
 ---
 
@@ -338,6 +346,13 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 ## Arkiv / Done
 
 > Verifierat genomförda items, borttagna från aktiv backlog. Format: item — datum/sprint — bevis/PR.
+
+### 2026-07 (Prod-lik staging med demo per session)
+
+| Item | När | Bevis |
+|------|-----|-------|
+| **Enabler-epic: Prod-lik staging med demo per session** (Slice 1–3c) | 2026-07-02 | **Live i prod.** Miljösäkerhet frikopplad från demo-presentation: `isStagingSafe()`/`IS_LIVE_PRODUCTION` styr säkerhet, demo aktiveras per session via demo-knappar (`isDemoSession()`-cookie). Staging och main i paritet. Se [epic](../ideas/epic-prodlik-staging-demo-per-session.md) + [slice-3c-release-runbook.md](../operations/slice-3c-release-runbook.md). |
+| Offline E2E Smoke RLS-grant-fel (blockerade prod-release) | 2026-06-12 | PR `fix/offline-e2e-rls-grants`. Rotorsak: icke-deterministiska Supabase default privileges i CI (race mellan `supabase start` och `prisma migrate deploy`). Lösning: explicita `GRANT ... TO anon/authenticated/service_role` + `ALTER DEFAULT PRIVILEGES` i `supabase/auth-triggers.sql`. Bekräftat via #404-rerun. |
 
 ### 2026-06 (Dagens rutt + betalnings-hardening)
 
