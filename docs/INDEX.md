@@ -3,7 +3,7 @@ title: "Equinet -- Dokumentationsindex"
 description: "Centralt navigeringsdokument for all projektdokumentation"
 category: root
 status: active
-last_updated: 2026-06-07
+last_updated: 2026-07-03
 sections:
   - Arkitektur
   - Operations
@@ -54,6 +54,10 @@ sections:
 | [deployment.md](operations/deployment.md) | Komplett deploy-guide (Vercel + Supabase) |
 | [environments.md](operations/environments.md) | Konfiguration och skillnader mellan lokal utveckling och produktion |
 | [environment-runbook.md](operations/environment-runbook.md) | Säkra copy/paste-steg för Vercel/Supabase env + DB-URL:er (audit, verifiering, delete+create) — prod + staging |
+| [staging-environment-setup.md](operations/staging-environment-setup.md) | Staging-arkitektur: custom domain, separat Supabase-projekt, env-hierarki |
+| [slice-3c-release-runbook.md](operations/slice-3c-release-runbook.md) | Release-runbook för prod-lik-staging-epiken (Slice 3c, live 2026-07-02) |
+| [deployment-verification-guide.md](operations/deployment-verification-guide.md) | Var demo/staging ska verifieras (staging vs previews) |
+| [demo-setup.md](operations/demo-setup.md) | Demo-läge: seed, personas, per-session-aktivering |
 | [monitoring.md](operations/monitoring.md) | Övervakningsverktyg, loggning, viktiga metrics och begränsningar |
 | [incident-runbook.md](operations/incident-runbook.md) | Vanliga driftstörningar och steg-för-steg-lösningar |
 | [backup-policy.md](operations/backup-policy.md) | RPO/RTO, backup-strategi och restore-steg |
@@ -76,7 +80,7 @@ sections:
 | [manual-testing.md](testing/manual-testing.md) | Manuell testguide for produktverifiering |
 | [exploratory-coverage.md](testing/exploratory-coverage.md) | Exploratory test-coverage |
 | [e2e-seed-plan.md](testing/e2e-seed-plan.md) | E2E seed-data strategi |
-| [exploratory-session-1.md](testing/exploratory-session-1.md) | Forsta exploratory-session |
+| [exploratory-session-1-2026-01-22.md](testing/exploratory-session-1-2026-01-22.md) | Forsta exploratory-session |
 | [e2e-suite-review.md](e2e-suite-review.md) | E2E-svit genomlysning och kategorisering |
 
 ## Guider
@@ -147,6 +151,20 @@ Se [retrospectives/README.md](retrospectives/README.md) for konsoliderade samman
 
 ## Ideer & Backlog
 
+> Kanonisk backlog: [sprints/backlog.md](sprints/backlog.md). Strategisk vy: [roadmap.md](roadmap.md).
+
+### Epics (Seven Dimensions)
+
+| Epic | Status | Beskrivning |
+|------|--------|-------------|
+| [epic-prodlik-staging-demo-per-session.md](ideas/epic-prodlik-staging-demo-per-session.md) | archived (live 2026-07-02) | Enabler: prod-lik staging med demo per session. Se [slice-3c-release-runbook.md](operations/slice-3c-release-runbook.md) |
+| [epic-messaging.md](ideas/epic-messaging.md) | active (post-launch) | Meddelanden kund↔leverantör, slicad i 5 delar |
+| [epic-stall.md](ideas/epic-stall.md) | active | Stallprofiler + gemensamt leverantörsbesök (Slice 1 levererad) |
+| [admin-hardening.md](ideas/admin-hardening.md) | active | Admin-säkerhet (MFA delvis levererad) |
+| [ai-team-framework.md](ideas/ai-team-framework.md) | draft | Idé: AI-team-ramverk |
+
+### Övriga idéer & analys
+
 | Dokument | Beskrivning |
 |----------|-------------|
 | [ux-backlog.md](ideas/ux-backlog.md) | UX-backlog |
@@ -167,4 +185,4 @@ Avslutade planer, ersatta dokument och 67 rå retrospectives finns i [archive/](
 
 ---
 
-*Senast uppdaterad: 2026-04-12*
+*Senast uppdaterad: 2026-07-03*

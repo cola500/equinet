@@ -448,12 +448,11 @@ Se [docs/operations/deployment.md](docs/operations/deployment.md) för fullstän
 
 ## Roadmap
 
-### Framtida Features
-- **Realtidsspårning** - Leverantörens position och ETA-uppdateringar
-- **Push/SMS-notifikationer** - Komplement till befintliga notifikationer
-- **Betalningsintegration** - Swish/Stripe via PaymentGateway (Stripe subscription-infrastruktur implementerad, väntar på konfiguration)
+- **Strategisk vy:** [docs/roadmap.md](./docs/roadmap.md) — riktning, milstolpar och [Nästa rekommenderade initiativ](./docs/roadmap.md#nästa-rekommenderade-initiativ).
+- **Operativ backlog (kanonisk):** [docs/sprints/backlog.md](./docs/sprints/backlog.md) — alla kända stories, uppgifter och beslut.
+- **Sprint-state:** [docs/sprints/status.md](./docs/sprints/status.md).
 
-Feature-backlog hanteras i Trello.
+Nästa prioriterade initiativ (2026-07-03): (1) DX / Node-version-standardisering, (2) dependency maintenance, (3) live Stripe-betalningar, (4) förbättrad leverantörssökning/discovery, (5) pre-booking messaging. Motivering i [roadmap.md](./docs/roadmap.md#nästa-rekommenderade-initiativ).
 
 ---
 

@@ -2,8 +2,8 @@
 title: "Enabler Epic: Prod-lik staging med demo per session"
 description: "Koppla loss miljösäkerhet från demo-presentation så staging kan köra prod-lik verifiering medan demo aktiveras per session via demo-knapparna"
 category: idea
-status: active
-last_updated: 2026-07-02
+status: archived
+last_updated: 2026-07-03
 tags: [enabler-epic, staging, demo-mode, environment, discovery]
 depends_on:
   - docs/operations/staging-environment-setup.md

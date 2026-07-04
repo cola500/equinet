@@ -3,9 +3,10 @@ title: "Equinet Roadmap"
 description: "Produktroadmap med prioriteringar, blockerare och tidslinje"
 category: guide
 status: active
-last_updated: 2026-06-07
+last_updated: 2026-07-03
 tags: [roadmap, product, strategy]
 sections:
+  - Nästa rekommenderade initiativ
   - Produktionsredo idag
   - Kvar innan lansering
   - Kort sikt
@@ -18,7 +19,31 @@ sections:
 # Equinet Roadmap
 
 > **Strategisk vy.** Den operativa, kanoniska backloggen finns i [docs/sprints/backlog.md](sprints/backlog.md) — den här filen beskriver riktning och milstolpar, inte enskilda stories.
-> Innehållet nedan speglar Sprint 22 (2026-04-11) och uppdateras vid nästa roadmap-genomgång; för aktuellt läge se backlog.md "Aktiva produktspår".
+> "Nästa rekommenderade initiativ" (nedan) uppdaterades **2026-07-03** efter att enabler-epiken *Prod-lik staging med demo per session* gick live. Feature-tabellerna längre ned speglar fortfarande Sprint 22 (2026-04-11) i delar och uppdateras vid nästa fulla roadmap-genomgång; för aktuellt operativt läge se backlog.md "Aktiva produktspår".
+
+## Nästa rekommenderade initiativ
+
+> Prioriterad ordning beslutad 2026-07-03 (PO Johan + tech lead), efter genomlysning av dokumentation, backlog, teknisk skuld och produktnuläge. Speglas operativt i [backlog.md "Aktiva produktspår"](sprints/backlog.md#aktiva-produktspår).
+
+| # | Initiativ | Storlek | Kort beskrivning |
+|---|-----------|---------|------------------|
+| 1 | **DX / Node-version-standardisering** | XS (30–60 min) | Pinna Node 20 (`.nvmrc` + `engines`) så lokalt och CI konvergerar; ta bort behovet av `--no-verify`-kringgåenden. |
+| 2 | **Dependency maintenance** | S (flera små PR:er) | Beta av 23 kvarvarande npm-advisories + eftersläpande majors (Stripe, Supabase, Prisma, Anthropic SDK). En ägar-dep per PR. |
+| 3 | **Live Stripe-betalningar** | S–M | Härda test-mode → live (idempotency keys, restricted keys, 3DS, monitoring). Enda hårda blocker: Stripe företagsverifiering (icke-kod). |
+| 4 | **Förbättrad leverantörssökning / discovery** | M | Strukturerad `providerCategory` + Mapbox-token så kärnvärdet "hitta leverantör" fungerar end-to-end. |
+| 5 | **Pre-booking messaging** | M | Messaging Slice 5 — kund kan kontakta leverantör innan bokning finns. Infrastrukturen (Conversation-domän) finns redan. |
+
+### Varför denna ordning
+
+Prioriteringen sätter **plattformshygien före produktfeatures**, och följer sedan intäktskedjan bakifrån (*hitta → kontakta → boka → betala* — där boka+betala redan är byggt).
+
+1. **DX / Node-version (först)** — billigast av allt (XS) och sänker friktionen för *varje* efterföljande initiativ. Divergensen lokalt (Node 26) vs CI (Node 20) tvingar idag fram `--no-verify`-kringgåenden, vilket urholkar kvalitetsgrindarna. Fixas det först blir allt annat säkrare att leverera.
+2. **Dependency maintenance (före betalning)** — medvetet placerad **före** live-betalning: vi vill inte gå live med pengar på en eftersläpande Stripe-/Supabase-yta. Att härda beroenden när ingen trafik och inga riktiga betalningar finns är lågrisk; att göra det mitt i ett betalnings-go-live är onödig risk.
+3. **Live Stripe-betalningar** — den enda P0 i NFR och det som låser upp affärsmodellen. Koden är klar och test-verifierad; kvarvarande blocker är affärsverifiering, inte teknik. Kör när plattformsytan är färsk.
+4. **Discovery / sök** — det spelar ingen roll hur bra bokning och betalning är om kunden inte kan hitta leverantören. "Delvis fungerande" sök på kärnvärdet är en tyst konverteringsläcka; kräver mest en Mapbox-token + `providerCategory`-modell.
+5. **Pre-booking messaging** — naturlig nästa produktfeature när betalning + discovery sitter. Hög värde-per-effort eftersom messaging-infrastrukturen redan finns; sänker tröskeln att ta kontakt och matar bokningsflödet uppströms.
+
+**Medvetet nedprioriterat härnäst:** native kundapp och tunga major-uppgraderingar som egna spår — stora och utan akut smärta. Major-bumpar timas per paket inom initiativ 2, inte som ett eget stort lyft.
 
 ## Produktionsredo idag
 
@@ -29,6 +54,7 @@ sections:
 | Kortbetalning (Stripe test-mode) | Kod klar, flagga av |
 | Push-notiser (iOS) | Kod klar, APNs saknas |
 | Demo-lage | Live |
+| Prod-lik staging + demo per session (enabler-epic) | Live (2026-07-02) |
 | iOS native (dashboard, bokningar, kunder, tjanster, profil, kalender, mer-flik) | Live |
 | Due-for-service native | Live |
 | Aterkommande bokningar | Live (default on) |
