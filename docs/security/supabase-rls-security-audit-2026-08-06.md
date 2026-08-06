@@ -1,6 +1,6 @@
 ---
 title: "Supabase RLS- och behörighetsaudit 2026-08"
-description: "Full read-only RLS/grants-audit av staging + production, de fynd som åtgärdats (BookingSeries + 6 server-only-tabeller) och de som kvarstår inför nästa slice."
+description: "Full read-only RLS/grants-audit av staging + production. Alla High-fynd åtgärdade (BookingSeries + 12 server-only-tabeller i tre slices); endast Medium/Low kvarstår."
 category: security
 status: active
 last_updated: 2026-08-06
@@ -33,9 +33,9 @@ sections:
 - Sex ytterligare tabeller (`PasswordResetToken`, `CustomerInviteToken`, `StableInviteToken`, `MobileToken`, `AdminAuditLog`, `StripeWebhookEvent`) hade RLS helt avstängt samtidigt som Supabase defaultar till fullt CRUD-grant till `anon`/`authenticated`/`service_role` vid tabellskapande. Två av dessa läckte **verifierat riktig data live**: `AdminAuditLog` hade 52 anon-läsbara rader i production (admin-händelser inkl. IP-adresser) och 8 i staging; `StripeWebhookEvent` hade 4 anon-läsbara rader i staging (och kunde i teorin användas för att tysta riktiga Stripe-webhooks via dedup-mekanismen).
 - Två av token-tabellerna (`PasswordResetToken`, `CustomerInviteToken`, `StableInviteToken`) lagrar **råa, direkt användbara tokens** (inte hashade) — läsbarhet via anon-nyckeln hade varit direkt kontokapning.
 
-**Vad som redan är åtgärdat:** Samtliga sju tabeller ovan har fått `ENABLE ROW LEVEL SECURITY` (plus matchande policy) applicerat i **både staging och production**, och migrationshistoriken är synkad i `main`. Se [Åtgärdade fynd](#åtgärdade-fynd).
+**Vad som redan är åtgärdat:** Samtliga tretton tabeller (`BookingSeries` + tolv server-only-tabeller, i tre separata slices) har fått `ENABLE ROW LEVEL SECURITY` (plus matchande policy) applicerat i **både staging och production**, och migrationshistoriken är synkad i `main`. Se [Åtgärdade fynd](#åtgärdade-fynd).
 
-**Nuvarande säkerhetsstatus:** Inga kända aktiva dataläckor. Sex tabeller (`BugReport`, `DeviceToken`, `MunicipalityWatch`, `ProviderSubscription`, `Stable`, `StableSpot`) har fortfarande RLS avstängt i båda miljöerna och delar exakt samma sårbarhetsklass som de redan fixade — de är nästa steg, inte en aktiv krisnivå, eftersom ingen av dem hittills är bekräftat exploaterad. Se [Kvarvarande fynd](#kvarvarande-fynd) och [Rekommenderad nästa slice](#rekommenderad-nästa-slice).
+**Nuvarande säkerhetsstatus (uppdaterad efter tredje slicen):** **Inga kvarvarande High-fynd.** Security Advisor i production visar **noll** `rls_disabled_in_public`-ERROR:ar — samtliga tabeller som var öppna för `anon`/`authenticated` utan autentisering är nu skyddade. Inga kända aktiva dataläckor. Det som återstår är uteslutande Medium/Low-nivå: tio staging-only RLS-disabled-tabeller (redan säkra i production, ren drift), en miljödrift på en auth-funktion, samt två mindre härdningspunkter. Se [Kvarvarande fynd](#kvarvarande-fynd) och [Rekommenderad nästa slice](#rekommenderad-nästa-slice).
 
 ---
 
@@ -104,22 +104,50 @@ Read-only genomgång (inga ALTER/GRANT/REVOKE utfördes under själva auditen �
 - Security Advisor omkörd efter fix: alla sex tabeller borta från `rls_disabled_in_public` i båda miljöerna.
 - Applicerad separat mot staging- och production-databaserna via `prisma migrate deploy`; `_prisma_migrations`-raden bekräftad (`applied_steps_count: 1`, `rolled_back_at: null`) i båda.
 
+### Ytterligare server-only-tabeller (tredje slicen)
+
+**Tabeller:** `BugReport`, `DeviceToken`, `MunicipalityWatch`, `ProviderSubscription`, `Stable`, `StableSpot`
+
+**Varför de var sårbara:**
+
+| Tabell | Sårbarhet |
+|---|---|
+| `BugReport` | RLS av + full anon-grant. Anon kunde läsa/skriva/radera buggrapporter (fritext, ev. PII i beskrivningar). |
+| `DeviceToken` | RLS av. Anon kunde enumerera/kapa/radera push-notification-registreringar. |
+| `MunicipalityWatch` | RLS av. Anon kunde läsa e-post/bevakningsdata (PII) och skapa spam-bevakningar. |
+| `ProviderSubscription` | RLS av. Anon kunde förfalska eller läsa prenumerations-/billingstatus. |
+| `Stable` | RLS av. Anon kunde skapa/ändra/radera stalldata. |
+| `StableSpot` | RLS av. Samma mönster som `Stable`, samma repository. |
+
+Ingen av dessa hade bekräftad live-läcka (till skillnad från `AdminAuditLog`/`StripeWebhookEvent` i slice 2), men samma exploaterbarhet via den publika anon-nyckeln.
+
+**Kodåtkomst-discovery (sju explicita kontrollpunkter, båda miljöerna, samma metod som föregående slice):**
+1. All dataåtkomst via Prisma/server-side — bekräftat (repositories + auth-gated API-routes: `POST /api/bug-reports` kräver session, `device-tokens` kräver `getAuthUser()`, `municipality-watches` kör `withApiHandler({auth:"customer"})`, `ProviderSubscription` har ingen egen API-route alls utom Stripe-webhook + auth-gated provider-routes).
+2. Ingen browser-klient använder PostgREST — 0 träffar på `.from("Stable"|"StableSpot"|"MunicipalityWatch"|"BugReport"|"DeviceToken"|"ProviderSubscription")` i hela `src/`/`scripts/`/`e2e/`, samt 0 träffar på **alla** `.from()`-anrop och direkta `/rest/v1`-fetches i hela appen.
+3. Inga Edge Functions använder tabellerna — `list_edge_functions` tomt i båda projekten.
+4. Inga Realtime-subscriptions — ingen av de sex finns i `supabase_realtime`-publikationen (kontrollerat via `pg_publication_tables`), och 0 `.channel()`/Realtime-kod i `src/`.
+5. Inga RPC-funktioner använder tabellerna — sökte igenom alla funktionskroppar i `public`-schemat (`pg_proc.prosrc`), noll referenser.
+6. Inga triggers eller views påverkas — 0 triggers på någon av de sex (`pg_trigger`); 0 application-level views i något av projekten (de 146 `pg_class`-vyerna är samtliga Postgres/Supabase-systemkataloger: `pg_catalog`, `information_schema`, `extensions`, `vault`).
+7. Inga publika API-anrop förlitar sig på rå Data API — den enda medvetet publika läsvägen (`GET /api/stables`) går via appens egen Next.js-route + Prisma, aldrig via PostgREST.
+
+Dessutom bekräftat innan migrationen skrevs: ingen av de sex hade någon befintlig policy eller RLS redan aktiverat i något av miljöerna (`relrowsecurity = false`, `pg_policies` tomt) — noll risk för dubblettpolicies.
+
+**Åtgärd:** Samma mönster — `ENABLE ROW LEVEL SECURITY` + `CREATE POLICY "Deny all via API" ... FOR ALL TO public USING (false);` för alla sex. En migration (`20260806083347_enable_rls_deny_all_remaining_server_only_tables`).
+
+**Verifiering (båda miljöerna):**
+- `SET ROLE anon`/`SET ROLE authenticated` → 0 rader på samtliga sex.
+- `SET ROLE anon; INSERT ...` mot `Stable` → `42501`-avvisning.
+- 21 testfiler / 228 tester gröna under Node 20 (bug-report, device-token, municipality-watch, provider-subscription, stable/stable-spot — unit + integration).
+- `npm run check:all` under Node 20 — 4/4 gröna (4653 tester).
+- CI grönt på PR #471 (staging) och PR #472 (main), inklusive `Migration From Scratch` och (för main-PR:erna) `E2E Tests`/`Offline E2E Smoke`.
+- Security Advisor omkörd efter fix i **båda** miljöer: alla sex tabeller borta från `rls_disabled_in_public`. I production gick `rls_disabled_in_public`-ERROR-antalet till **noll**. I staging kvarstår exakt de tio redan kända staging-only-drift-tabellerna (se Kvarvarande fynd) — inget nytt tillkommit.
+- Applicerad separat mot staging- och production-databaserna via `prisma migrate deploy`; `_prisma_migrations`-raden bekräftad (`applied_steps_count: 1`, `rolled_back_at: null`) i båda.
+
 ---
 
 ## Kvarvarande fynd
 
-### High
-
-Samma sårbarhetsklass och samma "server-only, noll funktionsrisk"-bevisning som de redan fixade sju — men ännu inte åtgärdade. Ingen bekräftad live-läcka på dessa (till skillnad från `AdminAuditLog`/`StripeWebhookEvent`), men samma exploaterbarhet via publik anon-nyckel.
-
-| Tabell | Risk | Server-only bekräftat? |
-|---|---|---|
-| `BugReport` | Anon kan läsa/skriva/radera buggrapporter (fritext, ev. PII) | Ja — `POST /api/bug-reports` kräver session, admin-routes admin-only |
-| `DeviceToken` | Anon kan enumerera/kapa/radera push-tokens | Ja — kräver `getAuthUser()` |
-| `MunicipalityWatch` | Anon kan läsa e-post/bevakningsdata, skapa spam | Ja — `withApiHandler({auth:"customer"})` |
-| `ProviderSubscription` | Anon kan förfalska/läsa billing-/prenumerationsstatus | Ja — ingen egen API-route, endast Stripe-webhook (server-till-server) + auth-gated provider-routes |
-| `Stable` | Anon kan skapa/ändra/radera stalldata | Ja — publik läsning (`GET /api/stables`) går via appens egen route/Prisma, inte via rå Supabase-klient |
-| `StableSpot` | Samma mönster som Stable | Ja — samma repository |
+**Inga High-fynd kvarstår.** Samtliga tabeller som var öppna för `anon`/`authenticated` utan autentisering via Data API är nu åtgärdade i både staging och production.
 
 ### Medium
 
@@ -144,19 +172,17 @@ Samma sårbarhetsklass och samma "server-only, noll funktionsrisk"-bevisning som
 
 ## Rekommenderad nästa slice
 
-Samma mönster som de två redan genomförda slicearna (migration → PR → CI → merge → `prisma migrate deploy` mot båda databaserna → `SET ROLE anon`-probe → Advisor-omkörning).
+Alla High-fynd är åtgärdade. Nästa slice är enbart Medium/Low-nivå — lägre brådska, men samma verifieringsmönster (migration → PR → CI → merge → `prisma migrate deploy` mot båda databaserna → `SET ROLE anon`-probe → Advisor-omkörning) rekommenderas ändå.
 
-| Tabell | Risk | Motivering | Föreslagen åtgärd | Uppskattad risk att bryta funktionalitet |
+| Fynd | Nivå | Motivering | Föreslagen åtgärd | Uppskattad risk att bryta funktionalitet |
 |---|---|---|---|---|
-| `BugReport` | High | Anon full CRUD på användarinskickad fritext (möjlig PII) | `ENABLE ROW LEVEL SECURITY` + `Deny all via API` | Ingen — bekräftat server-only |
-| `DeviceToken` | High | Anon kan kapa/radera push-registreringar | Samma | Ingen |
-| `MunicipalityWatch` | High | Anon kan läsa e-post + skapa spam-bevakningar | Samma | Ingen |
-| `ProviderSubscription` | High | Anon kan förfalska/läsa billing-status | Samma | Ingen |
-| `Stable` | High | Anon kan skriva/radera stalldata | Samma — **appens publika läsning påverkas inte** eftersom den går via Prisma, inte PostgREST | Ingen |
-| `StableSpot` | High | Samma mönster som Stable | Samma | Ingen |
-| 10 staging-only-tabeller | Medium | Drift mot production; production visar redan att "RLS på + 0 policies" är korrekt läge | `ENABLE ROW LEVEL SECURITY` (ingen ny policy behövs — matcha production) | Ingen |
+| 10 staging-only RLS-disabled-tabeller (`CustomerHorseServiceInterval`, `FeatureFlag`, `Follow`, `HorseServiceInterval`, `NotificationDelivery`, `ProviderCustomer`, `ProviderCustomerNote`, `PushSubscription`, `_RouteOrderToService`, `_prisma_migrations`) | Medium | Drift mot production; production visar redan att "RLS på + 0 policies" är korrekt läge för samtliga | `ENABLE ROW LEVEL SECURITY` (ingen ny policy behövs — matcha production) | Ingen |
+| `custom_access_token_hook()` miljödrift | Medium | Production `SECURITY INVOKER`/search_path NOT SET, staging `SECURITY DEFINER`/search_path satt | Harmonisera till en gemensam, medvetet vald konfiguration | Låg — kräver granskning av auth-hook-flödet innan ändring |
+| `equinet-uploads`-bucket saknar gränser i production | Medium | Defense-in-depth-gap jämfört med staging | Sätt `file_size_limit`/`allowed_mime_types` på prod-bucketen, matcha staging | Ingen |
+| `handle_new_user()` EXECUTE-grant till `anon`/`authenticated`/`PUBLIC` | Low | WARN i Advisor, ej praktiskt exploaterbar (trigger-only-funktion) | `REVOKE EXECUTE FROM PUBLIC, anon, authenticated` | Ingen |
+| Leaked password protection avstängt | Low | Standard Supabase Auth-härdning | Slå på i Supabase Dashboard | Ingen — ingen kodändring |
 
-**Ur scope för denna nästa slice** (kräver separat beslut/granskning): `custom_access_token_hook`-harmonisering, `equinet-uploads`-bucket-gränser i prod, `handle_new_user`-grant-städning, leaked-password-protection-inställning — inga av dessa är server-only-CRUD-hål och passar inte i samma "trivialt säkra deny-all"-kategori.
+Ingen av dessa är server-only-CRUD-hål av samma typ som de tre redan körda slicearna — de kräver antingen separat beslut (auth-hook-harmonisering) eller är rena konfigurationsändringar utanför migrations-flödet (Dashboard-inställningar, bucket-policy).
 
 ---
 
@@ -171,7 +197,8 @@ Samma mönster som de två redan genomförda slicearna (migration → PR → CI 
 
 ## Slutstatus
 
-- **Migrationer:** 48 totalt i `prisma/migrations/`, identiskt antal applicerat i både staging- och production-databasen (`_prisma_migrations`-radantal matchar exakt).
-- **Paritet:** `main`, `staging`, staging-databasen och production-databasen är i full paritet avseende de två säkerhetsmigrationerna (`20260805090430_enable_rls_booking_series`, `20260805100939_enable_rls_deny_all_token_and_audit_tables`).
-- **Git:** Rent arbetsträd på `main`, inga öppna PR:er för detta arbete (PR #467, #468, #469 mergade och branchar raderade).
-- **Återstående arbete:** Se [Rekommenderad nästa slice](#rekommenderad-nästa-slice) — sex High-prioriterade tabeller (`BugReport`, `DeviceToken`, `MunicipalityWatch`, `ProviderSubscription`, `Stable`, `StableSpot`) samt tio Medium-prioriterade staging-only-drift-tabeller kvarstår, plus tre lägre-prioriterade härdningspunkter (auth-hook-drift, storage-bucket-gränser, `handle_new_user`-grant).
+- **Migrationer:** 49 totalt i `prisma/migrations/`, identiskt antal applicerat i både staging- och production-databasen (`_prisma_migrations`-radantal matchar exakt — verifierat efter varje slice).
+- **Paritet:** `main`, `staging`, staging-databasen och production-databasen är i full paritet avseende alla tre säkerhetsmigrationerna (`20260805090430_enable_rls_booking_series`, `20260805100939_enable_rls_deny_all_token_and_audit_tables`, `20260806083347_enable_rls_deny_all_remaining_server_only_tables`).
+- **Security Advisor (production):** **Noll** kvarvarande `rls_disabled_in_public`-ERROR. Enda kvarvarande poster är redan kända INFO (`rls_enabled_no_policy` — RLS på, ingen policy, redan säkert) och tre WARN (`custom_access_token_hook`-search_path, `handle_new_user`-grant, leaked password protection) — samma som innan denna slice, inget nytt.
+- **Git:** Rent arbetsträd på `main`, inga öppna PR:er för detta arbete (PR #467–#472 mergade och branchar raderade).
+- **Återstående arbete:** Inga High-fynd kvar. Se [Rekommenderad nästa slice](#rekommenderad-nästa-slice) — enbart Medium/Low: tio staging-only-drift-tabeller, auth-hook-miljödrift, storage-bucket-gränser i prod, samt två mindre härdningspunkter (`handle_new_user`-grant, leaked password protection).

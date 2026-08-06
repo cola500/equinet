@@ -66,8 +66,9 @@ sections:
 | Dokument | Beskrivning |
 |----------|-------------|
 | [pentest-2026-02-15.md](security/pentest-2026-02-15.md) | OWASP ZAP pentest-rapport (februari 2026) |
-| [rls-findings.md](security/rls-findings.md) | Row Level Security-analys |
+| [rls-findings.md](security/rls-findings.md) | Row Level Security-analys (2026-03, företrädd av augusti-auditen nedan) |
 | [PENTEST-REPORT-2026-02-27.md](security/PENTEST-REPORT-2026-02-27.md) | Pentest-rapport (februari 2026, utokad) |
+| [supabase-rls-security-audit-2026-08-06.md](security/supabase-rls-security-audit-2026-08-06.md) | Fullständig RLS/grants-audit (augusti 2026) -- åtgärdade fynd, kvarvarande Medium/Low, ingen High kvar |
 
 ## Testning
 
