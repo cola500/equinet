@@ -86,6 +86,7 @@ sections:
 |----------|-------------|
 | [gotchas.md](guides/gotchas.md) | Vanliga gotchas och losningar |
 | [agents.md](guides/agents.md) | Agent-team guide for Claude Code |
+| [agent-operations/README.md](agent-operations/README.md) | Autonom feature-leverans -- orchestrator-modell, beslutsgranser, klistra-in-prompt |
 | [voice-logging.md](guides/voice-logging.md) | Rostloggning -- arkitektur och anvandning |
 | [feature-docs.md](guides/feature-docs.md) | Anvandardokumentation for funktioner |
 

@@ -4,13 +4,14 @@ description: "Arbetsprocesser, patterns, arkitektur och key learnings för utvec
 category: root
 tags: [development, workflow, architecture, patterns]
 status: active
-last_updated: 2026-06-07
+last_updated: 2026-08-09
 related:
   - README.md
   - NFR.md
   - docs/INDEX.md
   - docs/guides/gotchas.md
   - docs/guides/agents.md
+  - docs/agent-operations/README.md
   - docs/operations/deployment.md
   - docs/architecture/booking-flow.md
   - docs/architecture/database.md
@@ -46,6 +47,7 @@ sections:
 | Vad du söker | Gå till |
 |--------------|---------|
 | Docs-index | [docs/INDEX.md](docs/INDEX.md) |
+| **Autonom feature-leverans (orchestrator)** | [docs/agent-operations/README.md](docs/agent-operations/README.md) |
 | Setup & Kommandon | [README.md](README.md) |
 | **Återanvändbara mönster** | [docs/architecture/patterns.md](docs/architecture/patterns.md) (kolla FÖRST vid nytt) |
 | Gotchas | [docs/guides/gotchas.md](docs/guides/gotchas.md) |
@@ -300,4 +302,4 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
-**Senast uppdaterad**: 2026-06-07
+**Senast uppdaterad**: 2026-08-09

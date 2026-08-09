@@ -6,6 +6,11 @@
 > **Grundprincip: Processen evolverar varje sprint.** Inget arbetssatt ar permanent.
 > Varje sprint-retro identifierar vad som inte fungerar och fixar det.
 > Om en regel hindrar mer an den hjalper -- andra den.
+>
+> **Vill du starta en ny feature fran ett utfall, med minsta mojliga handpalaggning?**
+> Se [docs/agent-operations/README.md](docs/agent-operations/README.md) -- anvander samma
+> roller och stationsflode som beskrivs nedan, men orkestrerat autonomt fran utfall till
+> granskningsklar PR.
 
 ## Roller
 
