@@ -3,7 +3,7 @@ title: "Equinet -- Dokumentationsindex"
 description: "Centralt navigeringsdokument for all projektdokumentation"
 category: root
 status: active
-last_updated: 2026-06-07
+last_updated: 2026-08-09
 sections:
   - Arkitektur
   - Operations
@@ -69,6 +69,9 @@ sections:
 | [rls-findings.md](security/rls-findings.md) | Row Level Security-analys (2026-03, företrädd av augusti-auditen nedan) |
 | [PENTEST-REPORT-2026-02-27.md](security/PENTEST-REPORT-2026-02-27.md) | Pentest-rapport (februari 2026, utokad) |
 | [supabase-rls-security-audit-2026-08-06.md](security/supabase-rls-security-audit-2026-08-06.md) | Fullständig RLS/grants-audit (augusti 2026) -- åtgärdade fynd, kvarvarande Medium/Low, ingen High kvar |
+| [gdpr-records-of-processing.md](security/gdpr-records-of-processing.md) | GDPR Art. 30 -- datakarta över personuppgifter, ändamål, rättslig grund, lagringstid |
+| [gdpr-subprocessor-register.md](security/gdpr-subprocessor-register.md) | GDPR -- register över personuppgiftsbiträden (Stripe, Supabase, Sentry m.fl.) och DPA-status |
+| [gdpr-gap-register.md](security/gdpr-gap-register.md) | GDPR -- prioriterat gap-register med risknivå och rekommenderad åtgärd |
 
 ## Testning
 
@@ -169,4 +172,4 @@ Avslutade planer, ersatta dokument och 67 rå retrospectives finns i [archive/](
 
 ---
 
-*Senast uppdaterad: 2026-04-12*
+*Senast uppdaterad: 2026-08-09*
