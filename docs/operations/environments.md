@@ -4,7 +4,7 @@ description: "Konfiguration och skillnader mellan lokal utveckling, staging och 
 category: operations
 tags: [environments, vercel, supabase, ios, config]
 status: active
-last_updated: 2026-06-11
+last_updated: 2026-09-06
 related:
   - deployment.md
   - environment-runbook.md
@@ -101,6 +101,15 @@ Alla feature flags ar styrda av:
 - **Vercel-projekt:** `equinet-staging-app` (`prj_KKtKkiDRWp3OX67A52iUHuk3UoF4`) — separat från prod-projektet
 - **Vercel branch-URL:** `equinet-staging-app.vercel.app` (default, SSO-skyddad)
 - **Supabase-projekt:** `zzdamokfeenencuggjjp` ("slot machine", eu-central-1, Frankfurt)
+
+> **Delat Supabase-projekt — avsiktligt, inte stale konfiguration:** `zzdamokfeenencuggjjp` heter
+> "Slot Machine" i Supabase-dashboarden och äger även scheman för ett helt annat, obesläktat
+> projekt (`signals`, `lakers`, `tippliga`). Equinet staging delar medvetet detta projekt sedan
+> starten. Tolka INTE detta som fel projekt-ID eller en kvarglömd migrering — ändra det inte och
+> ta inte bort Equinet-tabeller därifrån utan att fråga Johan. RLS-avvikelser eller andra
+> säkerhetsfynd på Equinet-tabellerna i detta projekt (`public`-schemat) är riktiga staging-fynd
+> och ska åtgärdas som sådana, precis som i det dedikerade prod-projektet.
+
 - **Ursprung:** Skapades som PoC for Supabase Auth (S10-5, S11-2). Block 2 (2026-05-06) gjorde det till fullständigt isolerad staging. **Sprint 67 (2026-05-09)** flyttade staging till eget Vercel-projekt så iOS Bearer JWT inte blockas av Vercel SSO.
 - **Anvandning:** Manuell testning + iOS demo. Deployar vid push till `staging`-branch.
 - **Data:** Helt separat från prod — Erik Järnfot demo-persona med 5 tjänster, 9 kunder, 14 hästar, 18 bokningar, 7 reviews. **Inga prod-bokningar/data.**
