@@ -1,9 +1,9 @@
 ---
 title: "Supabase RLS- och behörighetsaudit 2026-08"
-description: "Full read-only RLS/grants-audit av staging + production. Alla High-fynd åtgärdade (BookingSeries + 12 server-only-tabeller i tre slices); endast Medium/Low kvarstår."
+description: "Full read-only RLS/grants-audit av staging + production. Alla High-fynd åtgärdade; 2026-09-06: rotorsak till tio staging-only RLS-tabeller utredd och parity-migration applicerad mot staging."
 category: security
 status: active
-last_updated: 2026-08-06
+last_updated: 2026-09-06
 tags: [rls, supabase, postgresql, authorization, audit, staging, production]
 depends_on:
   - docs/security/rls-findings.md
@@ -12,6 +12,7 @@ related:
   - docs/security/rls-findings.md
   - docs/security/staging-security-audit-2026-05.md
   - docs/operations/staging-environment-setup.md
+  - docs/operations/environments.md
 sections:
   - Executive Summary
   - Scope
@@ -20,6 +21,7 @@ sections:
   - Rekommenderad nästa slice
   - Lessons Learned
   - Slutstatus
+  - Uppföljande discovery 2026-09-06 – rotorsak till de tio staging-only-tabellerna
 ---
 
 # Supabase RLS- och behörighetsaudit 2026-08
@@ -151,7 +153,7 @@ Dessutom bekräftat innan migrationen skrevs: ingen av de sex hade någon befint
 
 ### Medium
 
-- **10 staging-only RLS-disabled-tabeller** (`public`-schemat): `CustomerHorseServiceInterval`, `FeatureFlag`, `Follow`, `HorseServiceInterval`, `NotificationDelivery`, `ProviderCustomer`, `ProviderCustomerNote`, `PushSubscription`, `_RouteOrderToService`, `_prisma_migrations`. Production har redan RLS på (0 policies = implicit deny) på samtliga — ren staging/prod-drift, lägre datakänslighet än High-listan.
+- ~~**10 staging-only RLS-disabled-tabeller**~~ **ÅTGÄRDAT 2026-09-06** (`public`-schemat): `CustomerHorseServiceInterval`, `FeatureFlag`, `Follow`, `HorseServiceInterval`, `NotificationDelivery`, `ProviderCustomer`, `ProviderCustomerNote`, `PushSubscription`, `_RouteOrderToService`, `_prisma_migrations`. Se [Uppföljande discovery 2026-09-06](#uppföljande-discovery-2026-09-06--rotorsak-till-de-tio-staging-only-tabellerna) för rotorsak och [Åtgärdat 2026-09-06](#åtgärdat-2026-09-06--parity-migration-applicerad-mot-staging) för verifierad fix.
 - **`custom_access_token_hook()` miljödrift:** production är `SECURITY INVOKER` + `search_path` NOT SET (WARN); staging är `SECURITY DEFINER` + `search_path` explicit satt till `public`. Ej direkt exploaterbar (endast `service_role`/`supabase_auth_admin` har EXECUTE), men bör harmoniseras.
 - **`equinet-uploads`-bucket saknar gränser i production:** `file_size_limit`/`allowed_mime_types` är `null`/`null` i production, medan staging har `5MB` + mime-whitelist. Appens magic-bytes-validering finns fortfarande, men bucket-nivå-gränsen är ett defense-in-depth-lager som saknas i prod.
 
@@ -176,7 +178,7 @@ Alla High-fynd är åtgärdade. Nästa slice är enbart Medium/Low-nivå — lä
 
 | Fynd | Nivå | Motivering | Föreslagen åtgärd | Uppskattad risk att bryta funktionalitet |
 |---|---|---|---|---|
-| 10 staging-only RLS-disabled-tabeller (`CustomerHorseServiceInterval`, `FeatureFlag`, `Follow`, `HorseServiceInterval`, `NotificationDelivery`, `ProviderCustomer`, `ProviderCustomerNote`, `PushSubscription`, `_RouteOrderToService`, `_prisma_migrations`) | Medium | Drift mot production; production visar redan att "RLS på + 0 policies" är korrekt läge för samtliga | `ENABLE ROW LEVEL SECURITY` (ingen ny policy behövs — matcha production) | Ingen |
+| ~~10 staging-only RLS-disabled-tabeller~~ **ÅTGÄRDAT 2026-09-06** (`CustomerHorseServiceInterval`, `FeatureFlag`, `Follow`, `HorseServiceInterval`, `NotificationDelivery`, `ProviderCustomer`, `ProviderCustomerNote`, `PushSubscription`, `_RouteOrderToService`, `_prisma_migrations`) | Medium | Drift mot production; production visar redan att "RLS på + 0 policies" är korrekt läge för samtliga | `ENABLE ROW LEVEL SECURITY` (ingen ny policy behövs — matcha production) — applicerad, se [Åtgärdat 2026-09-06](#åtgärdat-2026-09-06--parity-migration-applicerad-mot-staging) | Ingen |
 | `custom_access_token_hook()` miljödrift | Medium | Production `SECURITY INVOKER`/search_path NOT SET, staging `SECURITY DEFINER`/search_path satt | Harmonisera till en gemensam, medvetet vald konfiguration | Låg — kräver granskning av auth-hook-flödet innan ändring |
 | `equinet-uploads`-bucket saknar gränser i production | Medium | Defense-in-depth-gap jämfört med staging | Sätt `file_size_limit`/`allowed_mime_types` på prod-bucketen, matcha staging | Ingen |
 | `handle_new_user()` EXECUTE-grant till `anon`/`authenticated`/`PUBLIC` | Low | WARN i Advisor, ej praktiskt exploaterbar (trigger-only-funktion) | `REVOKE EXECUTE FROM PUBLIC, anon, authenticated` | Ingen |
@@ -202,3 +204,58 @@ Ingen av dessa är server-only-CRUD-hål av samma typ som de tre redan körda sl
 - **Security Advisor (production):** **Noll** kvarvarande `rls_disabled_in_public`-ERROR. Enda kvarvarande poster är redan kända INFO (`rls_enabled_no_policy` — RLS på, ingen policy, redan säkert) och tre WARN (`custom_access_token_hook`-search_path, `handle_new_user`-grant, leaked password protection) — samma som innan denna slice, inget nytt.
 - **Git:** Rent arbetsträd på `main`, inga öppna PR:er för detta arbete (PR #467–#472 mergade och branchar raderade).
 - **Återstående arbete:** Inga High-fynd kvar. Se [Rekommenderad nästa slice](#rekommenderad-nästa-slice) — enbart Medium/Low: tio staging-only-drift-tabeller, auth-hook-miljödrift, storage-bucket-gränser i prod, samt två mindre härdningspunkter (`handle_new_user`-grant, leaked password protection).
+
+---
+
+## Uppföljande discovery 2026-09-06 – rotorsak till de tio staging-only-tabellerna
+
+En fristående, read-only genomlysning (ingen ALTER/GRANT/migration/deploy) grävde i **varför** de tio tabellerna från "Kvarvarande fynd" (`CustomerHorseServiceInterval`, `FeatureFlag`, `Follow`, `HorseServiceInterval`, `NotificationDelivery`, `ProviderCustomer`, `ProviderCustomerNote`, `PushSubscription`, `_RouteOrderToService`, `_prisma_migrations`) skiljer sig mellan staging och production. Fyndet i sig var redan känt sedan augusti-auditen — det som är nytt är mekanismen bakom det.
+
+### Kontext att komma ihåg (för framtida läsare/agenter)
+
+- **Equinet staging använder medvetet Supabase-projektet `zzdamokfeenencuggjjp`** ("Slot Machine" i Supabase-dashboarden). Detta är ett avsiktligt delat projekt, inte stale infrastruktur eller fel projekt-ID — se `CLAUDE.md` ("Serverless & Deploy") och `docs/operations/environments.md` (Staging-sektionen) för den fullständiga notisen.
+- **Slot Machines egna scheman är helt oberörda av detta fynd.** Slot Machine har sin egen migrationshistorik i `supabase_migrations.schema_migrations` (14 rader, `create_signals_schema`, `tippliga_pivot_matches_schema` m.fl., daterade 2026-06-09–2026-08-22) — separat spårningsmekanism från Equinets `_prisma_migrations`. Ingenting i denna discovery har läst, ändrat eller berott på Slot Machines tabeller/scheman.
+
+### Verifierat: RLS-status per tabell
+
+| Tabell | RLS staging | RLS prod | Policies (båda) | Migration som skapade tabellen | Migration som slog på RLS i prod |
+|---|---|---|---|---|---|
+| `_prisma_migrations` | av | på | inga | (Prismas interna bokföringstabell) | Ingen spårbar migration alls |
+| `_RouteOrderToService` | av | på | inga | `20260205110146_add_municipality_and_services_to_announcements` | `enable_rls_customer_review_and_route_order_to_service` (Supabase-native, version `20260205192909`) |
+| `HorseServiceInterval` | av | på | inga | `20260206134538_add_horse_service_interval` | `enable_rls_horse_service_interval` (Supabase-native, version `20260208102755`) |
+| `ProviderCustomerNote` | av | på | inga | `20260211135119_add_provider_customer_notes` | Ingen spårbar migration alls |
+| `ProviderCustomer` | av | på | inga | `20260213120000_add_provider_customer` | Ingen spårbar migration alls |
+| `Follow` | av | på | inga | `20260223080456_add_follow_system` | Ingen spårbar migration alls |
+| `NotificationDelivery` | av | på | inga | `20260223080456_add_follow_system` | Ingen spårbar migration alls |
+| `PushSubscription` | av | på | inga | `20260223080456_add_follow_system` | Ingen spårbar migration alls |
+| `CustomerHorseServiceInterval` | av | på | inga | `20260223121939_add_customer_horse_service_interval` | Ingen spårbar migration alls |
+| `FeatureFlag` | av | på | inga | `20260224120000_add_feature_flag_table` | Ingen spårbar migration alls |
+
+Verifierat via tre oberoende källor i båda projekten: (1) Prismas `_prisma_migrations` — identisk lista på 51 migrationer i staging och production, ingen av dem rör dessa tio tabeller; (2) Supabase-native `supabase_migrations.schema_migrations` i **production** — 23 rader, varav två (bekräftat via `statements`-kolumnen) slår på RLS på `_RouteOrderToService` respektive `HorseServiceInterval`; (3) samma tabell i **staging** — 14 rader, samtliga tillhörande Slot Machines egen migrationshistorik, noll Equinet-RLS-poster.
+
+### Rotorsak: historiskt/manuellt state, inte vanlig migrationsdrift
+
+**Detta är INTE det vanliga driftmönstret** där staging helt enkelt missat att köra en känd, committad migration som production redan kört. Om så vore fallet hade `prisma migrate status` visat "N pending" i staging, och en enkel `prisma migrate deploy` hade löst det. Så är det inte här:
+
+- Två av tabellerna (`_RouteOrderToService`, `HorseServiceInterval`) fick RLS via en **Supabase-native migration** (`apply_migration`-mekanismen, spårad i `supabase_migrations.schema_migrations`), applicerad **enbart mot production-projektets ID**, tidigt i projektets liv (5–8 februari 2026). Ingen motsvarande Prisma-migrationsfil skapades, så det fanns inget för staging att replikera via `prisma migrate deploy`.
+- Övriga åtta tabeller (inklusive `_prisma_migrations` själv) saknar spår i **båda** spårningsmekanismerna, i båda projekten. RLS måste ha slagits på direkt mot production via rå SQL (t.ex. `execute_sql`-vägen eller Supabase Dashboardens SQL-editor) — helt utanför migrationsflödet. **Detta sista steget (exakt verktyg/session/datum) är en hypotes, inte ett verifierat faktum** — ingen tracking-tabell eller logg med tillräcklig retention kunde bekräfta det. Mönstret "finns i production, finns i ingen spårningstabell alls" är däremot verifierat för samtliga åtta.
+
+Den gemensamma nämnaren: projektets pipeline kräver att varje schema-/RLS-ändring appliceras **manuellt och separat** mot varje Supabase-projekt (ingen CI/CD-automation kör migrationer — se `.claude/rules/prisma.md`). När en fix aldrig fångas som en committad Prisma-migrationsfil, finns inget sätt för staging att någonsin få den — oavsett hur många gånger `prisma migrate deploy` körs där. Detta är samma mekanism som augusti-auditens egna "Lessons Learned" redan identifierade som risk, fast bekräftad här som orsaken bakom just dessa tio tabeller specifikt.
+
+### Klassificering
+
+**Defense-in-depth / environment parity — inte en verifierad akut exponering.** Samma resonemang som redan gäller för de tio tabellerna i "Kvarvarande fynd": ingen browser-/PostgREST-klientkod i `src/` läser eller skriver dessa tabeller (Prisma ansluter som `postgres`-rollen, `rolbypassrls = true`), så avsaknaden av RLS i staging är ett saknat säkerhetslager, inte en bekräftad dataläcka. Det ska åtgärdas för att uppnå parity med production och stänga en teoretisk lucka — inte hanteras som en pågående incident.
+
+### Åtgärdat 2026-09-06 — parity-migration applicerad mot staging
+
+Migration `20260906120000_enable_rls_staging_parity_ten_tables` (`prisma/migrations/`) applicerad mot staging-projektet `zzdamokfeenencuggjjp` via `apply_migration` (Supabase-native version `20260906051859`). Ren `ENABLE ROW LEVEL SECURITY` på samtliga tio tabeller, inga nya policies (matchar productions läge exakt — RLS på, 0 policies = implicit deny). Production rördes inte.
+
+**Verifiering, alla gröna:**
+- `pg_class.relrowsecurity` för samtliga tio tabeller i staging: `false` → `true`. `pg_policies`-räkning: `0` på alla tio, både före och efter (oförändrat, som avsett).
+- `SET ROLE anon; SELECT count(*)` på samtliga tio → `0` rader.
+- Security Advisor (staging, omkörd efter migration): **noll** `rls_disabled_in_public`-poster för dessa tio tabeller. Kvarvarande poster är exakt samma INFO/WARN-mönster som innan (RLS-på-utan-policy på andra redan kända tabeller, `rls_provider_id`-search_path, `handle_new_user`-grant, leaked password protection) — inget nytt tillkommit.
+- Slot Machines egna scheman (`lakers.chat_messages`/`matches`/`tips`, `signals.hidden_suggestions`/`hypotheses`/`ideas`/`signal_hypotheses`/`signal_outcomes`/`signal_tags`/`signals`/`tags`) jämförda mot baseline tagen omedelbart före migrationen: **identiska** RLS-status och policy-antal, ingen förändring.
+- `list_migrations` (Supabase-native) mot staging: `enable_rls_staging_parity_ten_tables` tillagd sist i listan, Slot Machines 14 tidigare rader oförändrade.
+- `npm run check:all` under Node 20.20.2 (via `/opt/homebrew/opt/node@20`, då varken `.nvmrc`-verktyget `nvm` eller annan versionshanterare fanns installerad i sessionen): **4/4 gröna** (typecheck, test:run 4653 passed, lint, check:swedish). En första körning under den lokalt aktiva Node 26 gav `test:run FAIL` — det är det kända, redan dokumenterade Node 26/jsdom-problemet (se minnesanteckning "Equinet Node version"), inte en regression från denna migration.
+
+**Status:** De tio tabellerna är inte längre en öppen "Medium"-post. Se `## Kvarvarande fynd` och `## Rekommenderad nästa slice` ovan — den raden är nu inaktuell och kvarstår i dokumentet enbart som historik för hur fyndet ursprungligen beskrevs.
