@@ -276,6 +276,21 @@ describe('AuthService', () => {
         expect(result.isFailure).toBe(false)
       })
 
+      it('should fail instead of silently upgrading when supabaseAdmin is unavailable', async () => {
+        const noAdminService = new AuthService({
+          authRepository: authRepo,
+          generateToken: () => `test-token-${++tokenCounter}`,
+        })
+
+        const result = await noAdminService.register(customerInput)
+
+        expect(result.isFailure).toBe(true)
+        expect(result.error.type).toBe('REGISTRATION_FAILED')
+        // The ghost row must NOT be marked upgraded -- no password was ever set.
+        const users = authRepo.getUsers()
+        expect(users[0].isManualCustomer).toBe(true)
+      })
+
       it('should still return EMAIL_ALREADY_EXISTS for regular accounts', async () => {
         authRepo.seedUser({
           id: 'real-user',
@@ -777,6 +792,26 @@ describe('AuthService', () => {
       expect(result.isFailure).toBe(true)
       expect(result.error.type).toBe('TOKEN_EXPIRED')
     })
+
+    it('should fail instead of silently succeeding when supabaseAdmin.updateUserById is unavailable', async () => {
+      const noUpdateService = new AuthService({
+        authRepository: authRepo,
+        supabaseAdmin: {
+          createUser: mockSupabaseAdmin.createUser,
+          // updateUserById intentionally omitted
+        },
+      })
+
+      const result = await noUpdateService.resetPassword('valid-reset-token', 'NewPassword1!')
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('REGISTRATION_FAILED')
+
+      // The token must NOT be marked used -- the password was never actually changed.
+      const tokens = authRepo.getPasswordResetTokens()
+      const usedToken = tokens.find(t => t.token === 'valid-reset-token')
+      expect(usedToken?.usedAt).toBeNull()
+    })
   })
 
   // -----------------------------------------------------------
@@ -948,6 +983,37 @@ describe('AuthService', () => {
 
       expect(result.isFailure).toBe(true)
       expect(result.error.type).toBe('ACCOUNT_ACTIVATION_FAILED')
+    })
+
+    it('should fail instead of silently accepting when supabaseAdmin is unavailable', async () => {
+      authRepo.seedUser({
+        id: 'ghost-7',
+        email: 'ghost7@example.com',
+        firstName: 'Oskar',
+        lastName: 'Holm',
+        userType: 'customer',
+        emailVerified: false,
+        isManualCustomer: true,
+      })
+      authRepo.seedCustomerInviteToken({
+        id: 'cit-7',
+        token: 'no-admin-invite-token',
+        userId: 'ghost-7',
+        expiresAt: new Date(Date.now() + 3600_000),
+        usedAt: null,
+      })
+
+      const noAdminService = new AuthService({ authRepository: authRepo })
+
+      const result = await noAdminService.acceptInvite('no-admin-invite-token', validPassword)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('ACCOUNT_ACTIVATION_FAILED')
+
+      // The invite must NOT be marked used -- no password was ever set.
+      const tokens = authRepo.getCustomerInviteTokens()
+      const usedToken = tokens.find((t) => t.token === 'no-admin-invite-token')
+      expect(usedToken?.usedAt).toBeNull()
     })
 
     it('should mark token as used and upgrade user after success', async () => {

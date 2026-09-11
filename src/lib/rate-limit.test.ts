@@ -9,6 +9,8 @@ describe("rate-limit (in-memory mode)", () => {
   let rateLimiters: typeof import("./rate-limit")["rateLimiters"]
   let getClientIP: typeof import("./rate-limit")["getClientIP"]
   let resetRateLimit: typeof import("./rate-limit")["resetRateLimit"]
+  let checkRateLimit: typeof import("./rate-limit")["checkRateLimit"]
+  let RateLimitServiceError: typeof import("./rate-limit")["RateLimitServiceError"]
 
   beforeEach(async () => {
     vi.useFakeTimers()
@@ -21,6 +23,8 @@ describe("rate-limit (in-memory mode)", () => {
     rateLimiters = mod.rateLimiters
     getClientIP = mod.getClientIP
     resetRateLimit = mod.resetRateLimit
+    checkRateLimit = mod.checkRateLimit
+    RateLimitServiceError = mod.RateLimitServiceError
   })
 
   afterEach(() => {
@@ -174,6 +178,14 @@ describe("rate-limit (in-memory mode)", () => {
         expect(result).toBe(true)
       }
     })
+
+    it("should fail closed (throw) for an unconfigured limiter type instead of allowing the request", async () => {
+      // Simulates config drift: a limiterType with no matching entry in the
+      // in-memory `configs` map (e.g. added to `rateLimiters` but forgotten here).
+      await expect(
+        checkRateLimit("nonexistentLimiterType" as never, "some-identifier")
+      ).rejects.toThrow(RateLimitServiceError)
+    })
   })
 
   // --- resetRateLimit ---
@@ -284,5 +296,14 @@ describe("rate-limit (Upstash mode)", () => {
 
     const { rateLimiters, RateLimitServiceError } = await import("./rate-limit")
     await expect(rateLimiters.login("test@example.com")).rejects.toThrow(RateLimitServiceError)
+  })
+
+  it("should fail closed (throw) for an unconfigured limiter type instead of allowing the request", async () => {
+    // Simulates config drift: a limiterType with no matching entry in the
+    // Upstash limiters map (e.g. added to `rateLimiters` but forgotten here).
+    const { checkRateLimit, RateLimitServiceError } = await import("./rate-limit")
+    await expect(
+      checkRateLimit("nonexistentLimiterType" as never, "some-identifier")
+    ).rejects.toThrow(RateLimitServiceError)
   })
 })
