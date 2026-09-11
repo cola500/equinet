@@ -92,7 +92,7 @@ describe("POST /api/auth/forgot-password", () => {
     expect(data.error).toBe("Ogiltig JSON")
   })
 
-  it("should return 429 when rate limited", async () => {
+  it("should return 429 when rate limited by IP", async () => {
     const { rateLimiters } = await import("@/lib/rate-limit")
     vi.mocked(rateLimiters.passwordReset).mockResolvedValueOnce(false)
 
@@ -109,6 +109,49 @@ describe("POST /api/auth/forgot-password", () => {
 
     expect(response.status).toBe(429)
     expect(data.error).toContain("För många försök")
+  })
+
+  it("should return 429 when rate limited by target email, even from a fresh IP", async () => {
+    const { rateLimiters } = await import("@/lib/rate-limit")
+    // First call = IP-scoped check (passes), second call = email-scoped check (blocked).
+    // This is what stops an attacker rotating source IPs to email-bomb one victim address.
+    vi.mocked(rateLimiters.passwordReset)
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false)
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/auth/forgot-password",
+      {
+        method: "POST",
+        body: JSON.stringify({ email: "victim@example.com" }),
+      }
+    )
+
+    const response = await POST(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(429)
+    expect(data.error).toContain("För många försök")
+    expect(mockRequestPasswordReset).not.toHaveBeenCalled()
+  })
+
+  it("should scope the email-based rate limit key to the lowercased target email", async () => {
+    const { rateLimiters } = await import("@/lib/rate-limit")
+    mockRequestPasswordReset.mockResolvedValue(Result.ok({ sent: true }))
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/auth/forgot-password",
+      {
+        method: "POST",
+        body: JSON.stringify({ email: "Test@Example.com" }),
+      }
+    )
+
+    await POST(request)
+
+    const calls = vi.mocked(rateLimiters.passwordReset).mock.calls
+    expect(calls[0][0]).toBe("127.0.0.1")
+    expect(calls[1][0]).toBe("email:test@example.com")
   })
 
   it("should reject extra fields with strict validation", async () => {
