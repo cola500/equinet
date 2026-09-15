@@ -1,0 +1,31 @@
+-- Fix: public."CustomerReview" has RLS policies (review_customer_insert,
+-- review_customer_update, review_provider_update, review_customer_read,
+-- review_provider_read) but no migration ever ran ENABLE ROW LEVEL SECURITY
+-- on the table itself.
+--
+-- Root cause: the table was created in 20260205075748_add_customer_review,
+-- about 19 hours after the bulk RLS-enable migration (20260204120000_enable_rls)
+-- had already run, so it was missed there -- same root cause class as
+-- BookingSeries (20260805090430_enable_rls_booking_series). Policies were
+-- added later in 20260404120000_rls_read_policies and
+-- 20260404130000_rls_write_policies without a matching
+-- ENABLE ROW LEVEL SECURITY ever being committed.
+--
+-- Verified live (2026-09-15): RLS is already enabled on CustomerReview in
+-- both production (xybyzflfxnqqyxnvjklv) and staging (zzdamokfeenencuggjjp),
+-- confirmed via direct query against pg_class.relrowsecurity and via
+-- Supabase Security Advisor. It was evidently applied directly against both
+-- databases at some point, the same way BookingSeries originally was,
+-- without a matching committed migration. Discovered by the new
+-- scripts/check-rls-coverage.sql guardrail failing against a
+-- freshly-migrated database (`prisma migrate reset` from scratch).
+--
+-- This migration exists to sync schema history so `prisma migrate deploy`
+-- and `prisma migrate reset` don't diverge from the live databases -- it is
+-- a no-op against prod/staging (already enabled) but fixes fresh/local DBs
+-- and CI's migration-from-scratch job.
+--
+-- Safe: ENABLE ROW LEVEL SECURITY is idempotent (no-op if already enabled).
+-- Rollback: ALTER TABLE "TableName" DISABLE ROW LEVEL SECURITY;
+
+ALTER TABLE public."CustomerReview" ENABLE ROW LEVEL SECURITY;

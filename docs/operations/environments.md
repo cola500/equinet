@@ -4,7 +4,7 @@ description: "Konfiguration och skillnader mellan lokal utveckling, staging och 
 category: operations
 tags: [environments, vercel, supabase, ios, config]
 status: active
-last_updated: 2026-09-06
+last_updated: 2026-09-15
 related:
   - deployment.md
   - environment-runbook.md
@@ -109,6 +109,15 @@ Alla feature flags ar styrda av:
 > ta inte bort Equinet-tabeller därifrån utan att fråga Johan. RLS-avvikelser eller andra
 > säkerhetsfynd på Equinet-tabellerna i detta projekt (`public`-schemat) är riktiga staging-fynd
 > och ska åtgärdas som sådana, precis som i det dedikerade prod-projektet.
+>
+> **Öppen fråga, upptäckt 2026-09-15:** Utöver `public`-schemat finns i samma projekt ett schema
+> som bokstavligen heter `staging` och innehåller egna kopior av Equinet-tabellnamn (Availability,
+> Booking, Horse, Notification, Payment, Provider, Review, Route, User, m.fl.) — RLS är aktiverat
+> på samtliga av dessa (bekräftat via Security Advisor 2026-09-15), men ursprung och syfte är inte
+> utrett. Det hanteras inte av Prisma-migrationerna (som bara känner till `public`) och omfattas
+> därför inte av `scripts/check-rls-coverage.sql`. Klarlägg om det är en aktiv datakälla, ett
+> kvarglömt experiment, eller något Slot-Machine-relaterat innan det städas eller dokumenteras
+> vidare.
 
 - **Ursprung:** Skapades som PoC for Supabase Auth (S10-5, S11-2). Block 2 (2026-05-06) gjorde det till fullständigt isolerad staging. **Sprint 67 (2026-05-09)** flyttade staging till eget Vercel-projekt så iOS Bearer JWT inte blockas av Vercel SSO.
 - **Anvandning:** Manuell testning + iOS demo. Deployar vid push till `staging`-branch.

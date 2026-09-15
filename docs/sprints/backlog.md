@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Kanonisk backlog för Equinet. Alla kända stories, uppgifter och beslut. status.md pekar hit; roadmap.md är den strategiska vyn."
 category: sprint
 status: active
-last_updated: 2026-07-02
+last_updated: 2026-09-15
 tags: [backlog, roadmap, planning]
 sections:
   - Aktiva produktspår
@@ -130,6 +130,7 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Story | Effort | Prioritet |
 |-------|--------|-----------|
 | **Dependency maintenance (npm audit)** — 23 kvarvarande advisories | 8 små PR:er (LÅG/MEDEL) | **Ej drift-blocker** (Next.js high-DoS redan fixad i prod, PR #431). Kvar: 3 critical + 8 high + 11 moderate + 1 low, alla i dev/build/test-verktyg eller transitiva som inte är exploaterbara i Equinets runtime. Prioriterad plan + riskmatris i [dependency-maintenance-backlog.md](../operations/dependency-maintenance-backlog.md). Börja med PR-A `@sentry/nextjs`→10.62 (rensar ~9) + PR-B apns2-transitiver (critical fast-jwt + high undici). Ingen `audit fix --force`, en ägar-dep per PR. |
+| **Supabase Security Advisor — 3 WARN-fynd** (upptäckta 2026-09-15, ej åtgärdade) | Read-only investigation, ej uppskattad | (1) `custom_access_token_hook` + `rls_provider_id` har muterbar `search_path`. (2) `handle_new_user()` är `SECURITY DEFINER` och publikt anropbar av `anon`+`authenticated` via `/rest/v1/rpc/handle_new_user`. (3) Leaked-password-protection avstängt i Supabase Auth. Bekräftat i både prod (`xybyzflfxnqqyxnvjklv`) och staging (`zzdamokfeenencuggjjp`) via `get_advisors`. Ingen exploaterbarhet verifierad ännu — nästa steg är en separat read-only granskning av vad `handle_new_user()` faktiskt gör om den anropas direkt (utanför sin avsedda trigger-kontext) innan något ändras. |
 | **Feature flag source-of-truth (beslut B)** — prod-migrering kvar | DB-reconcile + deploy + env/store-cleanup | **Beslutat B (2026-06-13): Supabase DB enda source of truth, Edge Config borttaget.** Kod + docs klara (Fas 1+2). Kvar: (1) reconcile prod-DB `follow_provider`+`municipality_watch` → true FÖRE prod-deploy (annars regression), (2) prod-deploy, (3) ta bort `EDGE_CONFIG`/`EDGE_CONFIG_ID`-env + Vercel Edge Config-store. Se [feature-flag-source-of-truth-debt.md](../operations/feature-flag-source-of-truth-debt.md). |
 | Leaflet CSS lazy-load (licensrisk) | 15 min | `leaflet.css` importeras i layout.tsx (alltid). Flytta till `RouteMapVisualization.tsx` (lazy). Eliminerar Hippocratic-licenserad kod från sidor som inte använder ruttplanering. Se `docs/security/license-audit-2026-04-15.md`. |
 | E-postverifiering Resend i prod (S17-5 / S22-3) | 0.5 dag | **Blockerad** — kräver domänverifiering eller Resend Pro. Gratis-konto tillåter bara eget e-post. Verifiera leverans i prod. |
