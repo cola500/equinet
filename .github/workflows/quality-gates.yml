@@ -393,6 +393,11 @@ jobs:
         # men supabase auth-schema + extensions finns redan. Fångar trasiga Prisma-migrationer.
         run: npx prisma migrate reset --force --skip-seed
 
+      - name: Check RLS coverage on all public tables
+        # Guardrail mot precis den bugklass som orsakade BookingSeries-incidenten
+        # (RLS-policies utan ENABLE ROW LEVEL SECURITY). Se scripts/check-rls-coverage.sql.
+        run: npm run check:rls-coverage
+
       - name: Stop Supabase
         if: always()
         run: npx supabase stop
