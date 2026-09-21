@@ -99,7 +99,7 @@
     "@stripe/stripe-js": "^9.0.1",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.101.1",
-    "@testing-library/dom": "^10.4.1",
+    "@testing-library/dom": "^10.4.2",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.35.6",
     "@vercel/analytics": "^2.0.1",
