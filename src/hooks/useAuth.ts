@@ -3,7 +3,7 @@
 import { useSession } from "@/components/providers/SessionProvider"
 import { useOnlineStatus } from "./useOnlineStatus"
 
-const SESSION_STORAGE_KEY = "equinet-auth-cache"
+export const SESSION_STORAGE_KEY = "equinet-auth-cache"
 
 interface CachedAuth {
   user: {
