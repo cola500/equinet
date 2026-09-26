@@ -2,6 +2,8 @@ import { defaultCache, PAGES_CACHE_NAME } from "@serwist/next/worker"
 import type { PrecacheEntry, RuntimeCaching } from "serwist"
 import { Serwist, NetworkFirst, CacheFirst, NetworkOnly, ExpirationPlugin } from "serwist"
 import { authSessionMatcher, apiCacheMatcher, jsChunkMatcher, stripeMatcher } from "./sw-matchers"
+import { AUTH_SESSION_CACHE_NAME, API_CACHE_NAME, clearUserDataCaches } from "./sw-cache-cleanup"
+import { SW_MESSAGE_CLEAR_USER_CACHES, SW_MESSAGE_USER_CACHES_CLEARED } from "./lib/sw-messages"
 
 declare const self: ServiceWorkerGlobalScope & {
   __SW_MANIFEST: (PrecacheEntry | string)[]
@@ -53,7 +55,7 @@ const navigationCaching: RuntimeCaching[] = [
   {
     matcher: authSessionMatcher,
     handler: new NetworkFirst({
-      cacheName: "auth-session",
+      cacheName: AUTH_SESSION_CACHE_NAME,
       plugins: [
         new ExpirationPlugin({ maxEntries: 1, maxAgeSeconds: 24 * 60 * 60 }),
         connectivityNotifier,
@@ -69,7 +71,7 @@ const navigationCaching: RuntimeCaching[] = [
     matcher: apiCacheMatcher,
     method: "GET",
     handler: new NetworkFirst({
-      cacheName: "apis",
+      cacheName: API_CACHE_NAME,
       plugins: [
         new ExpirationPlugin({ maxEntries: 16, maxAgeSeconds: 24 * 60 * 60 }),
         connectivityNotifier,
@@ -183,3 +185,26 @@ const serwist = new Serwist({
 })
 
 serwist.addEventListeners()
+
+// One-time (and every-update) migration: a browser that installed a service
+// worker before this cleanup existed may still hold a PREVIOUS user's auth
+// session, API responses, or rendered pages in these caches. Clear them on
+// every activation so a new session never inherits another user's data.
+// Cheap and safe -- all of these caches are NetworkFirst, so losing an entry
+// just costs one extra network round-trip.
+self.addEventListener("activate", (event) => {
+  event.waitUntil(clearUserDataCaches())
+})
+
+// On-demand cleanup: the client (Header's logout handler, via
+// src/lib/sw-client.ts) asks for this right after sign-out, so a same-browser
+// handoff between two users is covered even with no SW update in between.
+self.addEventListener("message", (event) => {
+  if (event.data?.type !== SW_MESSAGE_CLEAR_USER_CACHES) return
+  const port = event.ports[0]
+  event.waitUntil(
+    clearUserDataCaches().then(() => {
+      port?.postMessage({ type: SW_MESSAGE_USER_CACHES_CLEARED })
+    })
+  )
+})

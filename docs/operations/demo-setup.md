@@ -3,9 +3,10 @@ title: "Demo Setup — Erik Järnfot (leverantörsdemo)"
 description: "Inloggning och instruktioner för att köra leverantörsdemon för Erik Järnfot"
 category: operations
 status: active
-last_updated: 2026-09-25
+last_updated: 2026-09-26
 sections:
-  - Inloggning
+  - Hur en extern demo-mottagare ska öppna demon
+  - Inloggning (internt bruk)
   - Köra demon
   - Återställa data
   - Vad som ingår i demo-datan
@@ -22,7 +23,49 @@ potentiell pilot-leverantör.
 > Se [deployment-verification-guide.md](./deployment-verification-guide.md) — demo-läget är
 > inte aktivt i prod eller i feature-branch-previews.
 
-## Inloggning
+## Hur en extern demo-mottagare ska öppna demon
+
+**Skicka ALDRIG e-post/lösenord till en extern demo-mottagare (t.ex. en potentiell
+pilot-leverantör).** Instruera dem istället att:
+
+1. Öppna `https://equinet-staging.johanlindengard.com/login` i en **ren/privat
+   webbläsarflik** (inkognito/privat läge — se varför nedan)
+2. Klicka på knappen **"Demo som leverantör"** — logga ALDRIG in manuellt med
+   e-post/lösenord, inte ens med uppgifterna i tabellen nedan
+
+### Varför detta spelar roll
+
+Genvägsknappen "Demo som leverantör" sätter en särskild session-cookie
+(`isDemoSession`) som **bara** den knappen sätter — inte vanlig inloggning, inte
+ens med samma konto. Den cookien är det som:
+
+- begränsar navigationen till de kuraterade demo-vyerna (Kalender/Kunder/Tjänster/
+  Meddelanden + Översikt/Bokningar/Insikter/Profil/Hjälp under "Mer")
+- döljer buggrapport-knappen (`BugReportFab`, röd cirkel nere till höger) — ett
+  permanent internt/end-user-verktyg som annars visas för ALLA inloggade
+  användare, i alla miljöer
+- döljer röstloggnings-knappen (`Logga arbete`, grön mic-ikon) — kommentaren i
+  koden säger uttryckligen "voice-log is not part of the demo"
+
+**Loggar mottagaren in manuellt** (även med exakt `erik.jarnfot@demo.equinet.se` /
+`DemoProvider123!`) får hen istället hela produkten: full navigation, notisklocka,
+buggrapport-knapp och röstloggning — inget av det är fel i sig (det är precis vad en
+riktig leverantör i produktion skulle se), men det är inte den kuraterade
+first-impression-vy som demot är designat för.
+
+**Ren/privat webbläsarflik krävs eftersom:** appen är en PWA med service worker
+som cachar sidor och API-svar per webbläsarprofil. Om samma enhet/webbläsare
+tidigare besökt staging (t.ex. under intern testning) kan gammal cachad data
+blanda sig med den nya sessionen tills den rensas. Utloggning rensar numera denna
+cache automatiskt (se [staging-demo-seed.md](./staging-demo-seed.md) för detaljer
+om fixen), men en ren/privat flik är säkrast för en förstagångsvisning inför en
+extern mottagare.
+
+## Inloggning (internt bruk)
+
+Följande uppgifter är för **intern utveckling/testning** — visa dem ALDRIG för en
+extern demo-mottagare, och logga ALDRIG in manuellt när du förbereder en visning
+åt en extern mottagare (se ovan).
 
 | Fält | Värde |
 |------|-------|
