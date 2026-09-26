@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/hooks/useAuth"
+import { useAuth, SESSION_STORAGE_KEY } from "@/hooks/useAuth"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import {
   DropdownMenu,
@@ -38,6 +38,11 @@ export function Header({ hideSecondaryNav = false }: HeaderProps) {
     clearDemoSessionCookie()
     const supabase = createSupabaseBrowserClient()
     await supabase.auth.signOut()
+    // useAuth deliberately never clears this (see its own comment -- avoids
+    // a race with offline detection), so an explicit user-initiated logout
+    // is the only place it gets removed. sessionStorage.removeItem is
+    // synchronous and per-tab already, so this can't fail or hang.
+    sessionStorage.removeItem(SESSION_STORAGE_KEY)
     // Clear cached auth session / API / page data so the next login on this
     // browser never sees this user's cached data. Best-effort: logout must
     // still redirect even if this rejects (e.g. the SW controller became
