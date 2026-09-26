@@ -15,6 +15,7 @@ import { HorseIcon } from "@/components/icons/HorseIcon"
 import { CustomerNav } from "./CustomerNav"
 import { NotificationBell } from "@/components/notification/NotificationBell"
 import { notifyNativeLogout } from "@/lib/native-bridge"
+import { clearServiceWorkerUserCaches } from "@/lib/sw-client"
 import { useFeatureFlag } from "@/components/providers/FeatureFlagProvider"
 import { useDemoSession } from "@/components/providers/DemoSessionProvider"
 import { clearDemoSessionCookie } from "@/lib/demo-session"
@@ -37,6 +38,9 @@ export function Header({ hideSecondaryNav = false }: HeaderProps) {
     clearDemoSessionCookie()
     const supabase = createSupabaseBrowserClient()
     await supabase.auth.signOut()
+    // Clear cached auth session / API / page data so the next login on this
+    // browser never sees this user's cached data.
+    await clearServiceWorkerUserCaches()
     window.location.href = "/"
   }
 

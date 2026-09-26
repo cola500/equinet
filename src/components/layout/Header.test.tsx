@@ -1,9 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { Header } from "./Header"
 
 const mockUseAuth = vi.fn()
 const mockIsDemoMode = vi.fn(() => false)
+const mockSignOut = vi.fn().mockResolvedValue({ error: null })
+const mockClearServiceWorkerUserCaches = vi.fn().mockResolvedValue(undefined)
+
+vi.mock("@/lib/supabase/browser", () => ({
+  createSupabaseBrowserClient: () => ({ auth: { signOut: mockSignOut } }),
+}))
+
+vi.mock("@/lib/native-bridge", () => ({
+  notifyNativeLogout: vi.fn(),
+}))
+
+vi.mock("@/lib/sw-client", () => ({
+  clearServiceWorkerUserCaches: () => mockClearServiceWorkerUserCaches(),
+}))
+
+vi.mock("@/lib/demo-session", () => ({
+  clearDemoSessionCookie: vi.fn(),
+}))
 
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => mockUseAuth(),
@@ -28,7 +47,13 @@ vi.mock("@/components/ui/dropdown-menu", () => ({
   DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuItem: ({
+    children,
+    onClick,
+  }: {
+    children: React.ReactNode
+    onClick?: () => void
+  }) => <div onClick={onClick}>{children}</div>,
   DropdownMenuSeparator: () => <hr />,
 }))
 
@@ -116,5 +141,36 @@ describe("Header", () => {
     render(<Header />)
 
     expect(screen.getByTestId("customer-nav")).toBeInTheDocument()
+  })
+
+  it("clears service worker user caches on logout, before navigating away", async () => {
+    const user = userEvent.setup()
+    const originalLocation = window.location
+    // jsdom throws "Not implemented: navigation" on a real href assignment.
+    Object.defineProperty(window, "location", {
+      writable: true,
+      value: { ...originalLocation, href: "" },
+    })
+
+    mockUseAuth.mockReturnValue({
+      user: { name: "Erik Järnfot", email: "erik@test.com" },
+      isAuthenticated: true,
+      isLoading: false,
+      isProvider: true,
+      isCustomer: false,
+      isAdmin: false,
+    })
+
+    render(<Header />)
+    await user.click(screen.getByText("Logga ut"))
+
+    expect(mockSignOut).toHaveBeenCalled()
+    expect(mockClearServiceWorkerUserCaches).toHaveBeenCalled()
+    expect(window.location.href).toBe("/")
+
+    Object.defineProperty(window, "location", {
+      writable: true,
+      value: originalLocation,
+    })
   })
 })
