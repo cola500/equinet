@@ -83,10 +83,14 @@ dgl_require_repo() {
 }
 
 # --- dgl_require_clean_tree ---
-# Kräver att git working tree inte har okommitterade ändringar.
+# Kräver att SPÅRADE filer inte har okommitterade ändringar (modifierade,
+# staged, borttagna). Ignorerar medvetet ospårade filer/mappar -- de kan per
+# definition inte vara del av den SHA som skulle deployas, så de utgör ingen
+# risk här. (Exempel i denna repo: lösa scratch-mappar som legat kvar sedan
+# tidigare, utan koppling till deploy-innehållet.)
 dgl_require_clean_tree() {
-  if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
-    echo "✖ Okommitterade ändringar i arbetskatalogen. Committa eller stasha dem först." >&2
+  if [ -n "$(git status --porcelain --untracked-files=no 2>/dev/null)" ]; then
+    echo "✖ Okommitterade ändringar i spårade filer. Committa eller stasha dem först." >&2
     return 1
   fi
 }
