@@ -3,7 +3,7 @@ title: "Säker Staging Demo Seed"
 description: "Runbook för att säkert återställa demo-provider-data (Erik Järnfot) på staging via helper-scriptet — med project-ref-guard, dry-run och verifiering."
 category: operations
 status: active
-last_updated: 2026-06-06
+last_updated: 2026-09-26
 sections:
   - Syfte
   - Säkerhetsmodell
@@ -172,14 +172,17 @@ Logga in på staging som Erik (uppgifter i [demo-setup.md](./demo-setup.md)) och
 | Vy | Förväntat |
 |----|-----------|
 | **Dashboard** | "Kommande bokningar" > 0 (t.ex. 8), "Nya förfrågningar" > 0, intäktsgraf visar data |
-| **Kalender** | Framtida bokningsblock syns. Banner "X bokningar väntar". Se gotcha nedan. |
+| **Kalender** | Veckovyn visar full 7-dagarsgrid med bokningsblock (verifierat 2026-09-26). Banner "X bokningar väntar". |
 | **Bokningar** | Mix av status: Väntar / Bekräftade / Genomförda / Avbokade |
 | **Meddelanden** | Realistiska konversationer, **inga** test-strängar (t.ex. "3B.2 smoke-test") |
 | **Kundhem `/hem`** (om `--customer-login`) | Logga in som Lisa → landar på `/hem`; statusrad (lugnt/larm), hästkort, aktiv Hem-flik |
 
-> **Kalender-gotcha:** Veckovyn renderar i nuläget bara en dagkolumn (känd UI-bugg, ej
-> seed-relaterad). Verifiera framtida block i **dag-** eller **månadsvy** tills den buggen är
-> åtgärdad. Bokningarna börjar +2 dagar fram, så *dagens* kolumn kan vara tom.
+> **Tom kalender ≠ UI-bugg:** Om veckovyn ser tom ut, kontrollera FÖRST att `Bokningar`-sidan
+> verkligen visar >0 bokningar (och att seeden faktiskt slutförde utan fel — se Felsökning
+> nedan) innan du misstänker ett renderingsproblem. Den tidigare noterade "veckovyn visar bara
+> en dagkolumn"-gotchan gick inte att reproducera 2026-09-26 med korrekt seedad data — misstänkt
+> redan åtgärdad eller feldiagnostiserad ursprungligen (troligen samma orsak: 0 bokningar pga
+> ofullständig seed, se P2003-posten nedan).
 
 ---
 
@@ -218,6 +221,23 @@ Logga in på staging som Erik (uppgifter i [demo-setup.md](./demo-setup.md)) och
   ingen connection string på disk, `--dry-run`.
 - `DATABASE_URL` bekräftades vara *sensitive* i Vercel (kom tillbaka tom från
   `vercel env pull`) → därför den manuella prompten istället för auto-hämtning.
+- **2026-09-25 (hovslagar-pivot):** En verklig potentiell användare (hovslagare) ska få se
+  staging. Seeden utökades med 6 `HorseNote`-poster (häst-journal) i
+  `scripts/seed-demo-provider.ts` för att visa funktionaliteten en hovslagare efterfrågade
+  (journalföring per häst) — ingen ny funktionalitet byggdes, `HorseNote`-modellen och alla
+  vyer fanns redan men saknade demo-data. Verifierat lokalt: leverantören ser bara
+  `veterinary`/`farrier`/`medication`-kategorier på häst-tidslinjen, ägaren ser alla 6. Se
+  [demo-setup.md](./demo-setup.md#hästjournal-6-anteckningar). Kör `--reset` mot staging
+  igen inför det faktiska demotillfället eftersom bokningsdatumen är relativa
+  (`daysFromNow`) och blir historiska efter några veckor (samma gotcha som 2026-06-01 ovan).
+- **2026-09-26:** Första skarpa körningen efter hovslagar-pivoten kraschade: `prisma.user.deleteMany()`
+  i `resetDemoData()` kastade `P2003` (`Booking_customerId_fkey`) — en bokning kopplad till en
+  demo-kunds email men en annan/äldre leverantörs-post (historisk staging-data) blockerade
+  kund-raderingen eftersom bokningsrensningen filtrerade på `providerId`. Fix (PR #493): rensa
+  ALLA bokningar/serier/kundanteckningar för demo-kunderna oavsett leverantör innan `User`-raden
+  tas bort — dessa e-postadresser ägs uteslutande av seed-scriptet. Omkörning efter fix lyckades
+  (9 kunder, 14 hästar, 18 bokningar, 6 hästanteckningar). Detta var även orsaken till att
+  kalendern såg tom ut i en tidigare verifiering (0 bokningar fanns, inte en renderingsbugg).
 
 ---
 

@@ -4,7 +4,7 @@ description: "Collection of common pitfalls and solutions encountered during Equ
 category: guide
 tags: [gotchas, debugging, next-js, prisma, serverless, offline, security, ios, xcode]
 status: active
-last_updated: 2026-04-23
+last_updated: 2026-09-25
 related:
   - CLAUDE.md
   - docs/guides/agents.md
@@ -41,6 +41,7 @@ sections:
   - 30. jose v6 + jsdom Vitest-inkompatibilitet
   - 31. startsWith-prefix i auth.config Matchar Bredare Än Förväntat
   - 36. prisma migrate dev Fungerar Inte med Lokal Supabase
+  - 41. Lokal Supabase Auth-inloggning ger 500 ("permission denied for schema public")
   - Relaterade Dokument
 ---
 
@@ -1535,6 +1536,35 @@ grep -r "NEXTAUTH_URL" src/ --include="*.tsx"
 **Regel:** Miljövariabel-renames är globala operationer. En ändring i en fil räcker aldrig. Sök alltid i `src/`, `prisma/`, `scripts/` och `e2e/`.
 
 **Källa:** S62-2 hotfix 2026-04-25.
+
+---
+
+## Gotcha #41: Lokal Supabase Auth-inloggning ger 500 ("permission denied for schema public")
+
+**Problem:** Inloggning mot lokal Supabase (`npm run db:up`) misslyckas med `500` från
+`/auth/v1/token?grant_type=password`. GoTrue-loggen visar `Hook errored out ... ERROR:
+permission denied for schema public (SQLSTATE 42501)` i `custom_access_token_hook`. Rollen
+`supabase_auth_admin` saknar `USAGE` på schema `public` (`has_schema_privilege(...)` → `f`)
+trots att migrationen `20260403120000_supabase_auth_hook` ger `GRANT EXECUTE`/`GRANT SELECT`
+till samma roll — `GRANT USAGE ON SCHEMA public` saknas. Kan uppstå efter att den lokala
+Postgres-volymen återskapats (t.ex. `supabase start` mot en färsk volym).
+
+**Lösning:** Kör engångs-grant mot den lokala Docker-instansen:
+
+```bash
+docker exec -i supabase_db_equinet psql -U postgres -d postgres \
+  -c "GRANT USAGE ON SCHEMA public TO supabase_auth_admin;"
+```
+
+Endast lokal databas berörs — rör aldrig staging/prod på detta sätt (där hanteras grants via
+migrationer). Om felet återkommer efter `supabase db reset`: lägg gärna till grantet i
+`prisma/migrations/20260403120000_supabase_auth_hook/migration.sql` som en separat,
+diskuterad ändring (kräver tech-architect-review vid schemaändring).
+
+**Regel:** Slå upp `has_schema_privilege('supabase_auth_admin','public','USAGE')` innan du
+felsöker vidare i auth-flödet om inloggning ger 500 lokalt — det är oftast detta, inte koden.
+
+**Källa:** Hovslagar-demo-slice 2026-09-25 (HorseNote-journalverifiering blockerades av detta).
 
 ---
 

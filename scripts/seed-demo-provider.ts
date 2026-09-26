@@ -164,18 +164,23 @@ async function resetDemoData(providerId: string) {
   const demoCustomerIds = demoCustomers.map((c) => c.id)
 
   if (demoCustomerIds.length > 0) {
+    // Demo customers are exclusively owned by this script (synthetic emails —
+    // DEMO_CUSTOMER_EMAILS). Delete ALL of their bookings/series/notes, not just
+    // this provider's, before deleting the User rows: Booking.customerId,
+    // BookingSeries.customerId and ProviderCustomerNote.customerId have no
+    // onDelete cascade, so a stray row from a different (old/orphaned) provider
+    // would otherwise block the deleteMany below with a FK violation.
     // Reviews (by booking) — cascade via Prisma delete on bookings below
     // CustomerReviews (by booking) — same
     // Conversations + Messages (cascade from booking)
     const demoBookings = await prisma.booking.findMany({
-      where: { customerId: { in: demoCustomerIds }, providerId },
+      where: { customerId: { in: demoCustomerIds } },
       select: { id: true },
     })
     const bookingIds = demoBookings.map((b) => b.id)
 
     if (bookingIds.length > 0) {
-      await prisma.review.deleteMany({ where: { bookingId: { in: bookingIds } } })
-      await prisma.customerReview.deleteMany({ where: { bookingId: { in: bookingIds } } })
+      // Review/CustomerReview cascade from Booking (onDelete: Cascade) — no explicit delete needed
       // Conversations cascade from bookings (onDelete: Cascade) — no explicit delete needed
       const deleted = await prisma.booking.deleteMany({
         where: { id: { in: bookingIds } },
@@ -184,7 +189,7 @@ async function resetDemoData(providerId: string) {
     }
 
     const series = await prisma.bookingSeries.deleteMany({
-      where: { customerId: { in: demoCustomerIds }, providerId },
+      where: { customerId: { in: demoCustomerIds } },
     })
     if (series.count > 0) console.log(`  Deleted ${series.count} booking series`)
 
@@ -194,7 +199,7 @@ async function resetDemoData(providerId: string) {
     console.log(`  Deleted ${horses.count} horses`)
 
     const notes = await prisma.providerCustomerNote.deleteMany({
-      where: { providerId, customerId: { in: demoCustomerIds } },
+      where: { customerId: { in: demoCustomerIds } },
     })
     console.log(`  Deleted ${notes.count} customer notes`)
 
@@ -1122,6 +1127,82 @@ async function main() {
   console.log("")
 
   // -------------------------------------------------------------------------
+  // 12. Horse notes (hästspecifik journal)
+  //     HorseNote.authorId måste vara hästägaren (createNote/listNotes kräver
+  //     findByIdForOwner) — leverantören kan bara LÄSA, inte skriva, och ser av
+  //     integritetsskäl bara kategorierna veterinary/farrier/medication
+  //     (PROVIDER_VISIBLE_CATEGORIES i HorseService.ts). general/injury är
+  //     synliga för ägaren men inte för Erik — det speglas medvetet nedan.
+  // -------------------------------------------------------------------------
+
+  const horseNoteSpecs = [
+    {
+      owner: "Lisa Andersson", horseKey: "Lisa Andersson/Storm",
+      category: "farrier", title: "Skoning fram korrigerad",
+      content: "Erik justerade balansen på höger framhov vid senaste helskoningen — ojämn belastning från tidigare. Ser bättre ut nu.",
+      noteDate: daysFromNow(-56),
+    },
+    {
+      owner: "Lisa Andersson", horseKey: "Lisa Andersson/Molly",
+      category: "veterinary", title: "Vaccination — influensa",
+      content: "Årlig influensavaccination genomförd hos veterinär. Nästa dos om 12 månader.",
+      noteDate: daysFromNow(-100),
+    },
+    {
+      owner: "Karin Lindqvist", horseKey: "Karin Lindqvist/Bella",
+      category: "injury", title: "Känslig vänster bakben",
+      content: "Bella tappade en sko i hagen och verkar öm i vänster bakben sedan dess. Håller koll, bokat tappsko hos Erik.",
+      noteDate: daysFromNow(-1),
+    },
+    {
+      owner: "Stefan Olsson", horseKey: "Stefan Olsson/Flash",
+      category: "farrier", title: "Svårhanterad vid bakhovar",
+      content: "Flash blev orolig och böjde i knä vid tag i bakhovarna under skoningen. Erik tog det lugnt, gick bra till slut.",
+      noteDate: daysFromNow(-35),
+    },
+    {
+      owner: "Peter Svensson", horseKey: "Peter Svensson/Midnight",
+      category: "general", title: "Märkbar förbättring vid hantering",
+      content: "Midnight är fortfarande skygg för ljud men blir lugnare för varje besök. Bra rutin att prata med honom innan man börjar.",
+      noteDate: daysFromNow(-70),
+    },
+    {
+      owner: "Maria Holm", horseKey: "Maria Holm/Nova",
+      category: "medication", title: "Avslutad kur efter skavsår",
+      content: "Litet skavsår vid kotan läkte fint efter en veckas sårvård. Ingen uppföljning behövs.",
+      noteDate: daysFromNow(-40),
+    },
+  ]
+
+  for (const n of horseNoteSpecs) {
+    const authorId = customers[n.owner]
+    const horseId = horses[n.horseKey]
+    if (!authorId || !horseId) {
+      console.log(`  Skippad hästanteckning: ${n.horseKey} (referens saknas)`)
+      continue
+    }
+    const existing = await prisma.horseNote.findFirst({
+      where: { horseId, category: n.category, title: n.title },
+    })
+    if (!existing) {
+      await prisma.horseNote.create({
+        data: {
+          horseId,
+          authorId,
+          category: n.category,
+          title: n.title,
+          content: n.content,
+          noteDate: n.noteDate,
+        },
+      })
+      console.log(`  Hästanteckning: ${n.horseKey} — ${n.title} (${n.category})`)
+    } else {
+      console.log(`  Hästanteckning finns: ${n.horseKey} — ${n.title}`)
+    }
+  }
+  console.log("")
+
+  // -------------------------------------------------------------------------
   // Summary
   // -------------------------------------------------------------------------
 
@@ -1134,6 +1215,7 @@ async function main() {
   console.log(`Hästar     : ${Object.keys(horses).length}`)
   console.log(`Bokningar  : ${createdBookings.length} (+ eventuellt befintliga om --reset ej kördes)`)
   console.log(`Serie      : ${bookingSeriesId ? "Helskoning Molly — aktiv (6 tillfällen)" : "Ej skapad"}`)
+  console.log(`Journal    : ${horseNoteSpecs.length} hästanteckningar`)
   console.log("\nDemo-walkthrough: Se docs/operations/demo-setup.md")
 }
 
