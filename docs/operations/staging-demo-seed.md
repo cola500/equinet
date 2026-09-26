@@ -167,6 +167,11 @@ npm run db:seed:staging-demo:customer:safe
 
 ## Verifiering efter seed
 
+> **Detta är intern verifiering av seed-datan** — manuell inloggning är OK här (du vill se
+> allt: bokningsstatusar, testmeddelanden, etc). Det är **inte** hur demot ska visas för en
+> extern mottagare (t.ex. en pilot-leverantör) — då gäller ALLTID knappen "Demo som
+> leverantör" i en ren/privat flik, se [demo-setup.md](./demo-setup.md#hur-en-extern-demo-mottagare-ska-öppna-demon).
+
 Logga in på staging som Erik (uppgifter i [demo-setup.md](./demo-setup.md)) och kontrollera:
 
 | Vy | Förväntat |
@@ -238,6 +243,22 @@ Logga in på staging som Erik (uppgifter i [demo-setup.md](./demo-setup.md)) och
   tas bort — dessa e-postadresser ägs uteslutande av seed-scriptet. Omkörning efter fix lyckades
   (9 kunder, 14 hästar, 18 bokningar, 6 hästanteckningar). Detta var även orsaken till att
   kalendern såg tom ut i en tidigare verifiering (0 bokningar fanns, inte en renderingsbugg).
+- **2026-09-26 (feature-synlighet + PWA-cacheläckage):** Vid manuell verifiering syntes
+  buggrapport-knappen och röstloggnings-knappen (`Logga arbete`) trots att de var tänkta att
+  vara dolda i demot. Rotorsak: BÅDA gate:as av en cookie (`isDemoSession`) som **bara** sätts
+  av knappen "Demo som leverantör/hästägare" — inte av vanlig e-post/lösenord-inloggning, även
+  med samma konto. All tidigare manuell verifiering i denna session hade loggat in manuellt,
+  vilket exponerade dem. Se [demo-setup.md](./demo-setup.md#hur-en-extern-demo-mottagare-ska-öppna-demon)
+  för den nya, obligatoriska instruktionen till externa demo-mottagare.
+  Separat, allvarligare fynd under samma utredning: appens PWA-service worker (`src/sw.ts`)
+  cachade `auth-session`, `/api/*`-svar och renderade sidor (`pages`/`pages-rsc`) utan att
+  rensa dem vid utloggning — en efterföljande användare på samma enhet/webbläsare kunde se
+  förra användarens cachade nav-badges, auth-data och API-svar. Fixat (separat commit från
+  denna dokumentationsändring): `src/sw-cache-cleanup.ts` + `src/lib/sw-client.ts` rensar nu
+  dessa cache-poster dels vid varje `activate` (migrerar bort gamla cacheversioner automatiskt),
+  dels on-demand när `Header.tsx`s utloggning kör klart. Verifierat lokalt (webpack-bygge,
+  SW aktiverad): fullständig cache-innehåll före/efter inloggning, utloggning och ny
+  persona-inloggning utan manuell rensning — inga rester av föregående användares data kvar.
 
 ---
 
