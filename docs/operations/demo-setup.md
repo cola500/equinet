@@ -3,7 +3,7 @@ title: "Demo Setup — Erik Järnfot (leverantörsdemo)"
 description: "Inloggning och instruktioner för att köra leverantörsdemon för Erik Järnfot"
 category: operations
 status: active
-last_updated: 2026-06-13
+last_updated: 2026-09-25
 sections:
   - Inloggning
   - Köra demon
@@ -110,7 +110,8 @@ Demo-data är märkt på följande sätt:
 | Hästar | Kopplade till demo-kunder (via `ownerId`) |
 | Bokningar | Kopplade till demo-kunder (via `customerId`) |
 | Recensioner | Kopplade till demo-bokningar |
-| Anteckningar | Skapade av demo-leverantören (`providerId` = Erik Järnfot) |
+| Anteckningar (kund) | Skapade av demo-leverantören (`providerId` = Erik Järnfot) |
+| Hästanteckningar (journal) | Kopplade till demo-hästar (via `horseId`), skrivna av respektive hästägare |
 
 ## Vad som ingår i demo-datan
 
@@ -186,8 +187,30 @@ Betyg 3–5 stjärnor. Kopplade till genomförda bokningar.
 
 ### Anteckningar
 
-- 4 leverantörsanteckningar om kunder (journalanteckningar)
+- 4 leverantörsanteckningar om kunder (`ProviderCustomerNote`, kundnivå — aldrig synliga för kunden)
 - 3 interna notes på enskilda bokningar
+
+### Hästjournal (6 anteckningar)
+
+`HorseNote` per häst — skrivs av **hästägaren** (kunden), inte leverantören:
+`createNote`/`listNotes` kräver ägarskap (`findByIdForOwner`). Leverantören kan bara
+**läsa** journalen via häst-tidslinjen, och ser av integritetsskäl bara kategorierna
+`veterinary`, `farrier` och `medication` — `general` och `injury` är synliga enbart
+för ägaren (`PROVIDER_VISIBLE_CATEGORIES` i `HorseService.ts`).
+
+| Häst | Ägare | Kategori | Synlig för Erik? |
+|------|-------|----------|-------------------|
+| Storm | Lisa Andersson | Hovslagare | Ja |
+| Molly | Lisa Andersson | Veterinär | Ja |
+| Flash | Stefan Olsson | Hovslagare | Ja |
+| Nova | Maria Holm | Medicin | Ja |
+| Bella | Karin Lindqvist | Skada | Nej (privat för ägaren) |
+| Midnight | Peter Svensson | Allmänt | Nej (privat för ägaren) |
+
+Verifiera i demot: `/provider/horse-timeline/<Storm-id>` visar hovslagaranteckningen
+för Erik; samma sida för Bella visar "Ingen historik att visa" (integritetsfiltret
+fungerar). Ägaren (Lisa, inloggningsbar via `--customer-login`) ser alla 6 kategorier
+under `/customer/horses/<id>` → Historik.
 
 ## Demo-flöde (manuell walkthrough)
 
@@ -203,6 +226,7 @@ Rekommenderad ordning för att visa plattformen för en pilot-leverantör:
    - Klicka på "Jag är framme nu!" — textrutan fylls i automatiskt
    - Visa att `{datum}`, `{tid}`, `{telefon}` löses automatiskt i mallarna
 7. **Kunddetalj Lisa Andersson** — visa hästar, anteckningar, "Bjud in kund"-knappen
+   - Klicka på **Storm** → häst-tidslinjen visar hovslagarjournalen (`/provider/horse-timeline/...`) — precis det en hovslagare frågar efter
 8. **Affärsinsikter** (`/provider/insights`) — grafer för bokningar, intäkter, populäraste tjänster
 9. **Tjänster** (`/provider/services`) — visa, redigera en tjänst med rekommenderat intervall
 10. **Profil** (`/provider/profile`) — visa leverantörsprofil, inställningar, recurring bookings-toggle
@@ -217,6 +241,7 @@ Rekommenderad ordning för att visa plattformen för en pilot-leverantör:
 - **Due-for-service**: Kunder vars hästar är försenade med hovvård visas på dashboard
 - **Manuell bokning**: Leverantören kan lägga in bokningar för kunder
 - **Kundanteckningar**: Privata journalanteckningar per kund — aldrig synliga för kunden
+- **Hästjournal**: Ägaren för journal per häst (veterinär/hovslagare/medicin/allmänt/skada) — Erik ser hovslagar-relevanta kategorier på häst-tidslinjen, integritetskänsliga kategorier stannar hos ägaren
 - **Recensioner**: Kundernas omdömen samlade under profilen
 
 ## Relaterade filer

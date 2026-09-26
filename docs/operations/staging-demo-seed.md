@@ -3,7 +3,7 @@ title: "Säker Staging Demo Seed"
 description: "Runbook för att säkert återställa demo-provider-data (Erik Järnfot) på staging via helper-scriptet — med project-ref-guard, dry-run och verifiering."
 category: operations
 status: active
-last_updated: 2026-06-06
+last_updated: 2026-09-25
 sections:
   - Syfte
   - Säkerhetsmodell
@@ -218,6 +218,15 @@ Logga in på staging som Erik (uppgifter i [demo-setup.md](./demo-setup.md)) och
   ingen connection string på disk, `--dry-run`.
 - `DATABASE_URL` bekräftades vara *sensitive* i Vercel (kom tillbaka tom från
   `vercel env pull`) → därför den manuella prompten istället för auto-hämtning.
+- **2026-09-25 (hovslagar-pivot):** En verklig potentiell användare (hovslagare) ska få se
+  staging. Seeden utökades med 6 `HorseNote`-poster (häst-journal) i
+  `scripts/seed-demo-provider.ts` för att visa funktionaliteten en hovslagare efterfrågade
+  (journalföring per häst) — ingen ny funktionalitet byggdes, `HorseNote`-modellen och alla
+  vyer fanns redan men saknade demo-data. Verifierat lokalt: leverantören ser bara
+  `veterinary`/`farrier`/`medication`-kategorier på häst-tidslinjen, ägaren ser alla 6. Se
+  [demo-setup.md](./demo-setup.md#hästjournal-6-anteckningar). Kör `--reset` mot staging
+  igen inför det faktiska demotillfället eftersom bokningsdatumen är relativa
+  (`daysFromNow`) och blir historiska efter några veckor (samma gotcha som 2026-06-01 ovan).
 
 ---
 
