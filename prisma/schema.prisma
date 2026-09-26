@@ -2,7 +2,14 @@
 // Database schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // "native" covers local dev on any OS. The other two cover Vercel's
+  // Lambda runtime regardless of which CPU architecture (x64 or arm64) a
+  // given project is deployed to -- a `vercel build` run outside Vercel's
+  // own remote builder (e.g. a CI runner) only bundles the engine matching
+  // the machine it runs on, which silently disconnects the database if that
+  // machine's architecture differs from the deploy target's.
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "linux-arm64-openssl-3.0.x"]
 }
 
 datasource db {
