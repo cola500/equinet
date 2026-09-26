@@ -66,10 +66,13 @@ export function PendingBookingsBanner({
         <div className="border-t border-yellow-200 px-4 py-2">
           <ul className="divide-y divide-yellow-100">
             {sorted.map((booking) => (
-              <li key={booking.id} className="flex items-center gap-2 py-2">
+              <li
+                key={booking.id}
+                className="flex flex-col gap-2 py-2 sm:flex-row sm:items-center"
+              >
                 <button
                   onClick={() => onBookingClick(booking)}
-                  className="flex flex-1 items-center gap-4 text-left text-sm hover:bg-yellow-100 rounded px-2 -mx-2 transition-colors min-h-[44px]"
+                  className="flex flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-left text-sm hover:bg-yellow-100 rounded px-2 -mx-2 transition-colors min-h-[44px]"
                 >
                   <span className="font-medium text-gray-900">
                     {booking.service.name}
@@ -80,13 +83,13 @@ export function PendingBookingsBanner({
                   {booking.horseName && (
                     <span className="text-gray-500">{booking.horseName}</span>
                   )}
-                  <span className="ml-auto text-gray-500 whitespace-nowrap">
+                  <span className="text-gray-500 whitespace-nowrap sm:ml-auto">
                     {format(parseISO(booking.bookingDate), "d MMM", { locale: sv })}{" "}
                     {booking.startTime}&#8211;{booking.endTime}
                   </span>
                 </button>
                 {onQuickAction && (
-                  <div className="flex shrink-0 gap-1">
+                  <div className="flex shrink-0 gap-1 self-end sm:self-auto">
                     <Button
                       size="sm"
                       variant="outline"
