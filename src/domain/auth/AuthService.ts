@@ -251,8 +251,18 @@ export class AuthService {
     ghostUserId: string,
     input: RegisterInput
   ): Promise<Result<RegisterResult, AuthError>> {
+    // Supabase is required to set a real password -- without it, "upgrading"
+    // would just mark the ghost row done while the user could never log in.
+    if (!this.supabaseAdmin) {
+      logger.error('Supabase admin client not available for ghost user upgrade')
+      return Result.fail({
+        type: 'REGISTRATION_FAILED',
+        message: 'Kunde inte skapa konto',
+      })
+    }
+
     // 1. Create Supabase Auth user for the ghost user
-    if (this.supabaseAdmin) {
+    {
       const { error } = await this.supabaseAdmin.createUser({
         email: input.email,
         password: input.password,
@@ -445,7 +455,14 @@ export class AuthService {
     }
 
     // 4. Update password via Supabase Auth admin API
-    if (this.supabaseAdmin?.updateUserById) {
+    if (!this.supabaseAdmin?.updateUserById) {
+      logger.error('Supabase admin client not available for password reset')
+      return Result.fail({
+        type: 'REGISTRATION_FAILED',
+        message: 'Kunde inte uppdatera lösenordet',
+      })
+    }
+    {
       const { error } = await this.supabaseAdmin.updateUserById(resetToken.userId, {
         password: newPassword,
       })
@@ -494,7 +511,14 @@ export class AuthService {
     }
 
     // 4. Create or update Supabase Auth user with password
-    if (this.supabaseAdmin) {
+    if (!this.supabaseAdmin) {
+      logger.error('Supabase admin client not available for invite acceptance')
+      return Result.fail({
+        type: 'ACCOUNT_ACTIVATION_FAILED',
+        message: 'Kunde inte aktivera kontot',
+      })
+    }
+    {
       const updateResult = await this.supabaseAdmin.updateUserById?.(
         inviteToken.userId,
         { password, email_confirm: true }

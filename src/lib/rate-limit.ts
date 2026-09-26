@@ -278,7 +278,7 @@ if (typeof setInterval !== 'undefined' && !isUpstashConfigured()) {
  * @param identifier - Unique identifier (email, IP, user ID, etc)
  * @returns true if request is allowed, false if rate limited
  */
-async function checkRateLimit(
+export async function checkRateLimit(
   limiterType: keyof typeof rateLimiters,
   identifier: string
 ): Promise<boolean> {
@@ -289,8 +289,13 @@ async function checkRateLimit(
       const limiter = limiters[limiterType]
 
       if (!limiter) {
+        // Fail closed: an unconfigured limiter type is a config-drift bug
+        // (rateLimiters gained a type without a matching Upstash entry),
+        // never a reason to let the request through unthrottled.
         logger.error("Rate limiter type not found", { limiterType })
-        return true // Fail open
+        throw new RateLimitServiceError(
+          `Rate limiter type not found: ${limiterType}`
+        )
       }
 
       const { success } = await limiter.limit(identifier)
@@ -332,8 +337,11 @@ async function checkRateLimit(
 
   const config = configs[limiterType]
   if (!config) {
+    // Fail closed: same config-drift bug as the Upstash branch above.
     logger.error("Rate limiter type not found in fallback", { limiterType })
-    return true // Fail open
+    throw new RateLimitServiceError(
+      `Rate limiter type not found: ${limiterType}`
+    )
   }
 
   return checkRateLimitInMemory(identifier, config.max, config.window)

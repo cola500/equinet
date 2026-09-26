@@ -40,6 +40,12 @@ const adminNeedsMfaVerify: MiddlewareUser = {
   aal: { currentLevel: "aal1", nextLevel: "aal2" },
 }
 
+const adminAalCheckFailed: MiddlewareUser = {
+  userType: "provider",
+  isAdmin: true,
+  aalCheckFailed: true,
+}
+
 describe("handleAuthorization", () => {
   describe("admin routes", () => {
     it("allows admin to access /admin", () => {
@@ -128,6 +134,36 @@ describe("handleAuthorization", () => {
     it("blocks non-admin from /admin/mfa/setup", () => {
       const result = handleAuthorization(customerUser, makeNextUrl("/admin/mfa/setup"))
       expect(result!.status).toBe(307) // redirect to /
+    })
+
+    it("does NOT treat /admin/mfaXYZ as the MFA-verify path (prefix boundary)", () => {
+      // Without a boundary check, startsWith("/admin/mfa") also matches this --
+      // which would let an admin needing MFA verify reach a non-MFA admin route.
+      const result = handleAuthorization(adminNeedsMfaVerify, makeNextUrl("/admin/mfaXYZ"))
+      expect(result!.status).toBe(307)
+      expect(result!.headers.get("location")).toContain("/admin/mfa/verify")
+    })
+
+    it("does NOT treat /api/admin/mfa-export as the MFA-verify path (prefix boundary)", () => {
+      const result = handleAuthorization(adminNeedsMfaVerify, makeNextUrl("/api/admin/mfa-export"))
+      expect(result!.status).toBe(403)
+    })
+
+    it("blocks admin access when the AAL check itself failed (fail closed, not fail open)", () => {
+      const result = handleAuthorization(adminAalCheckFailed, makeNextUrl("/admin"))
+      expect(result).not.toBeNull()
+      expect(result!.status).toBe(307)
+      expect(result!.headers.get("location")).toContain("/admin/mfa/verify")
+    })
+
+    it("returns 403 for admin API when the AAL check itself failed", () => {
+      const result = handleAuthorization(adminAalCheckFailed, makeNextUrl("/api/admin/users"))
+      expect(result!.status).toBe(403)
+    })
+
+    it("still allows the MFA verify path itself when the AAL check failed (no lockout loop)", () => {
+      const result = handleAuthorization(adminAalCheckFailed, makeNextUrl("/admin/mfa/verify"))
+      expect(result).toBeNull()
     })
   })
 

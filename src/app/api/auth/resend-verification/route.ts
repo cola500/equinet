@@ -46,9 +46,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const email = result.data.email.toLowerCase()
+
+    // Rate limiting by target email, in addition to IP above. The IP check alone
+    // lets an attacker rotate source IPs to email-bomb one victim's inbox.
+    try {
+      const isEmailAllowed = await rateLimiters.resendVerification(`email:${email}`)
+      if (!isEmailAllowed) {
+        return NextResponse.json(
+          { error: "För många försök. Vänta 15 minuter innan du försöker igen." },
+          { status: 429 }
+        )
+      }
+    } catch (error) {
+      if (error instanceof RateLimitServiceError) {
+        return NextResponse.json(
+          { error: "Tjänsten är tillfälligt otillgänglig" },
+          { status: 503 }
+        )
+      }
+      throw error
+    }
+
     // Delegate to AuthService
     const service = createAuthService()
-    await service.resendVerification(result.data.email.toLowerCase())
+    await service.resendVerification(email)
 
     // Always return same response to prevent email enumeration
     return NextResponse.json({

@@ -14,6 +14,26 @@ export interface MiddlewareUser {
     currentLevel: string
     nextLevel: string
   }
+  /**
+   * True when the AAL lookup itself errored (network/Supabase issue), as opposed
+   * to succeeding with "no MFA enrolled". Must fail closed for admin routes --
+   * an error here is not evidence that MFA verification is unnecessary.
+   */
+  aalCheckFailed?: boolean
+}
+
+/**
+ * True for the MFA verify flow's own paths -- and ONLY those. A bare
+ * `startsWith("/admin/mfa")` also matches an unrelated path like
+ * `/admin/mfaXYZ`, which would exempt it from MFA enforcement by accident.
+ */
+function isMfaVerifyPath(path: string): boolean {
+  return (
+    path === "/admin/mfa" ||
+    path.startsWith("/admin/mfa/") ||
+    path === "/api/admin/mfa" ||
+    path.startsWith("/api/admin/mfa/")
+  )
 }
 
 /**
@@ -43,14 +63,16 @@ export function handleAuthorization(
 
     // MFA enforcement: if admin has MFA enrolled (nextLevel=aal2)
     // but hasn't verified this session (currentLevel=aal1), block access.
+    // Also blocks when the AAL lookup itself failed -- fail closed, never
+    // silently treat an error as "MFA not required".
     // Exception: /admin/mfa/* and /api/admin/mfa/* are always accessible for the verify flow.
-    if (
-      user.aal &&
-      user.aal.nextLevel === "aal2" &&
-      user.aal.currentLevel !== "aal2" &&
-      !path.startsWith("/admin/mfa") &&
-      !path.startsWith("/api/admin/mfa")
-    ) {
+    const mfaVerificationRequired =
+      user.aalCheckFailed ||
+      (user.aal &&
+        user.aal.nextLevel === "aal2" &&
+        user.aal.currentLevel !== "aal2")
+
+    if (mfaVerificationRequired && !isMfaVerifyPath(path)) {
       if (path.startsWith("/api/")) {
         return NextResponse.json(
           { error: "MFA-verifiering krävs" },

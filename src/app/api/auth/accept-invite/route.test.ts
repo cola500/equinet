@@ -22,16 +22,37 @@ vi.mock('@/lib/prisma', () => ({
   },
 }))
 
-vi.mock('@/lib/supabase/admin', () => ({
-  createSupabaseAdminClient: () => ({
-    auth: {
-      admin: {
-        updateUserById: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null }),
-        createUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null }),
-      },
-    },
-  }),
-}))
+const mockSupabaseUpdateUserById = vi.fn().mockResolvedValue({
+  data: { user: { id: 'user-1' } },
+  error: null,
+})
+const mockSupabaseCreateUser = vi.fn().mockResolvedValue({
+  data: { user: { id: 'user-1' } },
+  error: null,
+})
+
+// The real createAuthService() factory uses require('@/lib/supabase/admin') which
+// can't be intercepted reliably by vi.mock (it has 'import "server-only"', which
+// throws in the test env, so supabaseAdmin silently ends up undefined). Mock the
+// factory itself to inject a working supabaseAdmin instead -- same pattern as
+// reset-password/route.integration.test.ts.
+vi.mock('@/domain/auth/AuthService', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('@/domain/auth/AuthService')>()
+  const { PrismaAuthRepository } = await import(
+    '@/infrastructure/persistence/auth/PrismaAuthRepository'
+  )
+  return {
+    ...orig,
+    createAuthService: () =>
+      new orig.AuthService({
+        authRepository: new PrismaAuthRepository(),
+        supabaseAdmin: {
+          createUser: mockSupabaseCreateUser,
+          updateUserById: mockSupabaseUpdateUserById,
+        },
+      }),
+  }
+})
 
 import { prisma } from '@/lib/prisma'
 
@@ -124,7 +145,26 @@ describe('POST /api/auth/accept-invite', () => {
     const res = await POST(makeRequest({ token: 'abc123', password: validPassword }))
     expect(res.status).toBe(200)
 
+    // The password must actually be set in Supabase Auth -- not just the DB
+    // row flipped to "accepted" (that was a real bug: see AuthService.test.ts
+    // "should fail instead of silently accepting when supabaseAdmin is unavailable").
+    expect(mockSupabaseUpdateUserById).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({ password: validPassword })
+    )
+
     // Should use $transaction for atomicity
     expect(prisma.$transaction).toHaveBeenCalled()
+  })
+
+  it('returns 500 when Supabase admin cannot set the password (fail closed, not silent success)', async () => {
+    mockSupabaseUpdateUserById.mockResolvedValueOnce({ data: { user: null }, error: { message: 'down' } })
+    mockSupabaseCreateUser.mockResolvedValueOnce({ data: { user: null }, error: { message: 'down' } })
+
+    const res = await POST(makeRequest({ token: 'abc123', password: validPassword }))
+    expect(res.status).toBe(500)
+
+    // The invite must not be marked used when the password was never set.
+    expect(prisma.$transaction).not.toHaveBeenCalled()
   })
 })

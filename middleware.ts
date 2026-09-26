@@ -40,9 +40,13 @@ export async function middleware(req: NextRequest) {
 
     // For admin users, check MFA assurance level
     let aal: { currentLevel: string; nextLevel: string } | undefined
+    let aalCheckFailed = false
     if (isAdmin) {
-      const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-      if (aalData) {
+      const { data: aalData, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      if (aalError) {
+        // Fail closed: an error here is not evidence that MFA is unnecessary.
+        aalCheckFailed = true
+      } else if (aalData) {
         aal = {
           currentLevel: aalData.currentLevel ?? "aal1",
           nextLevel: aalData.nextLevel ?? "aal1",
@@ -55,6 +59,7 @@ export async function middleware(req: NextRequest) {
         userType: (appMetadata.userType as string) ?? "customer",
         isAdmin,
         aal,
+        aalCheckFailed,
       },
       req.nextUrl
     )
