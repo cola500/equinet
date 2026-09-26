@@ -14,6 +14,11 @@ import { createClient } from "@supabase/supabase-js"
 import { PrismaClient } from "@prisma/client"
 import { config } from "dotenv"
 import { assertStagingSeedSafe } from "../prisma/seed-guard"
+import {
+  DemoBookingScheduler,
+  type WeeklyAvailabilityDay,
+  type AvailabilityExceptionDay,
+} from "./lib/demo-booking-scheduler"
 
 config({ path: ".env.local" })
 config({ path: ".env" })
@@ -76,14 +81,6 @@ function daysFromNow(days: number): Date {
   d.setDate(d.getDate() + days)
   d.setHours(0, 0, 0, 0)
   return d
-}
-
-function addMinutes(time: string, minutes: number): string {
-  const [h, m] = time.split(":").map(Number)
-  const total = h * 60 + m + minutes
-  const newH = Math.floor(total / 60)
-  const newM = total % 60
-  return `${String(newH).padStart(2, "0")}:${String(newM).padStart(2, "0")}`
 }
 
 async function waitForPublicUser(userId: string, email: string): Promise<void> {
@@ -704,6 +701,31 @@ async function main() {
   // 7. Bookings (18 st)
   // -------------------------------------------------------------------------
 
+  // Resolve every seeded booking's date/time against the provider's ACTUAL
+  // seeded availability (not a hardcoded "skip weekends") so a seed run
+  // never places a booking on a day/time the demo provider is closed.
+  // See scripts/lib/demo-booking-scheduler.ts for the algorithm + tests.
+  const weeklySchedule: WeeklyAvailabilityDay[] = (
+    await prisma.availability.findMany({ where: { providerId: provider.id, isActive: true } })
+  ).map((a) => ({
+    dayOfWeek: a.dayOfWeek,
+    isClosed: a.isClosed,
+    startTime: a.startTime,
+    endTime: a.endTime,
+  }))
+
+  const availabilityExceptions: Map<string, AvailabilityExceptionDay> = new Map(
+    (await prisma.availabilityException.findMany({ where: { providerId: provider.id } })).map((e) => {
+      const dateKey = e.date.toISOString().slice(0, 10)
+      return [
+        dateKey,
+        { dateKey, isClosed: e.isClosed, startTime: e.startTime, endTime: e.endTime },
+      ]
+    })
+  )
+
+  const bookingScheduler = new DemoBookingScheduler(new Date(), weeklySchedule, availabilityExceptions)
+
   const demoCustomerIds = Object.values(customers)
   const existingBookingCount =
     demoCustomerIds.length > 0
@@ -731,89 +753,89 @@ async function main() {
       //     Lisa (Örebro 08:00) → Peter (Kumla 10:30) → Johan (Hallsberg 13:00).
       {
         customer: "Lisa Andersson", service: "Helskoning", horseKey: "Lisa Andersson/Molly",
-        date: daysFromNow(2), startTime: "08:00", status: "confirmed",
+        offsetDays: 2, startTime: "08:00", status: "confirmed",
         customerNotes: "Molly är lite öm i hovarna på grusunderlag, annars frisk",
       },
       {
         customer: "Anders Bergman", service: "Helskoning", horseKey: "Anders Bergman/Dante",
-        date: daysFromNow(3), startTime: "10:30", status: "confirmed",
+        offsetDays: 3, startTime: "10:30", status: "confirmed",
       },
       {
         customer: "Peter Svensson", service: "Verkning", horseKey: "Peter Svensson/Midnight",
-        date: daysFromNow(2), startTime: "10:30", status: "confirmed",
+        offsetDays: 2, startTime: "10:30", status: "confirmed",
       },
       {
         customer: "Maria Holm", service: "Skoning fram", horseKey: "Maria Holm/Prince",
-        date: daysFromNow(7), startTime: "09:00", status: "confirmed",
+        offsetDays: 7, startTime: "09:00", status: "confirmed",
         providerNotes: "Prince står bra. Förra gången ny sko på vänster fram — bakhovarna barfota.",
       },
       {
         customer: "Emma Eriksson", service: "Akut hovslagarbesök", horseKey: "Emma Eriksson/Samba",
-        date: daysFromNow(10), startTime: "14:00", status: "confirmed",
+        offsetDays: 10, startTime: "14:00", status: "confirmed",
         customerNotes: "Samba verkar halta lite på höger fram sedan igår",
       },
       // --- Pending ---
       {
         customer: "Karin Lindqvist", service: "Tappsko", horseKey: "Karin Lindqvist/Bella",
-        date: daysFromNow(4), startTime: "11:00", status: "pending",
+        offsetDays: 4, startTime: "11:00", status: "pending",
         customerNotes: "Bella tappade en sko på vänster bak i hagen igår. Lite känslig i bakbenet, var försiktig.",
       },
       {
         customer: "Sara Magnusson", service: "Helskoning", horseKey: "Sara Magnusson/Stella",
-        date: daysFromNow(8), startTime: "15:00", status: "pending",
+        offsetDays: 8, startTime: "15:00", status: "pending",
       },
       // --- Genomförda (8 st) ---
       {
         customer: "Lisa Andersson", service: "Helskoning", horseKey: "Lisa Andersson/Storm",
-        date: daysFromNow(-56), startTime: "09:00", status: "completed",
+        offsetDays: -56, startTime: "09:00", status: "completed",
         providerNotes: "Skodd enligt plan. Höger fram något ojämn — korrigerad, fin balans nu. Återkontroll om 8 veckor.",
       },
       {
         customer: "Anders Bergman", service: "Verkning", horseKey: "Anders Bergman/Dante",
-        date: daysFromNow(-42), startTime: "10:00", status: "completed",
+        offsetDays: -42, startTime: "10:00", status: "completed",
       },
       {
         customer: "Peter Svensson", service: "Helskoning", horseKey: "Peter Svensson/Midnight",
-        date: daysFromNow(-70), startTime: "08:00", status: "completed",
+        offsetDays: -70, startTime: "08:00", status: "completed",
       },
       {
         customer: "Karin Lindqvist", service: "Helskoning", horseKey: "Karin Lindqvist/Silver",
-        date: daysFromNow(-49), startTime: "09:00", status: "completed",
+        offsetDays: -49, startTime: "09:00", status: "completed",
       },
       {
         customer: "Emma Eriksson", service: "Verkning", horseKey: "Emma Eriksson/Luna",
-        date: daysFromNow(-56), startTime: "13:00", status: "completed",
+        offsetDays: -56, startTime: "13:00", status: "completed",
       },
       {
         customer: "Stefan Olsson", service: "Helskoning", horseKey: "Stefan Olsson/Flash",
-        date: daysFromNow(-35), startTime: "11:00", status: "completed",
+        offsetDays: -35, startTime: "11:00", status: "completed",
         providerNotes: "Flash svårhanterad vid bakhovarna. Böjde i knä vid tag. Ta extra tid nästa gång.",
       },
       {
         customer: "Johan Nilsson", service: "Hovstatuskontroll", horseKey: "Johan Nilsson/Tornado",
-        date: daysFromNow(-28), startTime: "14:00", status: "completed",
+        offsetDays: -28, startTime: "14:00", status: "completed",
       },
       {
         customer: "Maria Holm", service: "Verkning unghäst", horseKey: "Maria Holm/Nova",
-        date: daysFromNow(-42), startTime: "10:00", status: "completed",
+        offsetDays: -42, startTime: "10:00", status: "completed",
         providerNotes: "Verkad enligt plan. Fin balans och bra hovkvalitet för ung häst.",
       },
       // --- Avbokade ---
       {
         customer: "Sara Magnusson", service: "Helskoning", horseKey: "Sara Magnusson/Blixten",
-        date: daysFromNow(-14), startTime: "08:00", status: "cancelled",
+        offsetDays: -14, startTime: "08:00", status: "cancelled",
         cancellationMessage: "Hästen hade feber, fick inte rida. Ber om ursäkt för sena beskedet.",
       },
       {
         customer: "Karin Lindqvist", service: "Verkning", horseKey: "Karin Lindqvist/Bella",
-        date: daysFromNow(-7), startTime: "12:00", status: "cancelled",
+        offsetDays: -7, startTime: "12:00", status: "cancelled",
         cancellationMessage: "Tidsbrist pga jobbet. Bokar om nästa vecka.",
       },
       // --- Manuell bokning (skapad av leverantören) ---
       // Tredje stoppet på "Dagens rutt"-demodagen (dag 2, Hallsberg).
       {
         customer: "Johan Nilsson", service: "Helskoning", horseKey: "Johan Nilsson/Tornado",
-        date: daysFromNow(2), startTime: "13:00", status: "confirmed",
+        offsetDays: 2, startTime: "13:00", status: "confirmed",
         isManualBooking: true,
       },
     ]
@@ -827,9 +849,13 @@ async function main() {
       }
 
       const svcDef = serviceData.find((s) => s.name === b.service)
-      const endTime = addMinutes(b.startTime, svcDef?.durationMinutes ?? 60)
+      const durationMinutes = svcDef?.durationMinutes ?? 60
       const horseId = b.horseKey ? (horses[b.horseKey] ?? null) : null
       const horseName = b.horseKey ? b.horseKey.split("/")[1] : null
+
+      // Resolve against the provider's real seeded availability — never the
+      // naive "offset days from today" date. See scheduler docstring.
+      const resolved = bookingScheduler.resolve(b.offsetDays, b.startTime, durationMinutes)
 
       try {
         const created = await prisma.booking.create({
@@ -837,9 +863,9 @@ async function main() {
             customerId,
             providerId: provider.id,
             serviceId,
-            bookingDate: b.date,
-            startTime: b.startTime,
-            endTime,
+            bookingDate: resolved.date,
+            startTime: resolved.startTime,
+            endTime: resolved.endTime,
             status: b.status,
             horseName,
             horseId,
@@ -860,11 +886,11 @@ async function main() {
         }
         const horseLabel = horseName ? ` (${horseName})` : ""
         const manualLabel = b.isManualBooking ? " [manuell]" : ""
-        console.log(`  Bokning: ${b.service} - ${b.customer}${horseLabel} (${label[b.status] ?? b.status}${manualLabel})`)
+        console.log(`  Bokning: ${b.service} - ${b.customer}${horseLabel} (${label[b.status] ?? b.status}${manualLabel}) — ${resolved.dateKey} ${resolved.startTime}`)
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err)
         if (msg.includes("unique_booking_slot")) {
-          console.log(`  Hoppar: ${b.service} - ${b.customer} (tidsluckan ${b.date.toISOString().slice(0, 10)} ${b.startTime} finns redan)`)
+          console.log(`  Hoppar: ${b.service} - ${b.customer} (tidsluckan ${resolved.dateKey} ${resolved.startTime} finns redan)`)
         } else {
           throw err
         }
@@ -994,15 +1020,18 @@ async function main() {
     }
 
     // 2 genomförda bokningar i serien (8 och 16 veckor bakåt)
+    const helskoningDuration = serviceData.find((s) => s.name === "Helskoning")?.durationMinutes ?? 75
     for (const daysBack of [-112, -56]) {
-      const seriesDate = daysFromNow(daysBack)
-      // Check the provider-level slot (matches the unique constraint)
+      // Resolved against actual availability, same as the main bookings —
+      // avoids landing on a closed day and avoids colliding with any other
+      // seeded booking already placed on that date.
+      const resolved = bookingScheduler.resolve(daysBack, "08:00", helskoningDuration)
       const existing = await prisma.booking.findFirst({
         where: {
           providerId: provider.id,
-          bookingDate: seriesDate,
-          startTime: "08:00",
-          endTime: "09:15",
+          bookingDate: resolved.date,
+          startTime: resolved.startTime,
+          endTime: resolved.endTime,
         },
       })
       if (!existing) {
@@ -1012,19 +1041,19 @@ async function main() {
               customerId: lisaId,
               providerId: provider.id,
               serviceId: helskoningId,
-              bookingDate: seriesDate,
-              startTime: "08:00",
-              endTime: "09:15",
+              bookingDate: resolved.date,
+              startTime: resolved.startTime,
+              endTime: resolved.endTime,
               status: "completed",
               horseName: "Molly",
               horseId: mollyId ?? null,
               bookingSeriesId,
             },
           })
-          console.log(`  Serie-bokning (genomförd): Molly ${seriesDate.toISOString().slice(0, 10)}`)
+          console.log(`  Serie-bokning (genomförd): Molly ${resolved.dateKey} ${resolved.startTime}`)
         } catch (err: unknown) {
           if ((err as { code?: string }).code === "P2002") {
-            console.log(`  Serie-bokning hoppades över (slottkonflikt): ${seriesDate.toISOString().slice(0, 10)}`)
+            console.log(`  Serie-bokning hoppades över (slottkonflikt): ${resolved.dateKey} ${resolved.startTime}`)
           } else {
             throw err
           }
@@ -1033,7 +1062,7 @@ async function main() {
         if (!existing.bookingSeriesId && existing.customerId === lisaId) {
           await prisma.booking.update({ where: { id: existing.id }, data: { bookingSeriesId } })
         }
-        console.log(`  Serie-bokning finns: Molly ${seriesDate.toISOString().slice(0, 10)}`)
+        console.log(`  Serie-bokning finns: Molly ${resolved.dateKey} ${resolved.startTime}`)
       }
     }
 

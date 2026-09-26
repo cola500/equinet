@@ -195,7 +195,7 @@ Logga in på staging som Erik (uppgifter i [demo-setup.md](./demo-setup.md)) och
 
 | Symptom | Trolig orsak | Åtgärd |
 |---------|--------------|--------|
-| **Inga kommande bokningar** på Dashboard/Kalender | Seeden kördes för länge sedan; de relativa `daysFromNow(2..14)`-bokningarna har blivit dåtid | Kör om med `--reset` (helpern gör alltid reset) |
+| **Inga kommande bokningar** på Dashboard/Kalender | Seeden kördes för länge sedan; de relativa bokningarna (`offsetDays: 2..14`, resolverade av `DemoBookingScheduler`) har blivit dåtid | Kör om med `--reset` (helpern gör alltid reset) |
 | **Gammal seed-data uppdateras inte** vid omkörning | `upsert` med `update: {}` + skip-logik (`scripts/seed-demo-provider.ts`) hoppar över befintliga rader | Måste köras med `--reset` — vilket helpern gör |
 | **Test-/smoke-sträng** ("3B.2 smoke-test") syns i Meddelanden | Manuellt inmatad data i staging-DB (finns ej i seed-koden) | `--reset` raderar demo-kunders konversationer och återskapar rena. Om strängen kommer från ett **icke**-demo-konto: radera den konversationen manuellt i DB |
 | **"Demo som hästägare" ger tyst 401 → tillbaka till `/login`** (Supabase-login lyckas, men appen studsar) | Föräldralöst Supabase Auth-konto för Lisa: en tidigare körning med `--customer-login` skapade auth-kontot, men en SENARE `--reset` UTAN `--customer-login` tog bort hennes `public.User`-rad utan att röra auth-kontot. Se beslutslogg 2026-09-26 nedan | Kör om med `npm run db:seed:staging-demo:customer:safe` (MED `--customer-login`) — dess `createCustomerAuth()` upptäcker och läker det föräldralösa kontot automatiskt |
@@ -251,6 +251,20 @@ Logga in på staging som Erik (uppgifter i [demo-setup.md](./demo-setup.md)) och
   med samma konto. All tidigare manuell verifiering i denna session hade loggat in manuellt,
   vilket exponerade dem. Se [demo-setup.md](./demo-setup.md#hur-en-extern-demo-mottagare-ska-öppna-demon)
   för den nya, obligatoriska instruktionen till externa demo-mottagare.
+- **2026-09-26 (bokningar på stängda dagar):** `daysFromNow(N)` i `seed-demo-provider.ts` tog
+  ingen hänsyn till leverantörens seedade `Availability` (mån–fre) eller `AvailabilityException`
+  — en seed-körning kunde placera en bokning på en lördag/söndag då leverantören är stängd.
+  Fix: nytt, testat modul `scripts/lib/demo-booking-scheduler.ts` (`DemoBookingScheduler`) som
+  läser leverantörens faktiska öppettider och resolverar varje `offsetDays` till närmaste öppna
+  dag + en icke-överlappande tid inom öppettiderna (deterministiskt per seed-körning). Se
+  [demo-setup.md](./demo-setup.md#bokningar-20-st) för hur datumlogiken fungerar. Samma
+  omkörning avslöjade också att det redan dokumenterade föräldralösa-Supabase-konto-problemet
+  (raden ovan om `--customer-login`) kräver att `--reset` och `--customer-login` körs i **samma**
+  invokering — en separat `--reset` följt av en separat `--customer-login` kan skapa en
+  `public.User`-rad med samma e-post men annat ID än det gamla auth-kontot innan
+  `createCustomerAuth()` hinner läka det, vilket gör att inloggningen fortsätter peka på fel
+  användare. `npm run db:seed:staging-demo:customer:safe` kör redan båda flaggorna tillsammans
+  och påverkas inte av detta.
   Separat, allvarligare fynd under samma utredning: appens PWA-service worker (`src/sw.ts`)
   cachade `auth-session`, `/api/*`-svar och renderade sidor (`pages`/`pages-rsc`) utan att
   rensa dem vid utloggning — en efterföljande användare på samma enhet/webbläsare kunde se
