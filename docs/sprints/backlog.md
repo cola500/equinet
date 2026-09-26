@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Kanonisk backlog för Equinet. Alla kända stories, uppgifter och beslut. status.md pekar hit; roadmap.md är den strategiska vyn."
 category: sprint
 status: active
-last_updated: 2026-09-15
+last_updated: 2026-09-26
 tags: [backlog, roadmap, planning]
 sections:
   - Aktiva produktspår
@@ -168,6 +168,7 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Story | Effort | Beskrivning |
 |-------|--------|-------------|
 | Kund-offline (fas 4) | 1-2 dagar | **Parkerad** (2026-04-17) — fokus på leverantörens upplevelse. Se [Parking lot](#parking-lot). |
+| Utloggad hård-navigering till skyddad `/provider/*`-route fastnar på skeleton | 0.5-1 dag (undersökning + fix) | **Upptäckt 2026-09-26** under demo-verifiering på staging (befintligt beteende, reproducerat både lokalt och på staging — orelaterat till PWA-cachefixen i samma session). En utloggad besökare som hård-navigerar direkt till t.ex. `/provider/calendar` blir kvar på URL:en och fastnar på `<CalendarSkeleton />` för evigt (`if (isLoading \|\| !isProvider) return <CalendarSkeleton />` i `src/app/provider/calendar/page.tsx:427`) istället för att redirectas till `/login`. `middleware.ts` matchar `/provider/:path*` och redirectar till `/login` för routes utan giltig Supabase-session — men i den reproducerade sekvensen skedde ingen redirect (headern visade "Logga in", URL:en förblev `/provider/calendar`), vilket tyder på att requesten aldrig nådde/utvärderades korrekt av middleware för denna navigeringsväg. Ingen datexponering (ingen användardata syns, bara en tom skeleton) — ren UX-brist, inte en säkerhetsbugg. Kräver undersökning: (1) verifiera om service workerns NetworkFirst-hantering av navigation-requests kan kringgå middleware-utvärdering för denna route, (2) lägg annars till en klient-side fallback (`router.push("/login")`) i sidor som villkorar rendering på `isProvider`/`isCustomer` istället för att bara visa skeleton i oändlighet. |
 
 ## Agent-navigering (kodkarta)
 
