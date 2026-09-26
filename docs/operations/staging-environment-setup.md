@@ -3,9 +3,10 @@ title: "Staging Environment Setup"
 description: "Plan + utfall för isolerad staging-miljö (egen domain, egen Supabase, egen DB). Block 2 klart 2026-05-06."
 category: operations
 status: active
-last_updated: 2026-05-06
+last_updated: 2026-09-26
 tags: [staging, preview, vercel, supabase, environment, demo]
 sections:
+  - Historisk korrigering (2026-09-26)
   - Resultat 2026-05-06 (Block 2 klart)
   - 1. Målbild
   - 2. Environment model
@@ -73,6 +74,16 @@ CLI-kommandot `vercel env rm <var> <env> --yes` **tar bort hela variabeln** för
 ---
 
 > Plan, inte kod. Inga env-ändringar gjorda. Inga secrets i denna fil — bara `NEXT_PUBLIC_*`-värden (publika i klient-bundlen) och project-IDn som ändå syns publikt.
+
+---
+
+## Historisk korrigering (2026-09-26)
+
+Miljöseparationen mellan staging och produktion (egna Vercel-projekt, egna Supabase-databaser/nycklar, Stripe test/live, egna domäner, `NEXT_PUBLIC_DEMO_MODE` true/false) infördes för att **isolera demo, kunddata, betalningar och hemligheter** från varandra. Den anledningen är fortfarande korrekt och ska bevaras.
+
+Det som **inte** var nödvändigt för att uppnå den isoleringen var att koden skulle leva på en egen långlivad `staging`-Git-branch. Miljöisolering kräver separata Vercel-projekt/env-config — inte en separat kodgren. Den långlivade branchen ledde i praktiken till manuell tvåvägs-synk (`sync/*-to-staging`-PR:ar) och återkommande koddrift (t.ex. en sessionStorage-utloggningsfix som fanns på `main` men saknades på `staging` i flera veckor).
+
+Målbilden framåt: `main` är enda långlivade kodgrenen. Samma Git-SHA byggs separat för staging (med stagingkonfiguration, demo aktiverat) och för produktion (med produktionskonfiguration, demo avstängt), och produktionsdeploy kräver att exakt samma SHA redan är verifierad i staging. Se migrationsplanen från 2026-09-26 (chattsession) för stegvis genomförande och rollback.
 
 ---
 
