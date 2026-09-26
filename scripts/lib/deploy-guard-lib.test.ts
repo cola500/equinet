@@ -138,6 +138,12 @@ describe('dgl_require_clean_tree / dgl_require_branch', () => {
     expect(out).toContain('Okommitterade')
   })
 
+  it('an untracked file lying around does NOT count as dirty (it cannot be part of any deployed SHA)', () => {
+    const dir = makeRepo()
+    writeFileSync(join(dir, 'scratch-notes.md'), 'not part of any commit')
+    expect(run('dgl_require_clean_tree', { cwd: dir }).code).toBe(0)
+  })
+
   it('branch check passes on main, fails on other branches', () => {
     const dir = makeRepo()
     expect(run('dgl_require_branch main', { cwd: dir }).code).toBe(0)

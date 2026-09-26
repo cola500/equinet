@@ -131,6 +131,15 @@ describe('deploy-production.sh', () => {
     expect(out).toContain('Okommitterade')
   })
 
+  it('does not fail because of an untracked scratch file lying around', () => {
+    const { dir, sha } = makeRepo()
+    writeFileSync(join(dir, 'scratch-notes.md'), 'not part of any commit')
+    const { bin } = makeBinDir({ sha })
+    withFetchStub(bin)
+    const { code } = run(['--dry-run'], bin, dir)
+    expect(code).toBe(0)
+  })
+
   it('fails on a non-main branch', () => {
     const { dir, sha } = makeRepo()
     execFileSync('git', ['-C', dir, 'checkout', '-q', '-b', 'feature/x'])
