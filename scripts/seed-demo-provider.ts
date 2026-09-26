@@ -164,18 +164,23 @@ async function resetDemoData(providerId: string) {
   const demoCustomerIds = demoCustomers.map((c) => c.id)
 
   if (demoCustomerIds.length > 0) {
+    // Demo customers are exclusively owned by this script (synthetic emails —
+    // DEMO_CUSTOMER_EMAILS). Delete ALL of their bookings/series/notes, not just
+    // this provider's, before deleting the User rows: Booking.customerId,
+    // BookingSeries.customerId and ProviderCustomerNote.customerId have no
+    // onDelete cascade, so a stray row from a different (old/orphaned) provider
+    // would otherwise block the deleteMany below with a FK violation.
     // Reviews (by booking) — cascade via Prisma delete on bookings below
     // CustomerReviews (by booking) — same
     // Conversations + Messages (cascade from booking)
     const demoBookings = await prisma.booking.findMany({
-      where: { customerId: { in: demoCustomerIds }, providerId },
+      where: { customerId: { in: demoCustomerIds } },
       select: { id: true },
     })
     const bookingIds = demoBookings.map((b) => b.id)
 
     if (bookingIds.length > 0) {
-      await prisma.review.deleteMany({ where: { bookingId: { in: bookingIds } } })
-      await prisma.customerReview.deleteMany({ where: { bookingId: { in: bookingIds } } })
+      // Review/CustomerReview cascade from Booking (onDelete: Cascade) — no explicit delete needed
       // Conversations cascade from bookings (onDelete: Cascade) — no explicit delete needed
       const deleted = await prisma.booking.deleteMany({
         where: { id: { in: bookingIds } },
@@ -184,7 +189,7 @@ async function resetDemoData(providerId: string) {
     }
 
     const series = await prisma.bookingSeries.deleteMany({
-      where: { customerId: { in: demoCustomerIds }, providerId },
+      where: { customerId: { in: demoCustomerIds } },
     })
     if (series.count > 0) console.log(`  Deleted ${series.count} booking series`)
 
@@ -194,7 +199,7 @@ async function resetDemoData(providerId: string) {
     console.log(`  Deleted ${horses.count} horses`)
 
     const notes = await prisma.providerCustomerNote.deleteMany({
-      where: { providerId, customerId: { in: demoCustomerIds } },
+      where: { customerId: { in: demoCustomerIds } },
     })
     console.log(`  Deleted ${notes.count} customer notes`)
 
