@@ -198,6 +198,7 @@ Logga in på staging som Erik (uppgifter i [demo-setup.md](./demo-setup.md)) och
 | **Inga kommande bokningar** på Dashboard/Kalender | Seeden kördes för länge sedan; de relativa `daysFromNow(2..14)`-bokningarna har blivit dåtid | Kör om med `--reset` (helpern gör alltid reset) |
 | **Gammal seed-data uppdateras inte** vid omkörning | `upsert` med `update: {}` + skip-logik (`scripts/seed-demo-provider.ts`) hoppar över befintliga rader | Måste köras med `--reset` — vilket helpern gör |
 | **Test-/smoke-sträng** ("3B.2 smoke-test") syns i Meddelanden | Manuellt inmatad data i staging-DB (finns ej i seed-koden) | `--reset` raderar demo-kunders konversationer och återskapar rena. Om strängen kommer från ett **icke**-demo-konto: radera den konversationen manuellt i DB |
+| **"Demo som hästägare" ger tyst 401 → tillbaka till `/login`** (Supabase-login lyckas, men appen studsar) | Föräldralöst Supabase Auth-konto för Lisa: en tidigare körning med `--customer-login` skapade auth-kontot, men en SENARE `--reset` UTAN `--customer-login` tog bort hennes `public.User`-rad utan att röra auth-kontot. Se beslutslogg 2026-09-26 nedan | Kör om med `npm run db:seed:staging-demo:customer:safe` (MED `--customer-login`) — dess `createCustomerAuth()` upptäcker och läker det föräldralösa kontot automatiskt |
 | **Guard-fel: "is PRODUCTION"** | URL:en pekar på prod-ref `xybyzflfxnqqyxnvjklv` | Du har fel connection string. Hämta staging-direct-URL från Supabase Dashboard (projekt `zzdamokfeenencuggjjp`) |
 | **Guard-fel: "not the allowed staging project"** | Okänd/fel hostad Supabase-ref | Samma som ovan — verifiera project-ref |
 | **Guard-fel: "points to localhost but staging was required"** | Du körde helpern men gav en localhost-URL | Ange staging-URL, inte `127.0.0.1` |
@@ -259,6 +260,31 @@ Logga in på staging som Erik (uppgifter i [demo-setup.md](./demo-setup.md)) och
   dels on-demand när `Header.tsx`s utloggning kör klart. Verifierat lokalt (webpack-bygge,
   SW aktiverad): fullständig cache-innehåll före/efter inloggning, utloggning och ny
   persona-inloggning utan manuell rensning — inga rester av föregående användares data kvar.
+- **2026-09-26 (Lisa/"Demo som hästägare" gav tyst 401 → tillbaka till login):** Efter att
+  P2003-fixen (se ovan) lät oss köra **`npm run db:seed:staging-demo:safe` utan
+  `--customer-login`**, kunde "Demo som hästägare" inte längre logga in Lisa: Supabase Auth
+  accepterade lösenordet (200 på `/auth/v1/token`), men appen studsade tillbaka till `/login`
+  och `/api/auth/session` gav `401 {"user":null}` direkt efteråt.
+  **Rotorsak:** `--reset` utan `--customer-login` tar bort Lisas `public.User`-rad och
+  återskapar henne som en **ghost-kund** (nytt slumpmässigt ID, ingen Supabase Auth-koppling).
+  Hennes **gamla Supabase Auth-konto** — skapat av en tidigare körning som använde
+  `--customer-login` — rörs INTE av den vanliga varianten och blir därmed föräldralöst: JWT:n
+  validerar fint mot Supabase, men `getSession()` i `src/lib/auth-server.ts` slår upp
+  `public.User` på samma ID och hittar ingen rad → returnerar `null` → 401 → redirect till
+  login. Detta är EN ANNAN föräldralös-auth-situation än den som redan är dokumenterad och
+  självläkt i `createCustomerAuth()` (se kodkommentaren i `scripts/seed-demo-provider.ts`) —
+  den självläkningen triggas bara när `--customer-login` körs och upptäcker att auth-kontot
+  redan finns; den körs aldrig alls om man kör UTAN `--customer-login`, så det föräldralösa
+  auth-kontot från en TIDIGARE `--customer-login`-körning blir kvar orört och bruten.
+  **Fix:** kör om med `npm run db:seed:staging-demo:customer:safe` (dvs. MED
+  `--customer-login`) — dess `createCustomerAuth()` upptäcker att auth-kontot redan finns
+  utan matchande `public.User`, tar bort det föräldralösa auth-kontot och återskapar Lisa
+  rent. Verifierat: "Demo som hästägare" fungerar efter omkörningen.
+  **Regel framåt:** om du planerar att demonstrera kundhemmet (`/hem`) — vilket "Demo som
+  hästägare"-knappen alltid gör, den är synlig för alla besökare — kör **alltid**
+  `db:seed:staging-demo:customer:safe`, aldrig den vanliga varianten, på staging. Den vanliga
+  varianten (`db:seed:staging-demo:safe` utan `--customer-login`) är bara säker att köra ensam
+  om ingen tidigare körning någonsin använt `--customer-login` på samma miljö.
 
 ---
 
