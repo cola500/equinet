@@ -1,9 +1,9 @@
 ---
 title: "Deployment Verification Guide"
-description: "Var verifierar man vad? Snabb beslutsguide för staging/prod-isolation, demo-läge och varför equinet-staging-app feature-branch-previews blir 'Canceled by Ignored Build Step' (förväntat)."
+description: "Var verifierar man vad? Snabb beslutsguide för staging/prod-isolation, demo-läge och varför equinet-staging-app feature-branch-previews blir 'Canceled by Ignored Build Step' (förväntat). Uppdaterad 2026-09-26: staging bygger nu från main, inte en egen branch."
 category: operations
 status: active
-last_updated: 2026-06-13
+last_updated: 2026-09-26
 tags: [deployment, verification, staging, demo-mode, vercel, branch-isolation]
 depends_on:
   - docs/operations/environments.md
@@ -45,21 +45,23 @@ Feature-branch-preview för demo-UX?
 
 Vill du se ändringen FÖRE merge?
   → A) Lokal demo-mode (NEXT_PUBLIC_DEMO_MODE=true), eller
-  → B) Merge till staging och verifiera på staging-domänen.
+  → B) Testa på `preview/candidate` (Preview-target, stagingvärden) före merge till `main`.
 ```
 
 ---
 
 ## Environment Mapping
 
+> **Uppdaterad 2026-09-26:** Båda projekten bygger nu från `main` (tidigare byggde staging från en egen `staging`-branch — se `docs/operations/staging-environment-setup.md` "Migrering till main-baserad staging"). Skillnaden mellan miljöerna är inte längre vilken branch de bygger från, utan miljökonfigurationen (Supabase-projekt, Stripe-läge, `NEXT_PUBLIC_DEMO_MODE`).
+
 | Branch | Vercel-projekt | Syfte | Custom domain |
 |--------|----------------|-------|----------------|
 | `main` | **equinet-app** | Produktion | `equinet.johanlindengard.com` |
-| `staging` | **equinet-staging-app** | Demo / Staging | `equinet-staging.johanlindengard.com` |
+| `main` | **equinet-staging-app** | Demo / Staging | `equinet-staging.johanlindengard.com` |
 
-Verifierat 2026-06-02 via Vercel API (`get_project`): `equinet-staging-app` äger domänen
-`equinet-staging.johanlindengard.com`. Det är två **separata** Vercel-projekt med varsin
-Production Branch.
+Verifierat 2026-09-26 via Vercel API (`get_project`): `equinet-staging-app` äger domänen
+`equinet-staging.johanlindengard.com` och har Production Branch `main`. Det är fortfarande två
+**separata** Vercel-projekt med varsin miljökonfiguration, byggda separat trots samma källkod.
 
 > **OBS — drift mot [environments.md](./environments.md):** environments.md (2026-05-08)
 > beskriver en tidigare uppsättning där *ett* projekt (`equinet-app`) serverade båda
@@ -73,8 +75,8 @@ Production Branch.
 - **Demo-UX verifieras endast på staging** (`equinet-staging.johanlindengard.com`).
 - **equinet-app-previews är INTE demo-verifiering.** Prod-projektet bygger previews för alla
   branches, men där är `NEXT_PUBLIC_DEMO_MODE` inte satt → du ser vanlig provider-vy, inte demon.
-- **equinet-staging-app bygger endast `staging`-branchen.** Feature-branches ignoreras
-  medvetet av staging-projektet (kostnads-/isolationskontroll).
+- **equinet-staging-app bygger endast från `main`** (plus tillfälligt `staging` och `preview/candidate` under observationsveckan efter 2026-09-26-migreringen). Övriga feature-branches ignoreras
+  medvetet av staging-projektet via Ignore Build Step (kostnads-/isolationskontroll).
 - **Feature-branch-previews på staging-projektet kan bli "Canceled by Ignored Build Step".**
   Det är **önskat beteende**, inte ett fel.
 - **Inga Vercel-config-ändringar** för att kringgå detta utan uttryckligt beslut — det
@@ -86,7 +88,8 @@ Production Branch.
 
 **"Previewen fungerar i equinet-app men inte i staging-projektet — är staging trasigt?"**
 Nej. equinet-app bygger previews för alla branches; equinet-staging-app bygger bara sin
-Production Branch (`staging`) och avbryter resten via Ignored Build Step.
+Production Branch (`main`, sedan 2026-09-26) plus de branches som är explicit vitlistade i
+Ignore Build Step, och avbryter resten.
 
 **"demo-läget saknas i previewen."**
 `NEXT_PUBLIC_DEMO_MODE=true` är satt på equinet-staging-app (staging). equinet-app-previewen kör utan det
@@ -123,7 +126,7 @@ i en preview där det inte borde spela roll.
 
 ### ADR: Demo Mode Verification
 
-**Status:** Accepterad (2026-06-02).
+**Status:** Accepterad (2026-06-02). **Branch-referensen nedan är uppdaterad 2026-09-26** — beslutet i sak (demo-läge är env-gate:at, inte kod-gate:at) är oförändrat, men "branch: staging" ska nu läsas som "Vercel-projekt: equinet-staging-app, oavsett vilken branch som för tillfället är dess Production Branch".
 
 **Kontext:** Demo-läget (`NEXT_PUBLIC_DEMO_MODE`) styr en förenklad provider-vy avsedd för
 pilot-demos. Det är env-gate:at på staging-projektet och finns inte i prod eller i
@@ -133,7 +136,7 @@ demo-UX ska verifieras och varför staging-projektets feature-previews blir CANC
 **Beslut:** Demo-läge är **endast garanterat aktivt** i:
 
 - Vercel-projekt: **equinet-staging-app**
-- Branch: **staging**
+- Branch: **main** (Production Branch sedan 2026-09-26; tidigare `staging`)
 - Domän: **equinet-staging.johanlindengard.com**
 
 **Konsekvenser:**
@@ -141,7 +144,7 @@ demo-UX ska verifieras och varför staging-projektets feature-previews blir CANC
 - Feature-branch-previews är **inte** en giltig verifieringsmiljö för demo-UX.
 - `"Canceled by Ignored Build Step"` på staging-projektet är **normalt och önskat**.
 - Demo-UX får **inte** valideras i equinet-app-previews.
-- För pre-merge-verifiering: använd lokal `NEXT_PUBLIC_DEMO_MODE=true`, eller merga till
-  `staging` och verifiera på staging-domänen.
+- För pre-merge-verifiering: använd lokal `NEXT_PUBLIC_DEMO_MODE=true`, eller deploya till
+  `preview/candidate` (Preview-target, stagingvärden) innan merge till `main`.
 
 **Verifieringskällor:** komponentnivå via tester (PR), live demo-beteende via staging.
