@@ -41,6 +41,15 @@ describe("clearServiceWorkerUserCaches", () => {
     await expect(clearServiceWorkerUserCaches()).resolves.toBeUndefined()
   })
 
+  it("resolves (does not reject) if postMessage throws synchronously", async () => {
+    const postMessage = vi.fn(() => {
+      throw new DOMException("The service worker is redundant.", "InvalidStateError")
+    })
+    vi.stubGlobal("navigator", { serviceWorker: { controller: { postMessage } } })
+
+    await expect(clearServiceWorkerUserCaches()).resolves.toBeUndefined()
+  })
+
   it("resolves via timeout if the SW never acknowledges", async () => {
     vi.useFakeTimers()
     const postMessage = vi.fn() // never replies

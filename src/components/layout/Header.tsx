@@ -39,8 +39,10 @@ export function Header({ hideSecondaryNav = false }: HeaderProps) {
     const supabase = createSupabaseBrowserClient()
     await supabase.auth.signOut()
     // Clear cached auth session / API / page data so the next login on this
-    // browser never sees this user's cached data.
-    await clearServiceWorkerUserCaches()
+    // browser never sees this user's cached data. Best-effort: logout must
+    // still redirect even if this rejects (e.g. the SW controller became
+    // redundant mid-call).
+    await clearServiceWorkerUserCaches().catch(() => {})
     window.location.href = "/"
   }
 

@@ -31,6 +31,14 @@ export async function clearServiceWorkerUserCaches(timeoutMs = 1000): Promise<vo
         settle()
       }
     }
-    controller.postMessage({ type: SW_MESSAGE_CLEAR_USER_CACHES }, [channel.port2])
+    try {
+      controller.postMessage({ type: SW_MESSAGE_CLEAR_USER_CACHES }, [channel.port2])
+    } catch {
+      // e.g. InvalidStateError if the controller became redundant between the
+      // check above and this call (a SW update landing mid-logout). Never
+      // reject -- settle immediately instead of waiting out the timeout.
+      clearTimeout(timer)
+      settle()
+    }
   })
 }
