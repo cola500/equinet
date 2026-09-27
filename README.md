@@ -4,7 +4,7 @@ description: "Projektöversikt, setup-guide, teknisk stack och implementerade fu
 category: root
 tags: [setup, overview, getting-started]
 status: active
-last_updated: 2026-04-11
+last_updated: 2026-09-27
 related:
   - CLAUDE.md
   - NFR.md
@@ -66,7 +66,8 @@ Inte ett portfolio-projekt byggt för att se snyggt ut. Det är produktivkod i d
 
 ### Prerequisites
 
-- **Node.js**: v20 eller senare
+- **Node.js**: v20 (exakt huvudversion — samma som CI, se `.nvmrc`. Node 22/24/26 ger
+  falska testfel, se docs/guides/gotchas.md #42)
 - **npm**: v10 eller senare
 - **Docker Desktop**: Krävs av Supabase CLI för lokal utveckling
 - **Supabase CLI**: `brew install supabase/tap/supabase` (lokal auth + DB + RLS)
@@ -81,12 +82,29 @@ Inte ett portfolio-projekt byggt för att se snyggt ut. Det är produktivkod i d
    cd equinet
    ```
 
-2. **Installera beroenden**
+2. **Aktivera rätt Node-version**
+
+   Med **nvm** (rekommenderat — läser `.nvmrc` automatiskt):
+   ```bash
+   nvm install   # första gången
+   nvm use
+   ```
+
+   Med **Homebrew** (om du inte använder nvm):
+   ```bash
+   brew install node@20
+   export PATH="/opt/homebrew/opt/node@20/bin:$PATH"   # lägg i ~/.zshrc för att slippa upprepa
+   ```
+
+   `npm run test:run` (och `check:all`) stoppar tidigt med ett tydligt felmeddelande om
+   fel Node-huvudversion är aktiv.
+
+3. **Installera beroenden**
    ```bash
    npm install
    ```
 
-3. **Sätt upp environment variables**
+4. **Sätt upp environment variables**
    ```bash
    # Kopiera example-fil till .env
    cp .env.example .env
@@ -100,7 +118,7 @@ Inte ett portfolio-projekt byggt för att se snyggt ut. Det är produktivkod i d
 
    > `.env.example` har lokal Supabase som default med standardnycklar. För produktion: avkommentera alternativ 2.
 
-4. **Starta lokal databas och seeda**
+5. **Starta lokal databas och seeda**
    ```bash
    # Starta lokal Supabase (PostgreSQL + Auth + RLS + triggers)
    npm run db:up
@@ -112,14 +130,14 @@ Inte ett portfolio-projekt byggt för att se snyggt ut. Det är produktivkod i d
    npm run db:seed
    ```
 
-5. **Starta utvecklingsservern**
+6. **Starta utvecklingsservern**
    ```bash
    npm run dev
    ```
 
    Öppna [http://localhost:3000](http://localhost:3000) i din browser.
 
-6. **Verifiera installation**
+7. **Verifiera installation**
    ```bash
    # Kör tester för att säkerställa allt fungerar
    npm run test:run        # Unit tests

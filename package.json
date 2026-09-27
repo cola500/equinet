@@ -2,7 +2,11 @@
   "name": "equinet",
   "version": "0.2.0",
   "private": true,
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
+    "pretest:run": "bash scripts/check-node-version.sh",
     "dev": "DISABLE_SW=true next dev",
     "dev:offline": "FEATURE_OFFLINE_MODE=true next dev --webpack",
     "generate:help": "tsx scripts/generate-help-data.ts",

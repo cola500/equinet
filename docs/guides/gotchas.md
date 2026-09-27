@@ -4,7 +4,7 @@ description: "Collection of common pitfalls and solutions encountered during Equ
 category: guide
 tags: [gotchas, debugging, next-js, prisma, serverless, offline, security, ios, xcode]
 status: active
-last_updated: 2026-09-25
+last_updated: 2026-09-27
 related:
   - CLAUDE.md
   - docs/guides/agents.md
@@ -42,6 +42,7 @@ sections:
   - 31. startsWith-prefix i auth.config Matchar Bredare Än Förväntat
   - 36. prisma migrate dev Fungerar Inte med Lokal Supabase
   - 41. Lokal Supabase Auth-inloggning ger 500 ("permission denied for schema public")
+  - 42. Fel Node-huvudversion ger falska jsdom-testfel
   - Relaterade Dokument
 ---
 
@@ -1565,6 +1566,39 @@ diskuterad ändring (kräver tech-architect-review vid schemaändring).
 felsöker vidare i auth-flödet om inloggning ger 500 lokalt — det är oftast detta, inte koden.
 
 **Källa:** Hovslagar-demo-slice 2026-09-25 (HorseNote-journalverifiering blockerades av detta).
+
+---
+
+## Gotcha #42: Fel Node-huvudversion ger falska jsdom-testfel
+
+**Problem:** `npm run test:run` (och `check:all`) misslyckas med ~32 kryptiska jsdom-fel
+(t.ex. `Cannot read properties of undefined (reading 'getItem')`) i orelaterade filer, när
+lokal Node-huvudversion skiljer sig från CI:s (Node 20, se `.github/workflows/quality-gates.yml`).
+Node 22/24/26:s experimentella globala `localStorage` krockar med Vitest/jsdom-miljön. Detta
+har orsakat flera falska "regressions-larm" i tidigare sessioner (körningar mot lokal Node 26
+när `.nvmrc` fanns men ingen versionshanterare var aktiv för att läsa den).
+
+**Lösning:** Projektet är pinnat till Node 20 på tre ställen: `.nvmrc`, `package.json#engines.node`
+och CI (`actions/setup-node` läser `.nvmrc` via `node-version-file`, en enda källa). En
+`pretest:run`-hook (`scripts/check-node-version.sh`) körs automatiskt före `npm run test:run`
+(och därmed även i `check:all`) och stoppar direkt med ett tydligt fel + åtgärd om fel
+huvudversion är aktiv, istället för att låta det manifestera som obegripliga testfel.
+
+```bash
+# nvm (läser .nvmrc automatiskt)
+nvm use
+
+# Homebrew (utan versionshanterare)
+brew install node@20
+export PATH="/opt/homebrew/opt/node@20/bin:$PATH"
+```
+
+**Regel:** Se alltid `node -v` mot `.nvmrc` FÖRST om `test:run` ger flera orelaterade jsdom-fel
+samtidigt — det är nästan alltid detta, inte en riktig regression. `check-node-version.sh` fångar
+det numera automatiskt, men manuell `npx vitest run <fil>` utanför `npm run` kringgår hooken.
+
+**Källa:** Upptäckt och workaroundad flera gånger under seed-bookings-arbetet 2026-09-26/27
+innan det standardiserades (denna gotcha) 2026-09-27.
 
 ---
 

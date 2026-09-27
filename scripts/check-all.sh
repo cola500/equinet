@@ -4,6 +4,10 @@
 
 set -euo pipefail
 
+# Förutsättning, inte en av de 4 gates: fel Node-huvudversion ger annars
+# kryptiska jsdom-testfel i gate 2 istället för en tydlig, tidig förklaring.
+bash "$(dirname "$0")/check-node-version.sh"
+
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[0;33m'
