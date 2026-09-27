@@ -19,6 +19,7 @@ import {
   type WeeklyAvailabilityDay,
   type AvailabilityExceptionDay,
 } from "./lib/demo-booking-scheduler"
+import { reconcileCustomerAuth } from "./lib/demo-customer-auth"
 
 config({ path: ".env.local" })
 config({ path: ".env" })
@@ -93,12 +94,29 @@ async function waitForPublicUser(userId: string, email: string): Promise<void> {
 }
 
 /**
- * Create a loginable customer via Supabase Auth (same pattern as the provider).
- * Returns the public.User id (the trigger creates it from the auth user).
- *
- * Reset-safe: --reset deletes the demo customer's public.User but not the auth
- * user, so on a repeat run the auth user is orphaned. We detect that (auth
- * exists, public.User gone) and recreate cleanly.
+ * Deletes a demo customer's dependent rows so the public.User row itself can
+ * then be deleted without an FK violation (Booking/BookingSeries/
+ * ProviderCustomerNote.customerId and Horse.ownerId have no onDelete cascade —
+ * same reasoning as the per-customer cleanup in resetDemoData above).
+ */
+async function deleteDemoCustomerAndDependents(userId: string): Promise<void> {
+  const bookingIds = (
+    await prisma.booking.findMany({ where: { customerId: userId }, select: { id: true } })
+  ).map((b) => b.id)
+  if (bookingIds.length > 0) {
+    await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } })
+  }
+  await prisma.bookingSeries.deleteMany({ where: { customerId: userId } })
+  await prisma.horse.deleteMany({ where: { ownerId: userId } })
+  await prisma.providerCustomerNote.deleteMany({ where: { customerId: userId } })
+  await prisma.notification.deleteMany({ where: { userId } })
+  await prisma.user.delete({ where: { id: userId } })
+}
+
+/**
+ * Create (or reconcile) a loginable customer via Supabase Auth (same pattern
+ * as the provider). Returns the public.User id to use for the rest of the
+ * seed run. See reconcileCustomerAuth() for the reset-safety/mismatch logic.
  */
 async function createCustomerAuth(
   email: string,
@@ -106,37 +124,18 @@ async function createCustomerAuth(
   lastName: string,
   password: string
 ): Promise<string> {
-  const create = () =>
-    supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { firstName, lastName },
-      app_metadata: { userType: "customer", isAdmin: false },
-    })
-
-  let { data, error } = await create()
-
-  if (error && (error.code === "email_exists" || error.code === "user_already_exists")) {
-    const existing = await prisma.user.findUnique({ where: { email } })
-    if (existing) {
-      // Auth + public.User both present (e.g. no --reset) → reuse.
-      await waitForPublicUser(existing.id, email)
-      return existing.id
-    }
-    // Orphaned auth user (public.User reset away) → delete it and recreate.
-    const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
-    const orphan = list?.users?.find((u) => u.email === email)
-    if (orphan) await supabase.auth.admin.deleteUser(orphan.id)
-    ;({ data, error } = await create())
-  }
-
-  if (error || !data?.user) {
-    throw new Error(`Failed to create customer auth for ${email}: ${error?.message ?? "unknown"}`)
-  }
-
-  await waitForPublicUser(data.user.id, email)
-  return data.user.id
+  return reconcileCustomerAuth(
+    supabase.auth.admin,
+    {
+      findByEmail: (email) => prisma.user.findUnique({ where: { email } }),
+      waitForLinked: waitForPublicUser,
+      deleteWithDependents: deleteDemoCustomerAndDependents,
+    },
+    email,
+    firstName,
+    lastName,
+    password
+  )
 }
 
 // ---------------------------------------------------------------------------
