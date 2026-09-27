@@ -1573,32 +1573,36 @@ felsöker vidare i auth-flödet om inloggning ger 500 lokalt — det är oftast 
 
 **Problem:** `npm run test:run` (och `check:all`) misslyckas med ~32 kryptiska jsdom-fel
 (t.ex. `Cannot read properties of undefined (reading 'getItem')`) i orelaterade filer, när
-lokal Node-huvudversion skiljer sig från CI:s (Node 20, se `.github/workflows/quality-gates.yml`).
-Node 22/24/26:s experimentella globala `localStorage` krockar med Vitest/jsdom-miljön. Detta
-har orsakat flera falska "regressions-larm" i tidigare sessioner (körningar mot lokal Node 26
-när `.nvmrc` fanns men ingen versionshanterare var aktiv för att läsa den).
+lokal Node-huvudversion skiljer sig från CI:s (Node 24, se `.github/workflows/quality-gates.yml`).
+Node 26:s experimentella globala `localStorage` krockar med Vitest/jsdom-miljön (Node 24 har inte
+detta problem — verifierat 2026-09-27, se Källa nedan). Detta har orsakat flera falska
+"regressions-larm" i tidigare sessioner (körningar mot lokal Node 26 när `.nvmrc` fanns men ingen
+versionshanterare var aktiv för att läsa den).
 
-**Lösning:** Projektet är pinnat till Node 20 på tre ställen: `.nvmrc`, `package.json#engines.node`
-och CI (`actions/setup-node` läser `.nvmrc` via `node-version-file`, en enda källa). En
-`pretest:run`-hook (`scripts/check-node-version.sh`) körs automatiskt före `npm run test:run`
-(och därmed även i `check:all`) och stoppar direkt med ett tydligt fel + åtgärd om fel
-huvudversion är aktiv, istället för att låta det manifestera som obegripliga testfel.
+**Lösning:** Projektet är pinnat till Node 24 (LTS) på tre ställen: `.nvmrc`, `package.json#engines.node`
+och CI (`actions/setup-node` läser `.nvmrc` via `node-version-file`, en enda källa). Vercel-projekten
+(`equinet-app`, `equinet-staging-app`) körde redan Node 24.x sedan tidigare. En `pretest:run`-hook
+(`scripts/check-node-version.sh`) körs automatiskt före `npm run test:run` (och därmed även i
+`check:all`) och stoppar direkt med ett tydligt fel + åtgärd om fel huvudversion är aktiv, istället
+för att låta det manifestera som obegripliga testfel.
 
 ```bash
 # nvm (läser .nvmrc automatiskt)
 nvm use
 
 # Homebrew (utan versionshanterare)
-brew install node@20
-export PATH="/opt/homebrew/opt/node@20/bin:$PATH"
+brew install node@24
+export PATH="/opt/homebrew/opt/node@24/bin:$PATH"
 ```
 
 **Regel:** Se alltid `node -v` mot `.nvmrc` FÖRST om `test:run` ger flera orelaterade jsdom-fel
 samtidigt — det är nästan alltid detta, inte en riktig regression. `check-node-version.sh` fångar
 det numera automatiskt, men manuell `npx vitest run <fil>` utanför `npm run` kringgår hooken.
 
-**Källa:** Upptäckt och workaroundad flera gånger under seed-bookings-arbetet 2026-09-26/27
-innan det standardiserades (denna gotcha) 2026-09-27.
+**Källa:** Upptäckt och workaroundad flera gånger under seed-bookings-arbetet 2026-09-26/27.
+Standardiserades initialt på Node 20 (2026-09-27), sedan om till Node 24 samma dag efter att
+Node 20 konstaterades EOL och båda Vercel-projekten redan körde Node 24 LTS — 4738/4738 tester
+verifierat gröna under Node 24, ingen `localStorage`/jsdom-krock på den versionen.
 
 ---
 

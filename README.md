@@ -66,9 +66,9 @@ Inte ett portfolio-projekt byggt för att se snyggt ut. Det är produktivkod i d
 
 ### Prerequisites
 
-- **Node.js**: v20 (exakt huvudversion — samma som CI, se `.nvmrc`. Node 22/24/26 ger
-  falska testfel, se docs/guides/gotchas.md #42)
-- **npm**: v10 eller senare
+- **Node.js**: v24 (exakt huvudversion — samma som CI och Vercel, se `.nvmrc`. Andra
+  huvudversioner (t.ex. Node 20 eller 26) ger falska testfel, se docs/guides/gotchas.md #42)
+- **npm**: v11 eller senare
 - **Docker Desktop**: Krävs av Supabase CLI för lokal utveckling
 - **Supabase CLI**: `brew install supabase/tap/supabase` (lokal auth + DB + RLS)
 - **Git**: För version control
@@ -92,8 +92,8 @@ Inte ett portfolio-projekt byggt för att se snyggt ut. Det är produktivkod i d
 
    Med **Homebrew** (om du inte använder nvm):
    ```bash
-   brew install node@20
-   export PATH="/opt/homebrew/opt/node@20/bin:$PATH"   # lägg i ~/.zshrc för att slippa upprepa
+   brew install node@24
+   export PATH="/opt/homebrew/opt/node@24/bin:$PATH"   # lägg i ~/.zshrc för att slippa upprepa
    ```
 
    `npm run test:run` (och `check:all`) stoppar tidigt med ett tydligt felmeddelande om

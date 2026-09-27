@@ -1,6 +1,16 @@
 /**
  * @domain conversation
  * Integration tests for POST /api/bookings/[id]/messages/attachments
+ *
+ * @vitest-environment node
+ *
+ * Node, not the project-wide jsdom default: this route parses a real
+ * multipart body via `req.formData()`. Under jsdom, `File`/`FormData` are
+ * jsdom's own implementations rather than Node's native (undici-backed)
+ * ones, and Node 24's undici enforces a stricter WebIDL File-brand check
+ * when re-parsing — a jsdom File fails it, surfacing as a false 500 here
+ * even though real HTTP multipart uploads (verified manually against a
+ * running Node 24 server) work correctly. See docs/guides/gotchas.md #42.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { NextRequest } from 'next/server'
