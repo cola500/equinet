@@ -198,6 +198,21 @@ Demo-data är märkt på följande sätt:
 - **2 avbokade**
 - **1 manuell bokning** (skapad av leverantören)
 
+**Datumlogik (sedan 2026-09-26):** Bokningarna definieras i `bookingSpecs` som ett offset i dagar
+från seed-körningen (`offsetDays`), men det faktiska datumet och klockslaget räknas ut av
+`scripts/lib/demo-booking-scheduler.ts` — inte `offsetDays` rakt av. Schemaläggaren läser
+leverantörens seedade `Availability`/`AvailabilityException` och:
+
+- flyttar ett offset som landar på en stängd dag till närmaste öppna dag (t.ex. lördag → fredag),
+- håller tiden inom öppettiderna och ser till att sluttiden ryms före stängning,
+- undviker överlapp med andra bokningar samma dag (med en buffert på 15 min),
+- är deterministisk: samma seed-körningsdatum ger samma resultat, och två bokningar med
+  samma `offsetDays` hamnar alltid på samma kalenderdag (t.ex. hela "Dagens rutt"-dagen nedan).
+
+Det exakta datumet för t.ex. `offsetDays: 2` kan alltså skilja sig ±1 dag beroende på vilken
+veckodag seeden körs (om dag 2 råkar bli en lördag/söndag). Öppna kalendern efter seed-körning
+för att se de faktiska datumen — förlita dig inte på "seed-datum + N dagar" som en exakt regel.
+
 ### Dagens rutt-demodag (3 stopp)
 
 Alla 9 kunder har **realistiska koordinater** i Örebro-regionen (gata + ort), så **Dagens rutt** (`/provider/today`) kan rita stoppen på karta och beräkna riktig körsträcka.
@@ -210,7 +225,7 @@ Seeden lägger 3 bekräftade bokningar på **samma dag** (dag 2 efter seed-körn
 | 10:30 | Peter Svensson | Kumla | Verkning |
 | 13:00 | Johan Nilsson | Hallsberg | Helskoning (manuell) |
 
-> **Demo-tips:** öppna Dagens rutt och välj **seed-körningsdatum + 2 dagar** (inte "2 dagar från idag"). Ett enstaka stopp på avlägsen adress = du har landat på dag 3 (Anders i Västerås). Se [dagens-rutt-verifiering-2026-06.md](../discovery/dagens-rutt-verifiering-2026-06.md).
+> **Demo-tips:** öppna Dagens rutt och välj datumet som `offsetDays: 2` faktiskt resolverades till (se Datumlogik ovan — normalt seed-körningsdatum + 2 dagar, men ±1 dag om dag 2 landade på en stängd dag). Ett enstaka stopp på avlägsen adress = du har landat på fel dag (Anders i Västerås). Se [dagens-rutt-verifiering-2026-06.md](../discovery/dagens-rutt-verifiering-2026-06.md).
 
 ### Återkommande bokning (1 serie)
 
