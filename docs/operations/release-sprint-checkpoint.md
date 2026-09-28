@@ -37,6 +37,7 @@ Detta dokument är den enda källan till sanning för var release-ready-sprinten
 | 2.4 | Negativa triggerkontroller: push, tagg, Dependabot-merge, release-event | ✅ Klar, verifierade |
 | Förutsättning för 2.3 | `dry_run` kör nu `vercel pull` + `vercel build` på riktigt (muterar inget) så att en tokenrotation kan verifieras utan riktig deploy | ✅ Klar |
 | 2.3 | `VERCEL_TOKEN`-rotation | ✅ Klar, verifierad (se nedan) |
+| 3.1 | Force-push av fryst releasekandidat-SHA till `preview/candidate` | ✅ Klar, verifierad (se nedan) |
 
 ## Mergade PR:ar och commits
 
@@ -68,14 +69,15 @@ Insamlat 2026-09-28.
   - Dependabot-merge och release-event: strukturellt bevisat (inget sådant event nämns i `on:`), inte live-testat eftersom ingen Dependabot-PR eller release skapades för ändamålet.
 - **Valideringslogiken testad med fem riktiga `workflow_dispatch`-körningar** (alla med `dry_run=true`, ingen produktionseffekt): ogiltigt SHA-format avvisas, SHA som inte finns på `main` avvisas, SHA på `main` utan grön quality-gates-körning avvisas, `staging_verified_sha`-mismatch utan `override_reason` avvisas, och en fullt giltig kombination går igenom `validate`-jobbet och in i `deploy`-jobbet.
 - **`VERCEL_TOKEN` har roterats och verifierats.** Efter att Johan kört `scripts/sync-vercel-token.sh` (kräver hans egen interaktiva Vercel-session -- kan inte göras av en agent), dispatchades `deploy-production.yml` igen med `dry_run=true`. Stegen `Pull Vercel environment` och `Build` lyckades båda (se körning `36433870343`) -- det bevisar att token fungerar, utan att en enda rad deploy-relaterad kod någonsin kördes. Tokenvärdet är inte och har aldrig varit synligt i något loggutdrag eller i detta dokument.
-- **Produktionen är oförändrad genom hela sprinten hittills:** verifierad direkt efter tokenrotationstestet, fortfarande exakt SHA `42842022...` (PR #503).
+- **Produktionen är oförändrad genom hela sprinten hittills:** verifierad flera gånger, senast efter Slice 3.1, fortfarande exakt SHA `42842022...` (PR #503).
+- **Slice 3.1 klar:** releasekandidaten (`4973f6e919339b022425063bd8a280fa2bbe9b41`) force-pushad till `preview/candidate`. Vercel-deployment `dpl_6VHpb2b3bUzBzYoHcgxJN1oYyYhd` (`equinet-staging-app`, target=Preview) blev `READY` med rätt SHA i `meta.githubCommitSha`. `equinet-app` byggde också en (för produktionsformat) preview av samma branch, target=Preview -- normalt beteende, rör inget alias. **Det levande stagingaliaset (`equinet-staging.johanlindengard.com`) är opåverkat** -- fortfarande PR #503, bekräftat efteråt via `list_deployments`.
 
 ## Inte gjort
 
 - **Ingen tagg har skapats** (den tillfälliga testtaggen för det negativa triggertestet skapades och raderades samma session -- se ovan).
 - **Ingen GitHub Release har skapats.** `gh release list` är fortsatt tom.
 - **Ingen produktionsdeploy har körts** (`dry_run` har alltid varit `true` i varje test-dispatch).
-- **Ingen deploy till staging har skett** (Workstream 3 påbörjas efter denna checkpoint-PR).
+- **Ingen promotion till stagings LEVANDE deploy har skett** (Slice 3.1 är bara en isolerad Preview-deploy på `preview/candidate` -- Slice 3.3 gör den faktiska promoveringen, och kräver separat godkännande).
 
 ## Kända blockerare och återstående slices
 
@@ -107,7 +109,7 @@ Jämför resultatet mot tabellen i "Nuläge (SHA:er)" och listan i "Verifierat, 
 
 ### 3. Nästa säkra steg
 
-Releasekandidaten är fryst (`4973f6e9...`, se "Nuläge (SHA:er)"). Nästa steg är **Slice 3.1**: force-pusha exakt den SHA:n till `preview/candidate` (Preview-target, rör aldrig det levande stagingaliaset). **Invänta Johans uttryckliga godkännande innan detta görs** -- frysningen av en kandidat-SHA är inte i sig ett godkännande att deploya den någonstans.
+Slice 3.1 är klar (releasekandidaten `4973f6e9...` ligger som en Preview-deploy på `preview/candidate`, `READY`). Nästa steg är **Slice 3.2**: manuell rök-verifiering mot preview-URL:en (`https://equinet-staging-app-git-preview-candidate-cola500s-projects.vercel.app`) -- demo-läge, auth, en bokning end-to-end. Rör inget levande alias. **Invänta Johans uttryckliga godkännande innan Slice 3.3** (promotion till stagings faktiska levande deploy) -- det är först där en produktionsliknande, delad miljö faktiskt förändras.
 
 ### 4. Avvikelser som kräver stopp och nytt beslut
 
