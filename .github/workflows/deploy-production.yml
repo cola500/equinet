@@ -1,0 +1,208 @@
+name: Deploy to Production (manual)
+
+# Säkerhetsmodell (2026-09-28, ersätter det tidigare push-triggade
+# deploy-production-jobbet i quality-gates.yml):
+#
+# - ENDA triggern är workflow_dispatch. Ingen push, pull_request, tag,
+#   release eller Dependabot-merge kan starta detta workflow -- de events
+#   nämns inte alls i `on:` nedan, så det finns tekniskt inget att koppla
+#   bort. En vanlig merge till main producerar noll produktionseffekt.
+# - `sha` är ett obligatoriskt input. Workflowet använder ALDRIG github.sha
+#   eller ett rörligt main -- det deployar exakt den commit som efterfrågas,
+#   ingen annan.
+# - `validate`-jobbet kör helt utan produktionshemligheter (ingen
+#   `environment:`-bindning) och avgör om deployen ens FÅR försöka starta:
+#     1. sha är ett fullständigt, giltigt 40-tecken hex-SHA
+#     2. sha är en anfader till origin/main (dvs. finns på skyddad main)
+#     3. en avslutad quality-gates.yml-körning finns för exakt denna sha,
+#        och dess "Quality Gate Passed"-jobb lyckades
+#     4. sha matchar staging_verified_sha (operatörens attestering av vilken
+#        SHA som senast staging-verifierades) -- eller override_reason är
+#        ifylld som ett uttryckligt, dokumenterat undantag. Det finns idag
+#        ingen maskinläsbar markering av "senast staging-godkänd SHA"
+#        (planerat framtida arbete, se docs/operations/staging-environment-
+#        setup.md) -- detta är alltså en attesterad kontroll, inte en
+#        oberoende bevisad kontroll. Den stoppar ändå kopiering/felskrivning
+#        och tvingar fram en synlig, loggad motivering vid avvikelse.
+# - `deploy`-jobbet körs under GitHub-environmentet "production" (secrets,
+#   branch-restriktion, deployment-loggning) -- men UTAN required reviewers.
+#   Godkännandepunkten är Johans uttryckliga instruktion att köra detta
+#   workflow för en bestämd sha, inte ett GitHub-UI-godkännande.
+# - `dry_run` (default true) kör hela valideringen och bygget men hoppar
+#   över det faktiska `vercel deploy`-steget och health-checken. Används för
+#   att testa hela kedjan utan att någonsin röra produktionsmiljön.
+# - `concurrency` (workflow-brett) förhindrar att två produktionsdeployer
+#   körs samtidigt -- en andra dispatch köar istället för att avbryta eller
+#   krocka med en pågående.
+# - VERCEL_TOKEN skickas ALDRIG till echo/logg -- bara som inline
+#   `--token=${{ secrets.VERCEL_TOKEN }}` i samma mönster som redan använts
+#   i detta repo. GitHub maskerar automatiskt exakta secret-värden i loggar.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Exakt 40-tecken Git-SHA att deploya. Måste finnas på main och ha en grön Quality Gate Passed-körning."
+        required: true
+        type: string
+      staging_verified_sha:
+        description: "SHA:n du personligen verifierade som god på staging. Måste matcha 'sha' om inte override_reason är ifylld."
+        required: true
+        type: string
+      override_reason:
+        description: "Endast om staging_verified_sha skiljer sig från sha: förklara varför du ändå deployar. Lämna tomt annars."
+        required: false
+        type: string
+        default: ""
+      dry_run:
+        description: "true (default) = validera och bygg, men hoppa över det faktiska deploy-steget. Sätt till false för en riktig produktionsdeploy."
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  validate:
+    name: Validate deploy candidate
+    runs-on: ubuntu-latest
+    outputs:
+      quality_gate_run_id: ${{ steps.find-run.outputs.run_id }}
+      commit_summary: ${{ steps.commit-info.outputs.summary }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify SHA format
+        run: |
+          if ! [[ "${{ inputs.sha }}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::'sha' måste vara ett fullständigt 40-tecken hex-SHA. Fick: '${{ inputs.sha }}'"
+            exit 1
+          fi
+          echo "✓ SHA-format OK"
+
+      - name: Verify SHA exists on protected main
+        run: |
+          if ! git cat-file -e "${{ inputs.sha }}^{commit}" 2>/dev/null; then
+            echo "::error::${{ inputs.sha }} finns inte i repot."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "${{ inputs.sha }}" origin/main; then
+            echo "::error::${{ inputs.sha }} är inte en anfader till origin/main. Vägrar deploya en SHA som inte finns på skyddad main."
+            exit 1
+          fi
+          echo "✓ ${{ inputs.sha }} finns på origin/main"
+
+      - name: Commit info
+        id: commit-info
+        run: |
+          SUMMARY="$(git log -1 --format='%h %s (%ad)' --date=short "${{ inputs.sha }}")"
+          echo "summary=$SUMMARY" >> "$GITHUB_OUTPUT"
+          echo "Commit: $SUMMARY"
+
+      - name: Find Quality Gate Passed run for this SHA
+        id: find-run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RUN_JSON="$(gh run list --repo "${{ github.repository }}" --workflow quality-gates.yml \
+            --json databaseId,headSha,status -L 100)"
+          RUN_ID="$(echo "$RUN_JSON" | jq -r --arg sha "${{ inputs.sha }}" \
+            '[.[] | select(.headSha == $sha and .status == "completed")] | sort_by(.databaseId) | last | .databaseId // empty')"
+          if [ -z "$RUN_ID" ]; then
+            echo "::error::Ingen avslutad quality-gates.yml-körning hittad för ${{ inputs.sha }}. Deploy kräver bevisad grön CI för exakt denna commit."
+            exit 1
+          fi
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "✓ Hittade körning $RUN_ID"
+
+      - name: Verify Quality Gate Passed succeeded
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CONCLUSION="$(gh run view "${{ steps.find-run.outputs.run_id }}" --repo "${{ github.repository }}" --json jobs \
+            | jq -r '.jobs[] | select(.name == "Quality Gate Passed") | .conclusion')"
+          if [ "$CONCLUSION" != "success" ]; then
+            echo "::error::Quality Gate Passed lyckades inte för denna SHA (utfall: ${CONCLUSION:-saknas}). Vägrar deploya."
+            exit 1
+          fi
+          echo "✓ Quality Gate Passed är grön för ${{ inputs.sha }}"
+
+      - name: Verify staging-approved SHA match
+        run: |
+          SHA="${{ inputs.sha }}"
+          STAGING_SHA="${{ inputs.staging_verified_sha }}"
+          REASON="${{ inputs.override_reason }}"
+          if [ "$SHA" = "$STAGING_SHA" ]; then
+            echo "✓ sha matchar staging_verified_sha -- samma SHA som verifierades i staging"
+          elif [ -n "$REASON" ]; then
+            echo "::warning::sha ($SHA) skiljer sig från staging_verified_sha ($STAGING_SHA). Dokumenterat undantag: $REASON"
+          else
+            echo "::error::sha ($SHA) matchar inte staging_verified_sha ($STAGING_SHA), och ingen override_reason gavs."
+            echo "::error::Det finns idag ingen maskinläsbar 'senast staging-godkänd'-markering (se docs/operations/staging-environment-setup.md) -- denna kontroll är operatörens egen attestering."
+            echo "::error::Om avvikelsen är avsiktlig: kör om med override_reason ifylld och en tydlig motivering."
+            exit 1
+          fi
+
+  deploy:
+    name: Deploy to Production
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      PROD_HEALTH_URL: https://equinet.johanlindengard.com/api/health
+
+    steps:
+      - name: Summary
+        run: |
+          echo "SHA:            ${{ inputs.sha }}"
+          echo "Commit:         ${{ needs.validate.outputs.commit_summary }}"
+          echo "Quality Gate:   run ${{ needs.validate.outputs.quality_gate_run_id }}"
+          echo "dry_run:        ${{ inputs.dry_run }}"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "::notice::dry_run=true -- validering och bygge körs, men INGEN faktisk deploy eller health check sker."
+          fi
+
+      - name: Checkout exact SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel environment
+        if: inputs.dry_run == false
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        if: inputs.dry_run == false
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        if: inputs.dry_run == false
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Health check
+        if: inputs.dry_run == false
+        run: |
+          sleep 10
+          if curl -fsS --max-time 15 "$PROD_HEALTH_URL"; then
+            echo "✓ Health check OK"
+          else
+            echo "::warning::Kunde inte nå $PROD_HEALTH_URL -- verifiera manuellt. Se docs/operations/vercel-token-sync-and-production-deploy.md för rollback."
+          fi
+
+      - name: Dry-run complete
+        if: inputs.dry_run == true
+        run: echo "✓ dry_run klar. Ingen produktionsdeploy gjordes. Kör om med dry_run=false för en riktig deploy."

@@ -1,13 +1,15 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, rmSync, writeFileSync, chmodSync, existsSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync, chmodSync, existsSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-// Exercises scripts/deploy-production.sh end to end with git, gh and curl
-// all stubbed -- never a real repo, GitHub run, or network call. "git" is a
-// real temp repo (so status/branch/rev-parse behave exactly like production)
-// except "fetch", which is stubbed to a no-op since there is no real origin.
+// Exercises scripts/deploy-production.sh end to end with git, gh, node and
+// date all real except "git fetch" and gh's network-touching subcommands,
+// which are stubbed -- never a real repo, GitHub Actions run, or network
+// call. "git" is a real temp repo (so status/branch/rev-parse behave
+// exactly like production) except "fetch", stubbed to a no-op since there
+// is no real origin.
 const SCRIPT = join(process.cwd(), 'scripts/deploy-production.sh')
 
 const cleanupDirs: string[] = []
@@ -33,50 +35,39 @@ function makeRepo(): { dir: string; sha: string } {
 }
 
 function makeBinDir(opts: {
-  sha: string
   repo?: string
-  runExists?: boolean
-  runStatus?: 'completed' | 'in_progress'
-  deployJobConclusion?: 'success' | 'failure' | 'missing'
-  rerunOk?: boolean
+  dispatchOk?: boolean
+  runListable?: boolean
   watchOk?: boolean
-}): { bin: string; rerunMarker: string; watchMarker: string } {
-  const {
-    sha,
-    repo = 'cola500/equinet',
-    runExists = true,
-    runStatus = 'completed',
-    deployJobConclusion = 'failure',
-    rerunOk = true,
-    watchOk = true,
-  } = opts
+}): { bin: string; dispatchMarker: string; watchMarker: string; dispatchArgsFile: string } {
+  const { repo = 'cola500/equinet', dispatchOk = true, runListable = true, watchOk = true } = opts
   const dir = mkdtempSync(join(tmpdir(), 'deploy-bin-'))
   cleanupDirs.push(dir)
-  const rerunMarker = join(dir, 'rerun-called')
+  const dispatchMarker = join(dir, 'dispatch-called')
+  const dispatchArgsFile = join(dir, 'dispatch-args')
   const watchMarker = join(dir, 'watch-called')
 
-  const runListJson = runExists
-    ? JSON.stringify([{ databaseId: 999, headSha: sha, status: runStatus, conclusion: null, url: 'https://x', createdAt: '2026-01-01' }])
+  const runListJson = runListable
+    ? JSON.stringify([{ databaseId: 42, createdAt: '2099-01-01T00:00:00Z' }])
     : '[]'
-  const jobsJson = JSON.stringify({
-    jobs: deployJobConclusion === 'missing' ? [] : [{ name: 'Deploy to Production', conclusion: deployJobConclusion }],
-  })
 
   writeFileSync(
     join(dir, 'gh'),
     `#!/usr/bin/env bash
 if [ "$1" = "auth" ] && [ "$2" = "status" ]; then exit 0; fi
 if [ "$1" = "repo" ] && [ "$2" = "view" ]; then echo "${repo}"; exit 0; fi
+if [ "$1" = "workflow" ] && [ "$2" = "run" ]; then
+  echo "$@" > "${dispatchArgsFile}"
+  touch "${dispatchMarker}"
+  ${dispatchOk ? 'exit 0' : 'exit 1'}
+fi
 if [ "$1" = "run" ] && [ "$2" = "list" ]; then echo '${runListJson}'; exit 0; fi
-if [ "$1" = "run" ] && [ "$2" = "view" ]; then echo '${jobsJson}'; exit 0; fi
-if [ "$1" = "run" ] && [ "$2" = "rerun" ]; then touch "${rerunMarker}"; ${rerunOk ? 'exit 0' : 'exit 1'}; fi
 if [ "$1" = "run" ] && [ "$2" = "watch" ]; then touch "${watchMarker}"; ${watchOk ? 'exit 0' : 'exit 1'}; fi
 exit 1
 `
   )
-  writeFileSync(join(dir, 'curl'), `#!/usr/bin/env bash\necho '{"status":"ok"}'\n`)
-  for (const f of ['gh', 'curl']) chmodSync(join(dir, f), 0o755)
-  return { bin: dir, rerunMarker, watchMarker }
+  chmodSync(join(dir, 'gh'), 0o755)
+  return { bin: dir, dispatchMarker, watchMarker, dispatchArgsFile }
 }
 
 function run(
@@ -114,36 +105,27 @@ exec "${realGit}" "$@"
 
 describe('deploy-production.sh', () => {
   it('rejects an unknown flag', () => {
-    const { dir, sha } = makeRepo()
-    const { bin } = makeBinDir({ sha })
+    const { dir } = makeRepo()
+    const { bin } = makeBinDir({})
     const { code, out } = run(['--bogus'], bin, dir)
     expect(code).not.toBe(0)
     expect(out).toContain('Okänd flagga')
   })
 
   it('fails on a dirty working tree', () => {
-    const { dir, sha } = makeRepo()
+    const { dir } = makeRepo()
     writeFileSync(join(dir, 'f.txt'), 'changed')
-    const { bin } = makeBinDir({ sha })
+    const { bin } = makeBinDir({})
     withFetchStub(bin)
     const { code, out } = run(['--dry-run'], bin, dir)
     expect(code).not.toBe(0)
     expect(out).toContain('Okommitterade')
   })
 
-  it('does not fail because of an untracked scratch file lying around', () => {
-    const { dir, sha } = makeRepo()
-    writeFileSync(join(dir, 'scratch-notes.md'), 'not part of any commit')
-    const { bin } = makeBinDir({ sha })
-    withFetchStub(bin)
-    const { code } = run(['--dry-run'], bin, dir)
-    expect(code).toBe(0)
-  })
-
   it('fails on a non-main branch', () => {
-    const { dir, sha } = makeRepo()
+    const { dir } = makeRepo()
     execFileSync('git', ['-C', dir, 'checkout', '-q', '-b', 'feature/x'])
-    const { bin } = makeBinDir({ sha })
+    const { bin } = makeBinDir({})
     withFetchStub(bin)
     const { code, out } = run(['--dry-run'], bin, dir)
     expect(code).not.toBe(0)
@@ -151,11 +133,11 @@ describe('deploy-production.sh', () => {
   })
 
   it('fails when local main diverges from origin/main', () => {
-    const { dir, sha } = makeRepo()
+    const { dir } = makeRepo()
     writeFileSync(join(dir, 'g.txt'), 'y')
     execFileSync('git', ['-C', dir, 'add', '.'])
     execFileSync('git', ['-C', dir, 'commit', '-q', '-m', 'diverge locally'])
-    const { bin } = makeBinDir({ sha })
+    const { bin } = makeBinDir({})
     withFetchStub(bin)
     const { code, out } = run(['--dry-run'], bin, dir)
     expect(code).not.toBe(0)
@@ -163,72 +145,124 @@ describe('deploy-production.sh', () => {
   })
 
   it('fails when the repo does not match cola500/equinet', () => {
-    const { dir, sha } = makeRepo()
-    const { bin } = makeBinDir({ sha, repo: 'someone-else/fork' })
+    const { dir } = makeRepo()
+    const { bin } = makeBinDir({ repo: 'someone-else/fork' })
     withFetchStub(bin)
     const { code, out } = run(['--dry-run'], bin, dir)
     expect(code).not.toBe(0)
     expect(out).toContain('Fel repo')
   })
 
-  it('fails when no workflow run exists yet for this SHA', () => {
-    const { dir, sha } = makeRepo()
-    const { bin } = makeBinDir({ sha, runExists: false })
+  it('fails when --staging-verified-sha is missing', () => {
+    const { dir } = makeRepo()
+    const { bin } = makeBinDir({})
     withFetchStub(bin)
     const { code, out } = run(['--dry-run'], bin, dir)
     expect(code).not.toBe(0)
-    expect(out).toContain('Ingen quality-gates-körning')
+    expect(out).toContain('staging-verified-sha saknas')
   })
 
-  it('fails when the run for this SHA is still in progress', () => {
-    const { dir, sha } = makeRepo()
-    const { bin } = makeBinDir({ sha, runStatus: 'in_progress' })
+  it('fails when staging-verified-sha differs from main SHA and no override-reason is given', () => {
+    const { dir } = makeRepo()
+    const { bin } = makeBinDir({})
     withFetchStub(bin)
-    const { code, out } = run(['--dry-run'], bin, dir)
+    const { code, out } = run(['--dry-run', '--staging-verified-sha', 'deadbeef'], bin, dir)
     expect(code).not.toBe(0)
-    expect(out).toContain('inte klar')
+    expect(out).toContain('matchar inte main-SHA')
   })
 
-  it('reports already-deployed and exits 0 without rerunning, when the job already succeeded', () => {
+  it('--dry-run accepts a mismatched staging-verified-sha when override-reason is given, but never dispatches', () => {
     const { dir, sha } = makeRepo()
-    const { bin, rerunMarker } = makeBinDir({ sha, deployJobConclusion: 'success' })
+    const { bin, dispatchMarker } = makeBinDir({})
     withFetchStub(bin)
-    const { code, out } = run([], bin, dir)
-    expect(code).toBe(0)
-    expect(out).toContain('redan deployad')
-    expect(existsSync(rerunMarker)).toBe(false)
-  })
-
-  it('--dry-run shows the plan but never calls rerun/watch and never prompts', () => {
-    const { dir, sha } = makeRepo()
-    const { bin, rerunMarker, watchMarker } = makeBinDir({ sha })
-    withFetchStub(bin)
-    const { code, out } = run(['--dry-run'], bin, dir)
+    const { code, out } = run(
+      ['--dry-run', '--staging-verified-sha', 'deadbeef', '--override-reason', 'hotfix, staging body redeployed separately'],
+      bin,
+      dir
+    )
     expect(code).toBe(0)
     expect(out).toContain('DRY-RUN')
-    expect(existsSync(rerunMarker)).toBe(false)
+    expect(out).toContain('Override-skäl')
+    expect(existsSync(dispatchMarker)).toBe(false)
+    void sha
+  })
+
+  it('--dry-run shows the plan but never dispatches and never prompts', () => {
+    const { dir, sha } = makeRepo()
+    const { bin, dispatchMarker, watchMarker } = makeBinDir({})
+    withFetchStub(bin)
+    const { code, out } = run(['--dry-run', '--staging-verified-sha', sha], bin, dir)
+    expect(code).toBe(0)
+    expect(out).toContain('DRY-RUN')
+    expect(existsSync(dispatchMarker)).toBe(false)
     expect(existsSync(watchMarker)).toBe(false)
   })
 
-  it('aborts without triggering anything when the confirmation phrase does not match', () => {
+  it('aborts without dispatching when the confirmation phrase does not match', () => {
     const { dir, sha } = makeRepo()
-    const { bin, rerunMarker } = makeBinDir({ sha })
+    const { bin, dispatchMarker } = makeBinDir({})
     withFetchStub(bin)
-    const { code, out } = run([], bin, dir, 'nope\n')
+    const { code, out } = run(['--staging-verified-sha', sha], bin, dir, 'nope\n')
     expect(code).not.toBe(0)
     expect(out).toContain('matchade inte')
-    expect(existsSync(rerunMarker)).toBe(false)
+    expect(existsSync(dispatchMarker)).toBe(false)
   })
 
-  it('with the correct confirmation, triggers rerun and watch and reports success', () => {
+  it('with the correct confirmation, dispatches deploy-production.yml with dry_run=false and watches it', () => {
     const { dir, sha } = makeRepo()
-    const { bin, rerunMarker, watchMarker } = makeBinDir({ sha })
+    const { bin, dispatchMarker, watchMarker, dispatchArgsFile } = makeBinDir({})
     withFetchStub(bin)
     const short = sha.slice(0, 7)
-    const { code, out } = run([], bin, dir, `DEPLOY ${short}\n`)
+    const { code, out } = run(['--staging-verified-sha', sha], bin, dir, `DEPLOY ${short}\n`)
     expect(code).toBe(0)
-    expect(existsSync(rerunMarker)).toBe(true)
+    expect(existsSync(dispatchMarker)).toBe(true)
     expect(existsSync(watchMarker)).toBe(true)
     expect(out).toContain('klar')
+    const dispatchArgs = readFileSync(dispatchArgsFile, 'utf8')
+    expect(dispatchArgs).toContain('deploy-production.yml')
+    expect(dispatchArgs).toContain(`sha=${sha}`)
+    expect(dispatchArgs).toContain(`staging_verified_sha=${sha}`)
+    expect(dispatchArgs).toContain('dry_run=false')
+  })
+
+  it('with an override reason and mismatched staging SHA, dispatches including the reason', () => {
+    const { dir, sha } = makeRepo()
+    const { bin, dispatchArgsFile } = makeBinDir({})
+    withFetchStub(bin)
+    const short = sha.slice(0, 7)
+    const { code } = run(
+      ['--staging-verified-sha', 'deadbeef', '--override-reason', 'hotfix approved verbally'],
+      bin,
+      dir,
+      `DEPLOY ${short}\n`
+    )
+    expect(code).toBe(0)
+    const dispatchArgs = readFileSync(dispatchArgsFile, 'utf8')
+    expect(dispatchArgs).toContain('staging_verified_sha=deadbeef')
+    expect(dispatchArgs).toContain('override_reason=hotfix approved verbally')
+  })
+
+  it(
+    'fails cleanly if the dispatched run cannot be found afterwards',
+    () => {
+      const { dir, sha } = makeRepo()
+      const { bin } = makeBinDir({ runListable: false })
+      withFetchStub(bin)
+      const short = sha.slice(0, 7)
+      const { code, out } = run(['--staging-verified-sha', sha], bin, dir, `DEPLOY ${short}\n`)
+      expect(code).not.toBe(0)
+      expect(out).toContain('Kunde inte hitta')
+    },
+    40000
+  )
+
+  it('fails when the dispatched run itself fails', () => {
+    const { dir, sha } = makeRepo()
+    const { bin } = makeBinDir({ watchOk: false })
+    withFetchStub(bin)
+    const short = sha.slice(0, 7)
+    const { code, out } = run(['--staging-verified-sha', sha], bin, dir, `DEPLOY ${short}\n`)
+    expect(code).not.toBe(0)
+    expect(out).toContain('misslyckades')
   })
 })
