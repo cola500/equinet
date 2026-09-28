@@ -4,7 +4,7 @@ description: "Konfiguration och skillnader mellan lokal utveckling, staging och 
 category: operations
 tags: [environments, vercel, supabase, ios, config]
 status: active
-last_updated: 2026-09-26
+last_updated: 2026-09-28
 related:
   - deployment.md
   - environment-runbook.md

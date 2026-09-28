@@ -304,4 +304,4 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
-**Senast uppdaterad**: 2026-09-26
+**Senast uppdaterad**: 2026-09-28

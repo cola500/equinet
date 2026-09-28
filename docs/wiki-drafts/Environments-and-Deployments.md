@@ -3,7 +3,7 @@ title: "Wiki: Environments and Deployments"
 description: "Draft för GitHub Wiki-sidan om miljöer och deploy -- lokal/staging/prod-matris, deploy-ordning och de viktigaste fällorna. Frontmattern strippas vid publicering."
 category: guide
 status: draft
-last_updated: 2026-09-26
+last_updated: 2026-09-28
 tags: [wiki, environments, deployment, vercel, supabase]
 related:
   - docs/operations/environments.md

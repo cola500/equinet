@@ -3,7 +3,7 @@ title: "Staging Environment Setup"
 description: "Plan + utfall för isolerad staging-miljö (egen domain, egen Supabase, egen DB). Block 2 klart 2026-05-06."
 category: operations
 status: active
-last_updated: 2026-09-26
+last_updated: 2026-09-28
 tags: [staging, preview, vercel, supabase, environment, demo]
 sections:
   - Historisk korrigering (2026-09-26)
