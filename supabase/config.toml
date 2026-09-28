@@ -111,12 +111,21 @@ enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
 file_size_limit = "50MiB"
 
-# Uncomment to configure local storage buckets
-# [storage.buckets.images]
-# public = false
-# file_size_limit = "50MiB"
-# allowed_mime_types = ["image/png", "image/jpeg"]
-# objects_path = "./images"
+# Declarative local storage buckets — the Supabase CLI creates/reconciles
+# these on `supabase start` and `supabase db reset`, so a fresh local
+# volume gets the bucket automatically (idempotent: re-running is a no-op).
+# Settings mirror staging/production exactly (see
+# docs/architecture/messaging-attachments.md D2 + D4, and the
+# MESSAGE_MAX_SIZE/MESSAGE_ALLOWED_MIME constants in
+# src/lib/supabase-storage.ts) — private bucket, 10 MB limit, image-only
+# MIME whitelist. No bucket-level RLS policies: uploads/reads go through
+# the service role key (bypasses RLS) with IDOR checks enforced in the API
+# route, per the documented security model. This declaration is local-only
+# — it has no effect on the hosted staging/production Supabase projects.
+[storage.buckets.message-attachments]
+public = false
+file_size_limit = "10MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/heic", "image/webp"]
 
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]

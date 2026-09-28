@@ -4,7 +4,7 @@ description: "Collection of common pitfalls and solutions encountered during Equ
 category: guide
 tags: [gotchas, debugging, next-js, prisma, serverless, offline, security, ios, xcode]
 status: active
-last_updated: 2026-09-27
+last_updated: 2026-09-28
 related:
   - CLAUDE.md
   - docs/guides/agents.md
@@ -43,6 +43,7 @@ sections:
   - 36. prisma migrate dev Fungerar Inte med Lokal Supabase
   - 41. Lokal Supabase Auth-inloggning ger 500 ("permission denied for schema public")
   - 42. Fel Node-huvudversion ger falska jsdom-testfel
+  - 43. Lokal Supabase Storage-bucket saknas utan config-deklaration
   - Relaterade Dokument
 ---
 
@@ -1603,6 +1604,47 @@ det numera automatiskt, men manuell `npx vitest run <fil>` utanför `npm run` kr
 Standardiserades initialt på Node 20 (2026-09-27), sedan om till Node 24 samma dag efter att
 Node 20 konstaterades EOL och båda Vercel-projekten redan körde Node 24 LTS — 4738/4738 tester
 verifierat gröna under Node 24, ingen `localStorage`/jsdom-krock på den versionen.
+
+---
+
+## Gotcha #43: Lokal Supabase Storage-bucket saknas utan config-deklaration
+
+**Problem:** En fräsch lokal Supabase-volym (`supabase stop --no-backup && supabase start`, eller
+en helt ny klon) saknar bucketen `message-attachments` som meddelande-bilagor laddas upp till
+(`src/lib/supabase-storage.ts`). `supabase start` skapar INTE buckets automatiskt bara för att
+appkoden refererar dem — bucketen skapades tidigare bara manuellt via Supabase Dashboard
+(dokumenterat i `docs/architecture/messaging-attachments.md`, som inte nämnde lokal dev alls).
+Symptom: uppladdning ger `500` med `StorageApiError: Bucket not found` i serverloggen. Samma
+gap gjorde att uppladdade bilder aldrig visades inline lokalt ens efter att bucketen fanns —
+CSP:s `img-src` saknade `http://127.0.0.1:54321`/`http://localhost:54321` (till skillnad från
+`connect-src`, som redan hade dem för samma `isLocalSupabase`-gate i `next.config.ts`).
+
+**Lösning:**
+1. **Bucket:** deklarera bucketen i `supabase/config.toml`:
+   ```toml
+   [storage.buckets.message-attachments]
+   public = false
+   file_size_limit = "10MiB"
+   allowed_mime_types = ["image/jpeg", "image/png", "image/heic", "image/webp"]
+   ```
+   Supabase CLI skapar/reconcilerar deklarerade buckets på varje `supabase start` — idempotent
+   (en bucket som redan matchar lämnas orörd), och påverkar ENDAST den lokala stacken (ingen
+   effekt på hostade staging/produktion-projekt, som fortfarande konfigureras manuellt).
+   `npm run verify:local-storage-buckets` (`scripts/verify-local-storage-buckets.ts`) verifierar
+   att bucketen faktiskt fick rätt inställningar — körs i CI:s "Migration From Scratch"-jobb
+   direkt efter en genuint fräsch `supabase start`, samt manuellt vid behov.
+2. **CSP:** lägg till samma `localSupabaseCsp`-variabel (redan använd för `connect-src`) på
+   `img-src`-raden i BÅDA CSP-blocken i `next.config.ts`. Gated på `isDev || isLocalSupabase` —
+   läcker aldrig till en produktionsbuild mot ett riktigt Supabase-projekt.
+
+**Regel:** Om en ny lokal Storage-bucket behövs framöver: lägg till den i
+`supabase/config.toml` (inte bara i Supabase Dashboard för staging/prod), och lägg till
+motsvarande `ExpectedBucketConfig`-post i `scripts/verify-local-storage-buckets.ts` så
+regressionsskyddet täcker den också.
+
+**Källa:** Upptäckt vid minimal vertikal slice-verifiering av Node 24-uppladdningsflödet
+2026-09-27/28 (riktig multipart-uppladdning via webbläsare mot en fräsch lokal Supabase-volym
+avslöjade båda gapen). Fixat 2026-09-28.
 
 ---
 

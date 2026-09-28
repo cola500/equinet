@@ -205,9 +205,13 @@ export async function deleteFile(path: string): Promise<boolean> {
 // Message attachments (S46 — private bucket, signed URLs)
 // -----------------------------------------------------------
 
-const MESSAGE_BUCKET = 'message-attachments'
-const MESSAGE_MAX_SIZE = 10 * 1024 * 1024 // 10 MB
-const MESSAGE_ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/heic', 'image/webp']
+// Exported so scripts/verify-local-storage-buckets.ts can check the local
+// Supabase bucket against the exact same settings this module validates
+// against — one source of truth, no drift between config.toml, this
+// validation, and the verification script.
+export const MESSAGE_BUCKET = 'message-attachments'
+export const MESSAGE_MAX_SIZE = 10 * 1024 * 1024 // 10 MB
+export const MESSAGE_ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/heic', 'image/webp']
 
 const MIME_TO_EXT: Record<string, string> = {
   'image/jpeg': 'jpg',
