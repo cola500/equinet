@@ -236,7 +236,7 @@ Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 - **Rate limiter fail-closed**: `RateLimitServiceError` -> 503. Rate limiting EFTER auth, FÖRE JSON-parsing.
 - **Payload-minimering**: `select`-block ska BARA ha fält UI:t använder. `groupBy` > hämta-alla + JS-loop.
 - **Strukturerad loggning**: Server: `logger`. Klient: `clientLogger`. ALDRIG `console.*` i produktionskod.
-- **Plan-commit-ordning**: Committa plan-fil på main → PUSHA → SEDAN skapa feature-branch. Annars: divergent branches vid PR-merge. Fix om det hänt: `git rebase main` på feature-branchen. Se `.claude/rules/commit-strategy.md`.
+- **Allt via PR, ingen direkt-commit till main** (2026-09-28, ersätter tidigare "Plan-commit-ordning"-regel): plan-filer, status.md, done-filer och retros committas numera på feature-branchen tillsammans med resten av storyn, precis som kod -- inte direkt på main. Branch protection på `main` kräver grön `Quality Gate Passed` för alla merges. Den gamla divergent-branch-buggklassen (plan committad på main innan push, se `docs/guides/gotchas.md` Gotcha #37) kan inte längre uppstå. Se `.claude/rules/commit-strategy.md`.
 - **git checkout-miss**: Verifiera alltid `git branch --show-current` INNAN commit. Om commit hamnade på fel branch: `git cherry-pick <hash>` på rätt branch + `git reset --hard HEAD~1` på fel branch.
 
 **Vilken testplaybook?** Swift-fil -> iOS-testflöde (`ios-learnings.md`). TypeScript/JS-fil -> Webb-testflöde (nedan).

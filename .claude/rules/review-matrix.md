@@ -87,6 +87,8 @@ Om parallell körning faktiskt hittar mer värde i praktiken: revert till parall
 
 `docs/**`-raden ger tom `required_set` **ENBART om inga filer utanför `docs/**` är ändrade i storyn**. Om en story ändrar både `docs/` och kod-filer: union-regeln gäller fullt ut och docs-only-undantaget appliceras inte.
 
+**Observera:** "Docs-only" här handlar bara om vilka *reviewers* som krävs -- inte om PR/branch krävs. Feature branch + PR och grön `Quality Gate Passed` krävs alltid, docs-only inkluderat. Se `.claude/rules/commit-strategy.md`.
+
 ## Trivial-gating
 
 Trivial-gating (skippa review för stories med effort <15 min + ≤1 fil) är **hook-intern logik**, inte matrisbaserad. Matrisen definierar vilka subagents som *krävs*. Hooken bestämmer om kravet kan kringgås baserat på story-metadata. Se `.claude/rules/team-workflow.md` Station 4 Review-gating för kriterierna.
