@@ -3,9 +3,11 @@ title: "Staging Environment Setup"
 description: "Plan + utfall för isolerad staging-miljö (egen domain, egen Supabase, egen DB). Block 2 klart 2026-05-06."
 category: operations
 status: active
-last_updated: 2026-05-06
+last_updated: 2026-09-28
 tags: [staging, preview, vercel, supabase, environment, demo]
 sections:
+  - Historisk korrigering (2026-09-26)
+  - Migrering till main-baserad staging — genomförd (2026-09-26)
   - Resultat 2026-05-06 (Block 2 klart)
   - 1. Målbild
   - 2. Environment model
@@ -73,6 +75,81 @@ CLI-kommandot `vercel env rm <var> <env> --yes` **tar bort hela variabeln** för
 ---
 
 > Plan, inte kod. Inga env-ändringar gjorda. Inga secrets i denna fil — bara `NEXT_PUBLIC_*`-värden (publika i klient-bundlen) och project-IDn som ändå syns publikt.
+
+---
+
+## Historisk korrigering (2026-09-26)
+
+Miljöseparationen mellan staging och produktion (egna Vercel-projekt, egna Supabase-databaser/nycklar, Stripe test/live, egna domäner, `NEXT_PUBLIC_DEMO_MODE` true/false) infördes för att **isolera demo, kunddata, betalningar och hemligheter** från varandra. Den anledningen är fortfarande korrekt och ska bevaras.
+
+Det som **inte** var nödvändigt för att uppnå den isoleringen var att koden skulle leva på en egen långlivad `staging`-Git-branch. Miljöisolering kräver separata Vercel-projekt/env-config — inte en separat kodgren. Den långlivade branchen ledde i praktiken till manuell tvåvägs-synk (`sync/*-to-staging`-PR:ar) och återkommande koddrift (t.ex. en sessionStorage-utloggningsfix som fanns på `main` men saknades på `staging` i flera veckor).
+
+Målbilden framåt: `main` är enda långlivade kodgrenen. Samma Git-SHA byggs separat för staging (med stagingkonfiguration, demo aktiverat) och för produktion (med produktionskonfiguration, demo avstängt), och produktionsdeploy kräver att exakt samma SHA redan är verifierad i staging. Se migrationsplanen från 2026-09-26 (chattsession) för stegvis genomförande och rollback.
+
+---
+
+## Migrering till main-baserad staging — genomförd (2026-09-26)
+
+> **Status:** `equinet-staging-app`s Production Branch är sedan 2026-09-26 `main`, inte längre `staging`. Detta ersätter alla tidigare påståenden i denna och andra docs om att staging bygger från en egen branch. Den gamla `staging`-branchen finns kvar orörd under en observationsperiod (se nedan) men är **inte längre den aktiva deploykällan**.
+
+### Ny arkitektur
+
+- **`main` är enda aktiva kodkälla** för både staging och produktion. Ingen mer manuell `sync/*-to-staging`-synk.
+- **`equinet-staging-app`** bygger från `main` med stagingkonfiguration (egen Supabase, Stripe testläge, `NEXT_PUBLIC_DEMO_MODE=true`, övriga stagingvärden).
+- **`equinet-app`** bygger samma verifierade Git-SHA med produktionskonfiguration (`NEXT_PUBLIC_DEMO_MODE=false`).
+- Staging och produktion har fortfarande **separata Vercel-builds** — samma skäl som alltid: `NEXT_PUBLIC_*`, Supabase- och Stripe-nycklar bakas in vid build-tid och kan inte delas mellan miljöer i en och samma artefakt.
+- **Demo är en stagingegenskap, inte stagingunik kod:** samma källkod kör i båda miljöerna. Vad som skiljer är `NEXT_PUBLIC_DEMO_MODE`, en separat stagingdatabas och separat testkonfiguration (Stripe testläge) — allt via miljökonfiguration, aldrig via branch-specifik kod.
+- Demo-**ingången** (knapparna på login/landningssidan) styrs separat av `isStagingSafe()`/`IS_LIVE_PRODUCTION` — se `docs/ideas/epic-prodlik-staging-demo-per-session.md` för den bakgrunden. `NEXT_PUBLIC_DEMO_MODE` styr numera huvudsakligen nav-filtrering och Hjälpcenter-innehåll för demo-sessioner.
+
+### Deployflöde
+
+1. Merge till `main`.
+2. Separat stagingbuild triggas (idag: manuellt/API-styrt under observationsperioden — se "Ignore Build Step" nedan; framtida mål: automatiskt vid varje `main`-merge).
+3. Exakt SHA verifieras och registreras (idag: manuellt i denna dokumentation efter varje lyckad staging-deploy; framtida mål: en maskinläsbar "staging-verified"-markering, t.ex. en Git-tagg eller deployment-status).
+4. Produktionsdeploy av **samma** SHA kräver uttryckligt godkännande — sker via det befintliga gated flödet (`scripts/deploy-production.sh`, se `docs/operations/deployment.md`), inte via Vercels native git-integration (`vercel.json`: `git.deploymentEnabled.main = false` stänger av automatisk deploy för `main` på **båda** projekten, eftersom båda läser samma `vercel.json` från samma repo).
+5. Separat produktionsbuild med produktionsvärden.
+6. **Oberoende rollback** per miljö: staging kan rullas tillbaka utan att röra produktionen och vice versa — de är fortfarande helt separata Vercel-deployments/alias.
+
+### Previewflöde för kandidat-testning (`preview/candidate`)
+
+Innan en `main`-SHA blir stagingens produktionsdeploy kan den testas isolerat:
+
+- Branch: `preview/candidate` (dedikerad, återanvänds — force-pushas till önskad SHA).
+- Vercel target: **Preview** (inte Production) — får en egen `*.vercel.app`-URL, rör aldrig stagingaliaset eller custom-domänen.
+- Miljövärden: samma stagingvärden som produktions-scopet (Supabase, Stripe testläge, m.fl.), plus en dedikerad `NEXT_PUBLIC_DEMO_MODE=true`-rad scopad enbart till `preview`-target.
+- Skydd: Vercel Authentication (SSO) på alla `*.vercel.app`-URL:er (undantar bara custom-domänerna), `gitForkProtection: true`.
+
+**Nuvarande Vercel-plans kompromiss (dokumenterad avsiktligt avvikelse):** kontot är på Hobby-plan, som inte stödjer Custom Environments (`accountLimit.total: 0`) och inte tillåter att en variabel har både `gitBranch`-scopning och `target: ["production","preview"]` samtidigt (Vercel API: `"Environment Variables with gitBranch can only be used with target=preview"`). Konsekvensen: de återanvända stagingvärdena (`target: ["production","preview"]`) är **inte branch-scopade på env-nivå** — de är tekniskt tillgängliga för vilken preview-build som helst av detta projekt. Isoleringen upprätthålls istället av **Ignore Build Step**, som avgör vilka branches som överhuvudtaget får bygga något. **Om Vercel-planen senare uppgraderas till att stödja Custom Environments eller branch-scopad `target`-kombination ska vi återgå till strikt branch-scoping på env-nivå** — detta är en tillfällig, dokumenterad kompromiss, inte en målarkitektur.
+
+### Ignore Build Step (tillfälligt tillstånd under observationsvecka)
+
+Aktuell sträng på `equinet-staging-app` (ingen hemlig information — bara branchnamn):
+
+```
+if [ "$VERCEL_GIT_COMMIT_REF" = "main" ] || [ "$VERCEL_GIT_COMMIT_REF" = "staging" ] || [ "$VERCEL_GIT_COMMIT_REF" = "preview/candidate" ]; then exit 1; fi; exit 0
+```
+
+- `main` — den nya, ordinarie deploykällan.
+- `staging` — tillåten **tillfälligt under observationsveckan** efter migreringen, ifall den gamla branchen av någon anledning behöver byggas igen under övergången.
+- `preview/candidate` — den dedikerade kandidat-preview-branchen.
+
+**Efter observationsveckan:** ta bort `staging` ur denna sträng (så bara `main` och `preview/candidate` återstår). Arkivering/borttagning av själva `staging`-branchen sker **först efter separat, uttryckligt godkännande** — inte automatiskt när observationsveckan tar slut.
+
+### Drift och rollback (nuläge efter genomförd migrering)
+
+| Vad | Värde |
+|---|---|
+| Staging — Git-SHA | `4284202221f07216269659873cacf1f9b9f64f04` (branch `main`) |
+| Staging — Vercel deployment-ID | `dpl_A1S3vbfA2M6fDjvZFEKRup1AgUH8` |
+| Produktion — Git-SHA | `4284202221f07216269659873cacf1f9b9f64f04` (branch `main`, oförändrad genom hela migreringen) |
+| Produktion — Vercel deployment-ID | `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa` |
+| Återställningstagg (gamla stagingläget) | `staging-pre-sync-2026-09-26` → commit `7b7c38e3f35d501fec509b821444689c4d7141fa` |
+
+**Manuell återställning av Production Branch:** det finns **ingen publik Vercel REST-API-väg** för detta fält (verifierat — både `link.productionBranch` i `update_project`-anrop och i den officiella API-referensen saknas det). Måste göras i Vercel-dashboarden: `equinet-staging-app → Settings → Git → Production Branch → main → staging → Save`.
+
+**Återställning av env-scope och Ignore Build Step:** görs via Vercel API (`edit_project_env` för att ta bort `preview` ur `target`-arrayen på de återanvända raderna, `update_project` för att återställa `commandForIgnoringBuildStep` till dess exakta tidigare värde). Exakta tidigare värden för varje variabel-ID finns i en maskerad rollback-inventering.
+
+> **Rollback-inventeringen ligger utanför detta repo** (i en lokal, session-scopad katalog, inte incheckad) och **ska aldrig committas** — den innehåller Vercel-interna variabel-ID:n och projekt-/team-ID:n som inte behöver vara publika, även om den inte innehåller några hemliga värden. Be den som körde migreringen om den filen vid behov av rollback.
 
 ---
 

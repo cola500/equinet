@@ -4,7 +4,7 @@ description: "Konfiguration och skillnader mellan lokal utveckling, staging och 
 category: operations
 tags: [environments, vercel, supabase, ios, config]
 status: active
-last_updated: 2026-09-15
+last_updated: 2026-09-28
 related:
   - deployment.md
   - environment-runbook.md
@@ -40,10 +40,16 @@ sections:
 > **⚠ Drift (verifierat 2026-06-02):** Raden ovan beskriver den ursprungliga
 > single-project-uppsättningen. Staging-domänen serveras numera av ett **separat** Vercel-projekt
 > `equinet-staging-app` (bekräftat via `get_project` — det projektet äger
-> `equinet-staging.johanlindengard.com`). `equinet-staging-app` bygger endast `staging`-branchen;
-> feature-branch-previews avbryts med "Canceled by Ignored Build Step" (förväntat). Se
-> [deployment-verification-guide.md](./deployment-verification-guide.md). Denna rad bör
-> reconcilieras vid tillfälle.
+> `equinet-staging.johanlindengard.com`).
+>
+> **Uppdaterad 2026-09-26:** `equinet-staging-app`s Production Branch är `main`, inte `staging`
+> (migrering genomförd, se `staging-environment-setup.md` "Migrering till main-baserad staging").
+> "Deploy: Push till `staging`-branch" i tabellen ovan är alltså inaktuellt — staging deployas nu
+> från samma `main`-branch som produktion, med separat build/konfiguration. `staging`-branchen
+> finns kvar under en observationsvecka men är inte längre deploykälla. Feature-branch-previews
+> avbryts fortfarande med "Canceled by Ignored Build Step" (förväntat) för alla branches utom
+> `main`, `staging` (tillfälligt) och `preview/candidate`. Se
+> [deployment-verification-guide.md](./deployment-verification-guide.md).
 
 > **iOS-not:** iOS-appen använder `zzdamokfeenencuggjjp` för **både** staging och produktion tills Apple Developer Program är köpt (separat bundle ID + prod-projekt). Intentionellt — dokumenterat beslut från S48-1.
 
@@ -120,7 +126,7 @@ Alla feature flags ar styrda av:
 > vidare.
 
 - **Ursprung:** Skapades som PoC for Supabase Auth (S10-5, S11-2). Block 2 (2026-05-06) gjorde det till fullständigt isolerad staging. **Sprint 67 (2026-05-09)** flyttade staging till eget Vercel-projekt så iOS Bearer JWT inte blockas av Vercel SSO.
-- **Anvandning:** Manuell testning + iOS demo. Deployar vid push till `staging`-branch.
+- **Anvandning:** Manuell testning + iOS demo. Deployar från `main` (Production Branch bytt från `staging` 2026-09-26).
 - **Data:** Helt separat från prod — Erik Järnfot demo-persona med 5 tjänster, 9 kunder, 14 hästar, 18 bokningar, 7 reviews. **Inga prod-bokningar/data.**
 - **Schema:** Synkad med prod via `prisma migrate deploy` mot staging-pooler.
 - **RLS:** Custom Access Token Hook aktiv (samma kod som prod, separat installation).
@@ -128,11 +134,14 @@ Alla feature flags ar styrda av:
 - **Crons:** `DISABLE_CRONS=true` — staging utför ALDRIG bakgrundsjobb. Pre-build-guard tillåter detta via `STAGING_PROJECT=true`-flag.
 - **iOS APIClient:** Pekar på custom domain via `AppConfig.staging.baseURL`. Bearer JWT från Supabase staging accepteras av Next.js auth-handler.
 
-**Deploytrigger:**
-```bash
-git checkout staging && git merge main && git push origin staging
-# Vercel deployar automatiskt till equinet-staging-app som production (~3 min)
-```
+**Deploytrigger (uppdaterad 2026-09-26):**
+`equinet-staging-app`s Production Branch är nu `main`, samma branch som produktion. Vercels
+native git-auto-deploy för `main` är avstängd repo-brett (`vercel.json`: `git.deploymentEnabled.main
+= false`, gäller båda projekten eftersom de läser samma fil från samma repo). Under
+observationsperioden efter migreringen sker stagingdeploy manuellt/API-styrt (se
+`staging-environment-setup.md` "Migrering till main-baserad staging" för exakt flöde och
+nuvarande SHA). Det tidigare kommandot `git checkout staging && git merge main && git push
+origin staging` är **inaktuellt** och deployar inte längre något.
 
 **Vercel env-vars i `equinet-staging-app` (target=production):**
 17 vars totalt. Viktigaste:

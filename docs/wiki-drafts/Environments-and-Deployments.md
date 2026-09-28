@@ -3,7 +3,7 @@ title: "Wiki: Environments and Deployments"
 description: "Draft för GitHub Wiki-sidan om miljöer och deploy -- lokal/staging/prod-matris, deploy-ordning och de viktigaste fällorna. Frontmattern strippas vid publicering."
 category: guide
 status: draft
-last_updated: 2026-06-11
+last_updated: 2026-09-28
 tags: [wiki, environments, deployment, vercel, supabase]
 related:
   - docs/operations/environments.md
@@ -32,7 +32,7 @@ sections:
 | **URL** | `localhost:3000` | `equinet-staging.johanlindengard.com` | `equinet.johanlindengard.com` |
 | **Vercel-projekt** | -- | `equinet-staging-app` | `equinet-app` |
 | **Supabase** | Lokal CLI (`127.0.0.1:54321`) | `zzdamokfeenencuggjjp` (Frankfurt) | `xybyzflfxnqqyxnvjklv` (Zürich) |
-| **Deploy** | `npm run dev` | Push till `staging`-branch | Push till `main`-branch |
+| **Deploy** | `npm run dev` | Från `main` (separat build, se not nedan) | Från `main` (separat build) |
 | **Demo-läge** | Valfritt (`NEXT_PUBLIC_DEMO_MODE`) | **På** | Av |
 | **Crons** | -- | **Avstängda** (`DISABLE_CRONS=true`) | På (`CRON_SECRET`) |
 | **Betalning** | Mock | Stripe test-mode | **Mock** (`PAYMENT_PROVIDER=mock`; Stripe Live = Post-Parity) |
@@ -48,9 +48,14 @@ och egna env-namespaces. Undantag: Upstash Redis delas mellan staging och prod (
 
 ## Staging
 
-- Bygger **endast** `staging`-branchen. En CANCELED feature-branch-preview på staging-projektet är förväntat ("Ignored Build Step").
+> **Uppdaterad 2026-09-26:** `equinet-staging-app`s Production Branch är `main`, inte längre en
+> egen `staging`-branch (migrering genomförd -- se `staging-environment-setup.md` "Migrering
+> till main-baserad staging"). Den gamla `staging`-branchen finns kvar under en observationsvecka
+> men är inte längre deploykälla.
+
+- Bygger från `main` (plus tillfälligt `staging` och `preview/candidate` under observationsveckan). Övriga feature-branch-previews på staging-projektet blir CANCELED, förväntat ("Ignored Build Step").
 - staging == demomiljön. Demo-UX kan **inte** valideras i `equinet-app`-previews (demo-läget är inte aktivt där). Se [deployment-verification-guide.md](https://github.com/cola500/equinet/blob/main/docs/operations/deployment-verification-guide.md).
-- Deploy: `git checkout staging && git merge main && git push origin staging` (~3 min).
+- Deploy: Vercels native auto-deploy för `main` är avstängd repo-brett (`vercel.json` `git.deploymentEnabled.main=false`); staging deployas separat mot samma `main`-SHA som produktion, med egen konfiguration. Det gamla kommandot `git checkout staging && git merge main && git push origin staging` är inaktuellt.
 - Egen demo-data (Erik Järnfot-personan) -- ingen prod-data. Se [[Demo Data and Seed]].
 
 ## Produktion
