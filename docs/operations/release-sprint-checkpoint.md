@@ -49,16 +49,15 @@ Dessförinnan, samma dag, i samma sprint-kontext (dependabot-auto-merge-säkring
 
 ## Nuläge (SHA:er)
 
-Insamlat 2026-09-28, direkt före denna checkpoint-PR:
+Insamlat 2026-09-28.
 
 | Vad | SHA | Källa |
 |-----|-----|-------|
-| `main`-HEAD (före denna checkpoint-PR) | `527c2e80f3311dc76a7b26d121918a113a1e6390` | `git rev-parse origin/main` |
-| Föreslagen releasekandidat | **Ännu inte fryst** -- se nedan | -- |
+| **Fryst releasekandidat (enda giltiga)** | **`4973f6e919339b022425063bd8a280fa2bbe9b41`** | `main`-HEAD direkt efter att checkpoint-PR #513 mergades. Grön `Quality Gate Passed` bekräftad för exakt denna SHA (körning `36435973623`, samtliga 8 jobb + aggregatorn `success`) |
 | Staging (`equinet-staging-app`, target=production) | `4284202221f07216269659873cacf1f9b9f64f04` (PR #503, 2026-09-26) | Vercel `list_deployments` |
-| Produktion (`equinet-app`, target=production) | `4284202221f07216269659873cacf1f9b9f64f04` -- **bekräftat: fortfarande samma SHA som PR #503, oförändrad** | Vercel `list_deployments`, verifierad direkt efter tokenrotationstestet |
+| Produktion (`equinet-app`, target=production) | `4284202221f07216269659873cacf1f9b9f64f04` -- **bekräftat: fortfarande samma SHA som PR #503, oförändrad** | Vercel `list_deployments`, verifierad på nytt direkt före denna frysning |
 
-**Om "föreslagen releasekandidat":** eftersom denna checkpoint-PR själv blir en ny commit på `main`, är vilken SHA som helst jag namnger här redan föråldrad i det ögonblick PR:n mergas. Den faktiska frysningen sker EFTER merge, som ett separat, uttryckligt steg (se sprintplanens instruktion och avsnittet nedan) -- inte i denna dokumentation-PR.
+**Historik för frysningen:** en tidigare version av detta dokument (PR #513, innan merge) föreslog `759b7a75bb7637f623283aa08488f3aeb2728997` -- checkpoint-PR:ns egna commit, innehållsmässigt identisk med `main`-HEAD men vald bara för att den redan hade en bevisat grön CI-körning vid den tidpunkten. Johan instruerade uttryckligen att istället vänta in `main`-HEAD `4973f6e9...`s egen CI-körning och använda den som **enda** releasekandidat-SHA om den blev grön. Den blev grön (samtliga jobb, inkl. `Quality Gate Passed`). `759b7a75...` ska INTE användas för Slice 3.1 eller något senare steg -- `4973f6e9...` är den enda giltiga kandidaten från och med denna uppdatering.
 
 ## Verifierat, utan hemligheter
 
@@ -76,7 +75,6 @@ Insamlat 2026-09-28, direkt före denna checkpoint-PR:
 - **Ingen tagg har skapats** (den tillfälliga testtaggen för det negativa triggertestet skapades och raderades samma session -- se ovan).
 - **Ingen GitHub Release har skapats.** `gh release list` är fortsatt tom.
 - **Ingen produktionsdeploy har körts** (`dry_run` har alltid varit `true` i varje test-dispatch).
-- **Ingen releasekandidat-SHA är fryst än.**
 - **Ingen deploy till staging har skett** (Workstream 3 påbörjas efter denna checkpoint-PR).
 
 ## Kända blockerare och återstående slices
@@ -109,7 +107,7 @@ Jämför resultatet mot tabellen i "Nuläge (SHA:er)" och listan i "Verifierat, 
 
 ### 3. Nästa säkra steg
 
-Efter att denna checkpoint-PR är mergad: uppdatera lokal `main`, verifiera ren arbetsyta, läs om staging/produktions-SHA på nytt, välj och frys exakt releasekandidat-SHA från skyddad `main`, kontrollera grön `Quality Gate Passed` för den SHA:n, och presentera preflight-resultatet + rollbackmål för Johan. **Invänta därefter Johans uttryckliga godkännande innan något deployas till staging.**
+Releasekandidaten är fryst (`4973f6e9...`, se "Nuläge (SHA:er)"). Nästa steg är **Slice 3.1**: force-pusha exakt den SHA:n till `preview/candidate` (Preview-target, rör aldrig det levande stagingaliaset). **Invänta Johans uttryckliga godkännande innan detta görs** -- frysningen av en kandidat-SHA är inte i sig ett godkännande att deploya den någonstans.
 
 ### 4. Avvikelser som kräver stopp och nytt beslut
 
