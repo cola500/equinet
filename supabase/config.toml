@@ -113,19 +113,38 @@ file_size_limit = "50MiB"
 
 # Declarative local storage buckets — the Supabase CLI creates/reconciles
 # these on `supabase start` and `supabase db reset`, so a fresh local
-# volume gets the bucket automatically (idempotent: re-running is a no-op).
-# Settings mirror staging/production exactly (see
-# docs/architecture/messaging-attachments.md D2 + D4, and the
-# MESSAGE_MAX_SIZE/MESSAGE_ALLOWED_MIME constants in
-# src/lib/supabase-storage.ts) — private bucket, 10 MB limit, image-only
-# MIME whitelist. No bucket-level RLS policies: uploads/reads go through
-# the service role key (bypasses RLS) with IDOR checks enforced in the API
-# route, per the documented security model. This declaration is local-only
-# — it has no effect on the hosted staging/production Supabase projects.
+# volume gets both buckets automatically (idempotent: re-running is a
+# no-op). Neither bucket has client-facing RLS policies in any environment:
+# uploads/reads go through the service role key (bypasses RLS) with IDOR
+# checks enforced in the API routes, per the documented security model
+# (docs/architecture/messaging-attachments.md, Säkerhetsmodell). These
+# declarations are local-only — they have no effect on the hosted
+# staging/production Supabase projects.
+
+# Message-attachments: private, 10 MB, image-only. Mirrors staging AND
+# production exactly (see docs/architecture/messaging-attachments.md D2 + D4,
+# and the MESSAGE_MAX_SIZE/MESSAGE_ALLOWED_MIME constants in
+# src/lib/supabase-storage.ts).
 [storage.buckets.message-attachments]
 public = false
 file_size_limit = "10MiB"
 allowed_mime_types = ["image/jpeg", "image/png", "image/heic", "image/webp"]
+
+# Generic uploads bucket — avatars, horse photos, service images, provider
+# verification documents (src/lib/supabase-storage.ts, UPLOADS_BUCKET/
+# UPLOADS_MAX_SIZE/UPLOADS_ALLOWED_MIME; served via public URLs, not signed
+# ones — see Säkerhetsmodell in docs/architecture/messaging-attachments.md
+# for why no client-facing bucket policies are needed either way). Settings
+# mirror staging (verified via Supabase metadata query 2026-09-28) and the
+# app's own validation constants exactly. Deliberately NOT matching
+# production, whose equinet-uploads bucket is missing these limits
+# (file_size_limit/allowed_mime_types = null) — a separate, already-tracked
+# production drift (docs/security/supabase-rls-security-audit-2026-08-06.md)
+# unrelated to local dev.
+[storage.buckets.equinet-uploads]
+public = true
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp", "application/pdf"]
 
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]

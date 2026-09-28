@@ -4,16 +4,22 @@ import { logger } from "@/lib/logger"
 import { writeFile, mkdir } from "fs/promises"
 import nodePath from "path"
 
-const BUCKET_NAME = "equinet-uploads"
+// Exported (see MESSAGE_* below for the same rationale) so
+// scripts/verify-local-storage-buckets.ts checks the local bucket against
+// the exact same settings this module validates against.
+export const UPLOADS_BUCKET = "equinet-uploads"
+const BUCKET_NAME = UPLOADS_BUCKET
 
-const ALLOWED_MIME_TYPES = [
+export const UPLOADS_ALLOWED_MIME = [
   "image/jpeg",
   "image/png",
   "image/webp",
   "application/pdf",
 ]
+const ALLOWED_MIME_TYPES = UPLOADS_ALLOWED_MIME
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+export const UPLOADS_MAX_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_FILE_SIZE = UPLOADS_MAX_SIZE
 
 type UploadBucket = "avatars" | "horses" | "services" | "verifications"
 

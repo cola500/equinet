@@ -202,7 +202,10 @@ reconcilerar den bucketen automatiskt på varje `supabase start` — en fräsch
 lokal volym får en korrekt konfigurerad bucket utan manuella steg, och en
 omkörning är ett no-op. `npm run verify:local-storage-buckets` verifierar
 detta (körs även i CI:s "Migration From Scratch"-jobb direkt efter en riktigt
-fräsch `supabase start`). Se [Gotcha #43](../guides/gotchas.md#gotcha-43-lokal-supabase-storage-bucket-saknas-utan-config-deklaration).
+fräsch `supabase start`). Samma mönster täcker även den separata
+`equinet-uploads`-bucketen (avatarer/hästar/tjänster/verifieringar) — se
+[Gotcha #43](../guides/gotchas.md#gotcha-43-lokala-supabase-storage-buckets-saknas-utan-config-deklaration)
+för båda bucketsen.
 
 **Staging/produktion (fortfarande manuellt):**
 

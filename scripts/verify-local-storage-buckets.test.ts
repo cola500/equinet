@@ -25,13 +25,19 @@ function makeActual(overrides: Partial<ActualBucketConfig> = {}): ActualBucketCo
 }
 
 describe("EXPECTED_BUCKETS", () => {
-  it("declares exactly the message-attachments bucket with app-matching settings", () => {
+  it("declares exactly the two buckets the app uses, with app-matching settings", () => {
     expect(EXPECTED_BUCKETS).toEqual([
       {
         id: "message-attachments",
         public: false,
         fileSizeLimit: 10 * 1024 * 1024,
         allowedMimeTypes: ["image/jpeg", "image/png", "image/heic", "image/webp"],
+      },
+      {
+        id: "equinet-uploads",
+        public: true,
+        fileSizeLimit: 5 * 1024 * 1024,
+        allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "application/pdf"],
       },
     ])
   })
@@ -94,8 +100,30 @@ describe("verifyBuckets", () => {
   it("ignores unrelated buckets present in the actual list", () => {
     const result = verifyBuckets(
       [EXPECTED],
-      [makeActual(), { id: "equinet-uploads", public: false, file_size_limit: null, allowed_mime_types: null }]
+      [makeActual(), { id: "some-other-bucket", public: false, file_size_limit: null, allowed_mime_types: null }]
     )
     expect(result).toEqual({ ok: true, problems: [] })
+  })
+
+  it("verifies both real buckets (message-attachments + equinet-uploads) together", () => {
+    const result = verifyBuckets(EXPECTED_BUCKETS, [
+      makeActual(),
+      {
+        id: "equinet-uploads",
+        public: true,
+        file_size_limit: 5 * 1024 * 1024,
+        allowed_mime_types: ["image/jpeg", "image/png", "image/webp", "application/pdf"],
+      },
+    ])
+    expect(result).toEqual({ ok: true, problems: [] })
+  })
+
+  it("fails on equinet-uploads specifically if it matches production's under-configured state (null limits)", () => {
+    const result = verifyBuckets(EXPECTED_BUCKETS, [
+      makeActual(),
+      { id: "equinet-uploads", public: true, file_size_limit: null, allowed_mime_types: null },
+    ])
+    expect(result.ok).toBe(false)
+    expect(result.problems.some((p) => p.includes("equinet-uploads"))).toBe(true)
   })
 })

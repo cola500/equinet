@@ -1,18 +1,20 @@
 /**
  * Verifies that local Supabase Storage buckets exist with the exact settings
- * the app expects — private, correct file-size limit, correct MIME whitelist.
+ * the app expects — private/public, correct file-size limit, correct MIME
+ * whitelist.
  *
  * Rotorsak (2026-09-27/28): `supabase start` on a fresh local volume did not
- * create the `message-attachments` bucket used by message uploads
- * (scripts/lib/supabase-storage.ts), causing every local attachment upload
- * to fail with "Bucket not found". Fixed by declaring the bucket in
- * supabase/config.toml (`[storage.buckets.message-attachments]`) — the
- * Supabase CLI creates/reconciles declared buckets on every `supabase start`
- * (idempotent: a bucket that already matches is left untouched). This script
- * is the automated check that the declaration actually produces the correct
- * bucket, run in CI right after a genuinely fresh `supabase start`
- * (Migration From Scratch job) so drift here is caught without any manual
- * step. See docs/guides/gotchas.md #43.
+ * create either Storage bucket the app uses — `message-attachments`
+ * (message uploads) and `equinet-uploads` (avatars/horses/services/
+ * verifications) — causing every local upload to fail with "Bucket not
+ * found". Fixed by declaring both buckets in supabase/config.toml
+ * (`[storage.buckets.*]`) — the Supabase CLI creates/reconciles declared
+ * buckets on every `supabase start` (idempotent: a bucket that already
+ * matches is left untouched). This script is the automated check that the
+ * declarations actually produce correctly-configured buckets, run in CI
+ * right after a genuinely fresh `supabase start` (Migration From Scratch
+ * job) so drift here is caught without any manual step. See
+ * docs/guides/gotchas.md #43.
  *
  * Usage: npx tsx scripts/verify-local-storage-buckets.ts
  * (requires NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY, e.g. via
@@ -26,6 +28,9 @@ import {
   MESSAGE_BUCKET,
   MESSAGE_MAX_SIZE,
   MESSAGE_ALLOWED_MIME,
+  UPLOADS_BUCKET,
+  UPLOADS_MAX_SIZE,
+  UPLOADS_ALLOWED_MIME,
 } from "../src/lib/supabase-storage"
 
 export interface ExpectedBucketConfig {
@@ -51,6 +56,17 @@ export const EXPECTED_BUCKETS: ExpectedBucketConfig[] = [
     public: false,
     fileSizeLimit: MESSAGE_MAX_SIZE,
     allowedMimeTypes: MESSAGE_ALLOWED_MIME,
+  },
+  {
+    // Settings mirror staging's actual bucket config (verified via Supabase
+    // metadata query 2026-09-28) and the app's own UPLOADS_* constants.
+    // Deliberately NOT mirroring production, whose equinet-uploads bucket
+    // is missing these limits (file_size_limit/allowed_mime_types = null) —
+    // a separate, already-tracked production drift, unrelated to local dev.
+    id: UPLOADS_BUCKET,
+    public: true,
+    fileSizeLimit: UPLOADS_MAX_SIZE,
+    allowedMimeTypes: UPLOADS_ALLOWED_MIME,
   },
 ]
 

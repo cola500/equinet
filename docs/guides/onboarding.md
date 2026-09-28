@@ -4,7 +4,7 @@ description: "Steg-för-steg guide för att sätta upp utvecklingsmiljön: Supab
 category: guide
 tags: [onboarding, setup, supabase, prisma, testing]
 status: active
-last_updated: 2026-06-11
+last_updated: 2026-09-28
 related:
   - gotchas.md
   - ../operations/environments.md
@@ -84,13 +84,26 @@ in-memory och betalningar använder mock-gateway.
 npm run db:up      # supabase start
 ```
 
-Detta startar PostgreSQL (`127.0.0.1:54322`), Supabase Auth och Studio lokalt
-via Docker. Auth är **Supabase Auth** -- ingen `NEXTAUTH_SECRET` behövs.
+Detta startar PostgreSQL (`127.0.0.1:54322`), Supabase Auth, Storage och
+Studio lokalt via Docker. Auth är **Supabase Auth** -- ingen `NEXTAUTH_SECRET`
+behövs.
+
+`db:up` skapar även de två Storage-bucketsen appen använder, automatiskt och
+idempotent (deklarerade i `supabase/config.toml`, ingen manuell åtgärd):
+
+| Bucket | Används för |
+|--------|-------------|
+| `message-attachments` | Bild-bilagor i meddelanden |
+| `equinet-uploads` | Avatarer, hästbilder, tjänstebilder, verifieringsdokument |
 
 **Verifiering:**
 ```bash
 npm run db:status   # supabase status -- visar URL:er och nycklar
+npm run verify:local-storage-buckets   # bekräftar att båda bucketsen finns med rätt inställningar
 ```
+
+Se [gotchas.md #43](gotchas.md#gotcha-43-lokala-supabase-storage-buckets-saknas-utan-config-deklaration)
+om en bucket saknas eller har fel inställningar.
 
 ---
 
