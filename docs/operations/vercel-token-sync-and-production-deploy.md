@@ -43,17 +43,26 @@ Kör detta när:
 
 ## Produktionsdeploy: scripts/deploy-production.sh
 
+**2026-09-28: omarbetad till `workflow_dispatch`.** Produktionsdeploy är inte längre kopplad till push/merge till `main` -- den enda vägen till produktion är `.github/workflows/deploy-production.yml`, som ENDAST triggas av `workflow_dispatch` med en obligatorisk `sha`-input. Ingen vanlig PR-merge, Dependabot-merge, tagg eller GitHub Release kan starta en produktionsdeploy. Fullständig säkerhetsmodell i kommentarerna högst upp i `.github/workflows/deploy-production.yml`; sammanfattning nedan.
+
 ```bash
-# Se planen (SHA, commit, vilken körning som skulle triggas om) utan att göra något:
-bash scripts/deploy-production.sh --dry-run
+# Se planen (SHA, commit, vilket workflow_dispatch-anrop som skulle göras) utan att göra något:
+bash scripts/deploy-production.sh --dry-run --staging-verified-sha <sha>
 
 # Trigga på riktigt (kräver att du skriver en exakt bekräftelsefras):
-bash scripts/deploy-production.sh
+bash scripts/deploy-production.sh --staging-verified-sha <sha>
+
+# Om staging-SHA:n avviker från main-SHA:n (dokumenterat undantag):
+bash scripts/deploy-production.sh --staging-verified-sha <sha> --override-reason "<motivering>"
 ```
 
-Kontrollerar: ren arbetskatalog, att du står på `main`, att lokal `main` matchar `origin/main` exakt, att `gh` pekar på `cola500/equinet`, och att en avslutad `quality-gates`-körning finns för den SHA:n. Hittar den körningen och kör om `Deploy to Production`-jobbet (`gh run rerun --failed`) -- INTE hela test-sviten igen. Om jobbet redan lyckats för den SHA:n gör scriptet ingenting (exit 0, ingen omkörning).
+`--staging-verified-sha` är obligatorisk -- den SHA du personligen verifierade som god på staging. Det finns idag ingen maskinläsbar "senast staging-godkänd"-markering (planerat framtida arbete), så detta är en attesterad, inte oberoende bevisad, kontroll: scriptet och workflowet jämför den bara mot SHA:n som ska deployas och kräver `--override-reason` vid avvikelse.
 
-Scriptet rör aldrig `VERCEL_TOKEN` eller någon annan hemlighet -- själva deployen körs av GitHub Actions med sin egen lagrade secret. Detta script triggar och bevakar bara den körningen.
+Kontrollerar lokalt: ren arbetskatalog, att du står på `main`, att lokal `main` matchar `origin/main` exakt, att `gh` pekar på `cola500/equinet`, och att staging-verifieringen är ifylld/matchar. Dispatchar sedan `deploy-production.yml` (`gh workflow run ... -f sha=... -f dry_run=false`) och bevakar den nya körningen. Workflowet gör sina EGNA, oberoende kontroller server-side (SHA på skyddad `main`, grön `Quality Gate Passed`, staging-match) -- scriptet kan inte kringgå dem.
+
+Scriptet rör aldrig `VERCEL_TOKEN` eller någon annan hemlighet -- själva deployen körs av GitHub Actions med sin egen lagrade secret. Detta script dispatchar och bevakar bara den körningen.
+
+**Testa workflowets valideringslogik utan att deploya på riktigt:** workflowet har en egen `dry_run`-input (default `true`) som kör hela valideringen och Vercel-bygget men hoppar över själva `vercel deploy`-steget och health-checken. Trigga direkt via `gh workflow run deploy-production.yml -f sha=<sha> -f staging_verified_sha=<sha>` (utan `-f dry_run=false`) för ett säkert testkörning. `deploy-production.sh` skickar alltid `dry_run=false` när den dispatchar, eftersom en riktig körning via scriptet redan passerat den interaktiva bekräftelsefrasen.
 
 ## Personligt konto -- vad det betyder
 
