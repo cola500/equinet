@@ -162,6 +162,20 @@ Auto-merge fungerar så här:
 
 **Konsekvens för alla PRs, inte bara Dependabot:** merge-knappen (UI såväl som `gh pr merge` utan `--auto`) är nu blockerad tills `Quality Gate Passed` är grön, oavsett vem som mergar. Tidigare gick det tekniskt att merga en PR till main innan/utan att GitHubs CI hunnit klart -- det är stängt nu.
 
+## Push-workflows körs inte om vid Dependabot-auto-merge (avsiktligt icke-problem)
+
+**2026-09-28-fynd:** GitHub kör aldrig om `push`-triggade workflows för commits som `GITHUB_TOKEN` själv skapar (inbyggt loop-skydd i Actions). Eftersom `dependabot-auto-merge.yml` använder `GITHUB_TOKEN` för att utföra själva mergen (`gh pr merge --squash --auto`), triggar den resulterande commiten **ingen** ny körning av `quality-gates.yml`s `push: branches: [main]`-jobb -- till skillnad från när en människa mergar via PAT/UI.
+
+**Konsekvensanalys (samtliga jobb i `quality-gates.yml`s push-trigger):**
+- Unit Tests, E2E Tests, Offline E2E Smoke, TypeScript Check, Lint, Security Audit, Build Check, Migration From Scratch, Quality Gate Passed: **redan täckta** -- kördes identiskt på PR:ns exakta filträd (squash bevarar trädet oförändrat, ändrar bara commit-metadata). Ingen ny signal att få.
+- **Deploy to Production**: den enda posten med en teoretisk konsekvens (auto-deploy till produktion triggas aldrig för Dependabot-mergade commits, även efter att det separata `VERCEL_TOKEN`-felet är löst). Bedömt som **avsiktligt/ofarligt**, inte ett automationsgap att täppa: jobbet är redan konstruerat som en kontrollerad, gated väg -- inte ett "auto-deploy-på-varje-merge"-jobb -- och att bygga automation för att specifikt auto-deploya Dependabot-patchar till produktion skulle öka automationsgraden för en externt styrd trigger, vilket vore fel riktning.
+- Stagingdeploy: **inte relevant** -- Vercels git-integration för `main` är redan avstängd helt (`vercel.json` → `git.deploymentEnabled.main: false`, PR #490) oavsett merge-metod. Verifierat empiriskt: ingen deployment i Vercel för varken PR #509:s eller PR #486:s merge-commit, i vare sig `equinet-app` eller `equinet-staging-app`.
+- Releaseautomation/notifieringar: inga hittade kopplade till push (`npm run release` körs manuellt av Johan).
+
+**Ändra INTE till PAT/personlig token för att kringgå detta.** Det skulle återinföra risken att en mänsklig/PAT-driven merge triggar en riktig produktionsdeploy-körning direkt från Dependabot-flödet -- exakt den typ av automatiserad produktionsdeploy som ska undvikas.
+
+**Caveat:** branch protection kräver inte "strict" (up-to-date-branch), så trädidentiteten mellan PR-testad kod och den slutliga squash-commiten garanteras bara om `main` inte hunnit röra sig mellan CI-körningen och auto-mergen. Normalfallet för sekventiella Dependabot-merges, men värt att känna till.
+
 ## Felsökning
 
 ### Dependabot-PR auto-mergas inte trots grön CI
