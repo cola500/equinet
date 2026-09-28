@@ -3,7 +3,7 @@ title: "GDPR -- Gap-register"
 description: "Prioriterad lista över identifierade GDPR-luckor i Equinet, med risknivå och rekommenderad åtgärd"
 category: security
 status: active
-last_updated: 2026-08-09
+last_updated: 2026-09-28
 tags: [gdpr, security, privacy, gap-analysis, dataskydd]
 related:
   - docs/security/gdpr-records-of-processing.md

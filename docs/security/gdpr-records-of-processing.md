@@ -3,7 +3,7 @@ title: "GDPR -- Register över behandlingsaktiviteter (Art. 30)"
 description: "Datakarta över vilka personuppgifter Equinet behandlar, i vilket syfte, med vilken rättslig grund och hur länge"
 category: security
 status: active
-last_updated: 2026-08-09
+last_updated: 2026-09-28
 tags: [gdpr, security, privacy, records-of-processing, dataskydd]
 depends_on:
   - prisma/schema.prisma
@@ -114,7 +114,7 @@ kan kräva SCC (Standard Contractual Clauses) eller motsvarande. Se gap-registre
 ## Källor och metod
 
 Denna kartläggning gjordes genom:
-1. Genomläsning av `prisma/schema.prisma` (44 modeller)
+1. Genomläsning av `prisma/schema.prisma` (45 modeller -- rättat 2026-09-28, ursprungsversionen angav felaktigt 44; ingen schemaändring sedan 2026-08-09, bara en felräkning i ursprungsdokumentet)
 2. Genomläsning av `src/app/api/export/my-data/route.ts` och
    `src/domain/account/AccountDeletionService.ts` för att verifiera faktiskt
    dataflöde (inte bara schema)

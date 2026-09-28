@@ -3,7 +3,7 @@ title: "Equinet -- Dokumentationsindex"
 description: "Centralt navigeringsdokument for all projektdokumentation"
 category: root
 status: active
-last_updated: 2026-08-09
+last_updated: 2026-09-28
 sections:
   - Arkitektur
   - Operations
@@ -172,4 +172,4 @@ Avslutade planer, ersatta dokument och 67 rå retrospectives finns i [archive/](
 
 ---
 
-*Senast uppdaterad: 2026-08-09*
+*Senast uppdaterad: 2026-09-28*

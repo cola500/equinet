@@ -3,7 +3,7 @@ title: "GDPR -- Register över personuppgiftsbiträden"
 description: "Alla tredjepartstjänster som behandlar personuppgifter för Equinets räkning, med ändamål, delad data och DPA-status"
 category: security
 status: active
-last_updated: 2026-08-09
+last_updated: 2026-09-28
 tags: [gdpr, security, privacy, subprocessors, dpa, dataskydd]
 depends_on:
   - .env.example
