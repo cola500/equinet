@@ -1,6 +1,16 @@
 /**
  * Tests for POST /api/native/provider/upload
  * BDD outer loop: integration-style tests for the upload route.
+ *
+ * @vitest-environment node
+ *
+ * Node, not the project-wide jsdom default: this route parses a real
+ * multipart body via `req.formData()`. Under jsdom, `File`/`FormData` are
+ * jsdom's own implementations rather than Node's native (undici-backed)
+ * ones, and Node 24's undici enforces a stricter WebIDL File-brand check
+ * when re-parsing — a jsdom File fails it, surfacing as a false failure
+ * here even though real HTTP multipart uploads (verified manually against
+ * a running Node 24 server) work correctly. See docs/guides/gotchas.md #42.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest"
 

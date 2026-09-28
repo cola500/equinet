@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Kanonisk backlog för Equinet. Alla kända stories, uppgifter och beslut. status.md pekar hit; roadmap.md är den strategiska vyn."
 category: sprint
 status: active
-last_updated: 2026-09-26
+last_updated: 2026-09-27
 tags: [backlog, roadmap, planning]
 sections:
   - Aktiva produktspår
@@ -296,7 +296,7 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Konsolidera meta-rules-filer | 2-4h | 5 filer (team-workflow, autonomous-sprint, tech-lead, parallel-sessions, auto-assign, ~1200 rader) dokumenterar samma tema. Ingen refereras från CLAUDE.md Snabbreferens. Slå ihop, arkivera resten till `docs/archive/rules/`. *(Process-beslut.)* |
 | MessagingDialog öppnar ej i headless Playwright (S50-0) | 30 min | `onClick` triggas men `open`-state flippar ej i headless. API-kedjan funkar → inte prod-blocker. Undersök `--headed` + verkliga browsers. |
 | iOS WebView login-bypass för mobile-mcp (S50-0) | 45 min | WKWebView `<input type=password>` = `SecureTextField`, XCUITest kan inte skriva. Utforska: pre-seed session via API + deep link, biometri-bypass, Keychain AutoFill. Utan detta kan iOS login-flöde inte E2E-testas. |
-| **Developer Experience: pinna och standardisera Node-version** | 30-60 min | **Problem:** lokalt kör vissa flöden Node 26 medan CI/tester förväntar sig Node 20 (`.github/workflows/quality-gates.yml` → `node-version: '20'`). Node 26:s experimentella `localStorage`-global kraschar ~32 jsdom-tester (`Cannot read properties of undefined (reading 'getItem')`) och tvingar `check:all`/push under `node@20` + `--no-verify`. **Förslag:** (1) lägg till/uppdatera `.nvmrc` till Node 20 LTS; (2) lägg till `engines` i `package.json` om det saknas; (3) säkerställ att Husky/pre-push-hooks använder samma Node-version eller ger tydligt fel; (4) dokumentera setup-kommandot för ny dator. Sågs under Slice 2a/2b (2026-07). |
+| **✅ LÖST 2026-09-27: Developer Experience: pinna och standardisera Node-version** | klart | `.nvmrc` fanns redan (Node 20) men saknade `package.json#engines`, en `node-version-file`-koppling i CI och en lokal spärr. Standardiserades initialt på Node 20, sedan om till **Node 24 (LTS)** samma dag — Node 20 är EOL och båda Vercel-projekten körde redan Node 24.x. Löst: `engines.node: "24.x"`, `.nvmrc` = 24, CI:s `actions/setup-node` läser `.nvmrc` (en källa), nytt `scripts/check-node-version.sh` körs som `pretest:run`-hook (fångas av både `npm run test:run` och `check:all`) och stoppar tidigt med tydligt fel + åtgärd vid fel huvudversion (inklusive Node 20 och 26). Vercel-projektens `nodeVersion` verifierat = `24.x` på både `equinet-app` och `equinet-staging-app` — redan korrekt, ingen ändring behövdes där. Se [Gotcha #42](../guides/gotchas.md#gotcha-42-fel-node-huvudversion-ger-falska-jsdom-testfel). |
 
 ---
 
