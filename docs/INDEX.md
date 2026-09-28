@@ -60,6 +60,8 @@ sections:
 | [apns-setup.md](operations/apns-setup.md) | Steg-för-steg guide för APNs-konfiguration (iOS push) |
 | [load-testing.md](operations/load-testing.md) | Lasttest-baseline och resultat |
 | [parallel-sessions.md](operations/parallel-sessions.md) | Guide för parallella utvecklingssessioner |
+| [vercel-token-sync-and-production-deploy.md](operations/vercel-token-sync-and-production-deploy.md) | Produktionsdeploy (`workflow_dispatch`-only) och VERCEL_TOKEN-synk |
+| [release-sprint-checkpoint.md](operations/release-sprint-checkpoint.md) | Löpande status, paus-/återupptagning och rollbackplan för release-ready-sprinten |
 
 ## Sakerhet
 
