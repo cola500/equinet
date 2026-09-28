@@ -117,19 +117,12 @@ Kontrollera manuellt att:
 
 ## 5. S47-hooks-medvetenhet
 
-Pre-commit-hooks kan blockera dina commits. För lifecycle-docs-ändringar på main:
+Pre-commit-hooks kan blockera dina commits på feature-branchen (samma som för kod). De körs alltid mot branchen du står på, inte mot `main` -- ingen commit görs längre direkt på `main`, så inget särskilt "lifecycle-docs på main"-läge finns.
 
-- **`check-branch-for-story.sh`** blockerar kod-commits på main när story in_progress → docs-ändringar är lifecycle, vilket passerar utan override
-- **`check-reviews-done.sh`** triggar bara om done-fil staged — påverkar inte ren docs-uppdatering
-- **`check-plan-commit.sh`** triggar bara om story in_progress utan plan — docs-ändringar påverkas inte
+- **`check-branch-for-story.sh`**, **`check-reviews-done.sh`**, **`check-plan-commit.sh`** kan fortfarande triggas beroende på story-status och filinnehåll -- samma regler som för kod.
 
 Om en hook ändå triggar felaktigt: lägg till `[override: <motivering>]` i commit-message-subject. Motiveringen ska vara specifik (t.ex. `[override: docs-sync efter sprint-avslut]`).
 
 ## 6. Commit-strategi
 
-Per `.claude/rules/commit-strategy.md`:
-
-- **Lifecycle-docs** (retros, done-filer, status.md) → direkt till main tillåtet
-- **Rule-docs, CLAUDE.md, README.md, NFR.md, arkitektur** → kräver feature branch + PR
-
-Om skill-körningen uppdaterar både lifecycle och rule-docs → PR-flödet gäller.
+Per `.claude/rules/commit-strategy.md` (uppdaterad 2026-09-28): **allt går via feature branch + PR, inklusive lifecycle-docs** (retros, done-filer, status.md, plan-filer). Ingen fil eller katalog har längre en direkt-till-main-väg. `Quality Gate Passed` måste vara grön innan merge -- branch protection på `main` gäller alla, oavsett innehåll.

@@ -135,8 +135,10 @@ Vid osäkerhet: kör code-reviewer. Kostar 5 min, sparar potentiell bugg.
 
 ## Undantag
 
-**Hotfix:** Skippa BRANCH (committa direkt på main om kritiskt). Alla övriga steg gäller.
+**Alla bestående ändringar -- kod såväl som dokumentation -- går via feature branch + PR.** Ingen direkt commit eller push till `main`, oavsett hur liten eller "lifecycle" ändringen är (status.md, done-filer, retros, plan-filer inkluderat). `main` har branch protection: `Quality Gate Passed` måste vara grön innan merge, se `docs/operations/dependabot.md`. Detta ersätter den tidigare "trunk-based hybrid"-modellen (`.claude/rules/commit-strategy.md`), som byggde på antagandet att branch protection inte gick att aktivera -- ett antagande som var felaktigt (repot är publikt) och som åtgärdades 2026-09-28.
 
-**Docs-only:** Direkt till main utan PR. Kör check:swedish.
+**"Docs-only" som term förekommer på flera ställen i regelverket** (`review-matrix.md`, `tech-lead.md`, `feature-delivery.md`) -- där syftar det ENDAST på vilka reviewers/granskningssteg som krävs, ALDRIG på om PR/branch krävs. En agent får aldrig tolka "docs-only" som tillstånd att committa eller pusha direkt till `main`.
 
-**Schema-ändringar:** Kräver tech-architect-review och deploy-ordning per `prisma.md`.
+**Break-glass (produktionskritiskt nödläge):** Reponägaren kan manuellt override:a branch protection (`enforce_admins: false` på repo-nivå) för en genuint akut, produktionsblockerande situation. Detta är INTE ett normalt arbetsflöde och inget en agent väljer på egen hand baserat på hur "kritiskt" en ändring känns -- det kräver explicit, medvetet godkännande från Johan i stunden, inte en tyst egen bedömning.
+
+**Schema-ändringar:** Kräver tech-architect-review och deploy-ordning per `prisma.md`, utöver PR-kravet ovan.

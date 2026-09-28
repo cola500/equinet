@@ -143,7 +143,7 @@ Tre regler:
 | **Review-gating (trivial vs icke-trivial)** | Triviala stories (<15 min, mekaniska, utan logikändring) skippar subagent-review; check:all räcker | `.claude/rules/team-workflow.md` Station 4 |
 | **Parallella sessioner med worktrees** | 2 sessioner på olika domäner samtidigt | `.claude/rules/parallel-sessions.md` |
 | **Worktree-agent-mönster** | Huvudsession spawnar isolated agent för docs-arbete | `.claude/rules/autonomous-sprint.md` |
-| **Trunk-based hybrid** | Kod = PR, lifecycle-docs = direkt till main | `.claude/rules/commit-strategy.md` |
+| ~~Trunk-based hybrid~~ (retirerad 2026-09-28) | Allt = feature branch + PR, ingen direkt-till-main-väg längre | `.claude/rules/commit-strategy.md` |
 | **Sessionsfil istället för delad status.md** | Varje session skriver till egen fil -- inga merge-konflikter | `.claude/rules/auto-assign.md` |
 | **Done-fil med Reviews + Docs-uppdaterade** | Obligatoriska sektioner vid story-avslut | `.claude/rules/auto-assign.md` |
 | **Dependabot auto-merge för patch** | Bara patch-versioner, inte minor/major | `docs/operations/dependabot.md` |
@@ -156,7 +156,7 @@ När du har löst ett problem och inser "det här kan återanvändas":
 
 1. **Skriv mönstret som ett eget dok** under `docs/architecture/<namn>-pattern.md` (om det behöver utrymme) eller referera till koden direkt (om det är litet).
 2. **Lägg till rad i denna katalog** med: namn, när, länk.
-3. **Commit som lifecycle-doc** -- direkt till main är OK för denna katalog.
+3. **Feature branch + PR**, som all annan bestående ändring (`.claude/rules/commit-strategy.md`).
 4. **Uppdatera CLAUDE.md snabbreferens** om det är ett stort eller centralt mönster.
 
 **Vad som kvalificerar som "pattern":**

@@ -1475,18 +1475,15 @@ body { padding-bottom: 0 !important; }
 
 ---
 
-## Gotcha #37: Plan-commit på main skapar divergent feature-branch
+## Gotcha #37: Plan-commit på main skapar divergent feature-branch (RETIRERAD 2026-09-28)
 
-**Problem:** Om du committar `docs/plans/<story>-plan.md` direkt på main (tillåtet per commit-strategy) och sedan skapar feature-branchen UTAN att pusha main först, får du en divergent branch — lokal main och feature-branch delar inte samma bas som remote main. `gh pr merge` klagar på konflikter vid merge.
+**Status:** Kan inte längre uppstå. `commit-strategy.md` tillåter inte längre direkt-commit av plan-filer (eller något annat) till main -- allt går via feature branch + PR, inklusive plan-filer. Kvarlämnad här som historik för att förklara varför regeln finns.
 
-**Lösning (förebyggande):** Tryck alltid main INNAN du skapar feature-branchen:
-1. `git commit -m "docs: plan"` på main
-2. `git push origin main`
-3. `git checkout -b feature/...`
+**Problem (historiskt):** Om du committade `docs/plans/<story>-plan.md` direkt på main (tillåtet per den gamla commit-strategy-versionen) och sedan skapade feature-branchen UTAN att pusha main först, fick du en divergent branch — lokal main och feature-branch delade inte samma bas som remote main. `gh pr merge` klagade på konflikter vid merge.
 
-**Lösning (i efterhand):** `git rebase main` på feature-branchen synkar basen.
+**Lösning (om du stöter på en gammal divergent branch):** `git rebase main` på feature-branchen synkar basen.
 
-**Källa:** S44-retro-fynd — divergent branches vid PR #230. Regel i `.claude/rules/commit-strategy.md`.
+**Källa:** S44-retro-fynd — divergent branches vid PR #230. Tidigare regel i `.claude/rules/commit-strategy.md`, borttagen 2026-09-28 (se filens "Vad som ändrades och varför").
 
 ---
 
