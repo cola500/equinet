@@ -19,8 +19,25 @@ async function loginAsProvider(page: import('@playwright/test').Page) {
   await page.getByLabel(/email/i).fill('provider@example.com')
   await page.getByLabel('Lösenord', { exact: true }).fill('ProviderPass123!')
   await page.getByRole('button', { name: /logga in/i }).click()
-  // Wait for any post-login redirect (may land on /customer, /dashboard, or /provider/dashboard)
-  await expect(page).toHaveURL(/\/(provider\/)?dashboard|\/customer/, { timeout: 15000 })
+  // Post-login navigation passes through a transitional /dashboard hop -- the
+  // server-side redirect() in src/app/dashboard/page.tsx (never rendered, only
+  // ever an intermediate redirect target) -- before landing on /provider/calendar.
+  // Waiting on a URL regex that also matched /dashboard was a race: Playwright's
+  // toHaveURL polling could catch that momentary URL and resolve before the second
+  // redirect fired, or miss both hops if it polled right after the app had already
+  // settled on /provider/calendar -- causing intermittent timeouts unrelated to any
+  // real regression. Wait instead for the same "Kalender" heading already used
+  // throughout e2e/calendar.spec.ts: it only renders once CalendarContent has
+  // resolved isLoading=false && isProvider=true, so it can't false-positive on the
+  // intermediate hop and genuinely proves the app is ready.
+  // Fallback: if provider claims haven't propagated to the JWT yet, the app lands
+  // on /customer instead (no equivalent readiness heading available here, so this
+  // leg is detected via the URL, same as before).
+  const calendarHeading = page.getByRole('heading', { name: /kalender/i })
+  await Promise.race([
+    calendarHeading.waitFor({ state: 'visible', timeout: 15000 }),
+    page.waitForURL(/\/customer/, { timeout: 15000 }),
+  ])
   // If redirected to /customer (userType not yet "provider" in claims), navigate directly
   if (!page.url().includes('/provider/')) {
     await page.goto('/provider/dashboard')

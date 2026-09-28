@@ -6,6 +6,23 @@ permissions:
   contents: write
   pull-requests: write
 
+# Säkerhetsmodell:
+# - Triggas bara av pull_request (inte pull_request_target) -- ingen access till
+#   secrets utöver vad PR:en själv skulle haft, och ingen risk för "pwn request"
+#   via en attacker-kontrollerad checkout.
+# - `if: github.actor == 'dependabot[bot]'` säkerställer att vanliga mänskliga
+#   PRs ALDRIG rör vid detta jobb.
+# - Bara semver-patch aktiveras för auto-merge. Minor/major är redan helt
+#   blockerade i .github/dependabot.yml (ignore-regel) -- de når aldrig hit.
+# - Filomfångs-guarden nedan är försvar-i-djup: om Dependabot någon gång skulle
+#   generera en PR som rör andra filer än de förväntade dependency-filerna
+#   (t.ex. pga en bugg i Dependabot self, eller ändrad dependabot.yml-config),
+#   ska den INTE auto-godkännas.
+# - GITHUB_TOKEN kan inte approva sina egna PRs (GitHub-central säkerhetsspärr).
+# - `--auto` sätter bara GitHubs inbyggda "auto-merge"-flagga på PR:en. Den
+#   mergar inte förrän branch protection på main är uppfylld, dvs. den
+#   obligatoriska statuskontrollen "Quality Gate Passed" måste vara grön.
+#   Se docs/operations/dependabot.md för fullständig policy.
 jobs:
   auto-merge:
     runs-on: ubuntu-latest
@@ -18,13 +35,41 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Enable auto-merge for patch updates.
-      # GITHUB_TOKEN kan inte approva sina egna PRs (security-inställning).
-      # Branch protection kräver att CI passerar -- det räcker.
-      # --auto väntar tills alla checks är gröna och mergar då automatiskt.
-      - name: Enable auto-merge for patch updates
+      - name: Verify only dependency files changed
+        id: scope-check
         if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          set -euo pipefail
+          changed_files=$(gh pr view "$PR_URL" --json files -q '.files[].path')
+          echo "Ändrade filer:"
+          echo "$changed_files"
+
+          unexpected=$(echo "$changed_files" | grep -vE '^(package\.json|package-lock\.json)$' || true)
+          if [[ -n "$unexpected" ]]; then
+            echo "❌ Oväntade filer ändrade utanför package.json/package-lock.json:"
+            echo "$unexpected"
+            echo "in-scope=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          echo "in-scope=true" >> "$GITHUB_OUTPUT"
+
+      # Aktiverar GitHubs inbyggda auto-merge för patch-uppdateringar vars
+      # diff är begränsad till förväntade dependency-filer. GitHub mergar
+      # inte PR:en förrän main:s branch protection är uppfylld (obligatorisk
+      # status-check "Quality Gate Passed"). Konflikter eller trasig CI
+      # blockerar alltså mergen -- den här raden bara köar önskan om merge.
+      - name: Enable auto-merge for patch updates
+        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' && steps.scope-check.outputs.in-scope == 'true'
         run: gh pr merge --squash --auto "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log manual-review requirement for non-patch updates
+        if: steps.metadata.outputs.update-type != 'version-update:semver-patch'
+        run: |
+          echo "ℹ️ update-type=${{ steps.metadata.outputs.update-type }} är inte semver-patch."
+          echo "Auto-merge aktiveras inte -- kräver manuell granskning per policy i docs/operations/dependabot.md."

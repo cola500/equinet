@@ -3,7 +3,7 @@ title: "Dependabot -- strategi och hantering"
 description: "Hur Dependabot-uppdateringar hanteras: auto-merge, risker per paket, manuell granskning"
 category: operations
 status: active
-last_updated: 2026-04-17
+last_updated: 2026-09-28
 tags: [operations, dependencies, security, ci]
 sections:
   - Översikt
@@ -11,6 +11,7 @@ sections:
   - Vad som kan gå sönder
   - Manuell granskning per paket
   - Workflow-konfiguration
+  - Branch protection (repo-nivå säkerhetsgaller)
   - Felsökning
 ---
 
@@ -132,14 +133,34 @@ Auto-merge fungerar så här:
 ```yaml
 - Fetch Dependabot metadata
 - Om update-type == 'semver-patch':
+    - Verifiera att bara package.json/package-lock.json ändrats (försvar-i-djup)
     - Enable auto-merge (--squash --auto)
+- Annars: logga att manuell granskning krävs (ingen auto-merge)
 ```
 
 **VIKTIGT:** Vi approvar INTE PR:en. GitHub Actions kan inte approva sina egna PRs (säkerhetsinställning). Branch protection kräver bara att CI passerar -- det räcker.
 
+**Säkerhetsmodell:**
+- Triggas av `pull_request` (inte `pull_request_target`) -- ingen förhöjd secrets-access, ingen pwn-request-risk.
+- `if: github.actor == 'dependabot[bot]'` -- mänskliga PRs rör aldrig detta workflow.
+- Minor/major för npm är redan helt blockerade i `.github/dependabot.yml` (ignore-regel) -- Dependabot skapar dem aldrig, så de når aldrig detta workflow.
+- Filomfångs-guard (2026-09-28): avvisar auto-merge om PR:en rör andra filer än `package.json`/`package-lock.json`.
+- Minsta möjliga GitHub Actions-behörighet: `contents: write` + `pull-requests: write`, inget mer.
+
 ### Tidigare fel: "GitHub Actions is not permitted to approve pull requests"
 
 2026-04-12 försökte workflow:en `gh pr review --approve`. Det failade för att GitHub blockerar egen-approval. Fixad 2026-04-17 genom att ta bort approve-steget och bara köra `gh pr merge --auto`.
+
+## Branch protection (repo-nivå säkerhetsgaller)
+
+**2026-09-28-fynd:** `main` saknade helt branch protection/required status checks sedan repots start -- `allow_auto_merge` var också avstängt (troligen aldrig aktiverat, GitHubs default för nya repon). Ingen dokumenterad, avsiktlig anledning hittades i git-historik eller docs. Utan en obligatorisk statuskontroll hade en aktiverad auto-merge kunnat merga en PR så fort den är konfliktfri -- **inte** nödvändigtvis efter att CI blivit klar.
+
+**Åtgärdat 2026-09-28:**
+- `allow_auto_merge: true` på repo-nivå.
+- `delete_branch_on_merge: true` på repo-nivå (mergade head-branches städas automatiskt).
+- Branch protection på `main`: obligatorisk statuskontroll `Quality Gate Passed` (aggregatjobbet i `quality-gates.yml`). Inget krav på mänsklig review-approval -- det hade brutit det befintliga agent-drivna själv-mergande arbetsflödet (`autonomous-sprint.md`). `enforce_admins: false` -- reponägaren kan fortfarande manuellt override:a vid akutbehov.
+
+**Konsekvens för alla PRs, inte bara Dependabot:** merge-knappen (UI såväl som `gh pr merge` utan `--auto`) är nu blockerad tills `Quality Gate Passed` är grön, oavsett vem som mergar. Tidigare gick det tekniskt att merga en PR till main innan/utan att GitHubs CI hunnit klart -- det är stängt nu.
 
 ## Felsökning
 
