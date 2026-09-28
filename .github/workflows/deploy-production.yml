@@ -28,9 +28,12 @@ name: Deploy to Production (manual)
 #   branch-restriktion, deployment-loggning) -- men UTAN required reviewers.
 #   Godkännandepunkten är Johans uttryckliga instruktion att köra detta
 #   workflow för en bestämd sha, inte ett GitHub-UI-godkännande.
-# - `dry_run` (default true) kör hela valideringen och bygget men hoppar
-#   över det faktiska `vercel deploy`-steget och health-checken. Används för
-#   att testa hela kedjan utan att någonsin röra produktionsmiljön.
+# - `dry_run` (default true) kör hela valideringen samt `vercel pull` och
+#   `vercel build` på riktigt (2026-09-28: medvetet INTE villkorade på
+#   dry_run -- ingen av dem muterar något i Vercel, och det gör dry_run till
+#   det enda sättet att bevisa att VERCEL_TOKEN faktiskt fungerar, t.ex.
+#   efter en tokenrotation, utan att någonsin röra produktionsmiljön). Bara
+#   det faktiska `vercel deploy`-steget och health-checken hoppas över.
 # - `concurrency` (workflow-brett) förhindrar att två produktionsdeployer
 #   körs samtidigt -- en andra dispatch köar istället för att avbryta eller
 #   krocka med en pågående.
@@ -170,7 +173,7 @@ jobs:
           echo "Quality Gate:   run ${{ needs.validate.outputs.quality_gate_run_id }}"
           echo "dry_run:        ${{ inputs.dry_run }}"
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            echo "::notice::dry_run=true -- validering och bygge körs, men INGEN faktisk deploy eller health check sker."
+            echo "::notice::dry_run=true -- Pull och Build körs på riktigt (verifierar att VERCEL_TOKEN fungerar, mutar inget), men Deploy och health check hoppas över. Ingen produktionseffekt."
           fi
 
       - name: Checkout exact SHA
@@ -181,14 +184,19 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
+      # Körs ALLTID, även vid dry_run=true -- varken pull eller build muterar
+      # något i Vercel (pull läser bara konfiguration, build kompilerar
+      # lokalt i runnern). Det gör dry_run till det enda sättet att
+      # verifiera att VERCEL_TOKEN faktiskt fungerar utan att någonsin röra
+      # produktionsmiljön -- vilket är precis vad en tokenrotation behöver
+      # kunna bevisas med.
       - name: Pull Vercel environment
-        if: inputs.dry_run == false
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build
-        if: inputs.dry_run == false
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
+      # Enda muterande steget -- körs ENDAST vid dry_run=false.
       - name: Deploy
         if: inputs.dry_run == false
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
@@ -205,4 +213,4 @@ jobs:
 
       - name: Dry-run complete
         if: inputs.dry_run == true
-        run: echo "✓ dry_run klar. Ingen produktionsdeploy gjordes. Kör om med dry_run=false för en riktig deploy."
+        run: echo "✓ dry_run klar -- Pull+Build lyckades (VERCEL_TOKEN fungerar). Ingen produktionsdeploy gjordes. Kör om med dry_run=false för en riktig deploy."

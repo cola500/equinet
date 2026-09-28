@@ -62,7 +62,7 @@ Kontrollerar lokalt: ren arbetskatalog, att du står på `main`, att lokal `main
 
 Scriptet rör aldrig `VERCEL_TOKEN` eller någon annan hemlighet -- själva deployen körs av GitHub Actions med sin egen lagrade secret. Detta script dispatchar och bevakar bara den körningen.
 
-**Testa workflowets valideringslogik utan att deploya på riktigt:** workflowet har en egen `dry_run`-input (default `true`) som kör hela valideringen och Vercel-bygget men hoppar över själva `vercel deploy`-steget och health-checken. Trigga direkt via `gh workflow run deploy-production.yml -f sha=<sha> -f staging_verified_sha=<sha>` (utan `-f dry_run=false`) för ett säkert testkörning. `deploy-production.sh` skickar alltid `dry_run=false` när den dispatchar, eftersom en riktig körning via scriptet redan passerat den interaktiva bekräftelsefrasen.
+**Testa workflowets valideringslogik OCH att VERCEL_TOKEN fungerar, utan att deploya på riktigt:** workflowet har en egen `dry_run`-input (default `true`) som kör hela valideringen samt `vercel pull` och `vercel build` på riktigt (ingen av dem muterar något i Vercel) -- bara själva `vercel deploy`-steget och health-checken hoppas över. Det gör `dry_run` till rätt sätt att verifiera en tokenrotation: om `vercel pull` misslyckas ser du exakt samma felmeddelande som i produktionsjobbet, utan att något deployats. Trigga direkt via `gh workflow run deploy-production.yml -f sha=<sha> -f staging_verified_sha=<sha>` (utan `-f dry_run=false`). `deploy-production.sh` skickar alltid `dry_run=false` när den dispatchar, eftersom en riktig körning via scriptet redan passerat den interaktiva bekräftelsefrasen.
 
 ## Personligt konto -- vad det betyder
 
