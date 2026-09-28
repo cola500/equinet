@@ -4,7 +4,7 @@ description: "Projektöversikt, setup-guide, teknisk stack och implementerade fu
 category: root
 tags: [setup, overview, getting-started]
 status: active
-last_updated: 2026-09-27
+last_updated: 2026-09-28
 related:
   - CLAUDE.md
   - NFR.md
@@ -120,7 +120,7 @@ Inte ett portfolio-projekt byggt för att se snyggt ut. Det är produktivkod i d
 
 5. **Starta lokal databas och seeda**
    ```bash
-   # Starta lokal Supabase (PostgreSQL + Auth + RLS + triggers)
+   # Starta lokal Supabase (PostgreSQL + Auth + RLS + triggers + Storage-buckets)
    npm run db:up
 
    # Kör migrationer + generera Prisma Client
@@ -129,6 +129,12 @@ Inte ett portfolio-projekt byggt för att se snyggt ut. Det är produktivkod i d
    # Seeda med testdata
    npm run db:seed
    ```
+
+   `npm run db:up` skapar även de två Supabase Storage-bucketsen appen använder
+   (`message-attachments`, `equinet-uploads`) automatiskt — deklarerade i
+   `supabase/config.toml`, ingen manuell åtgärd behövs. Verifiera med
+   `npm run verify:local-storage-buckets`. Se
+   [Gotcha #43](docs/guides/gotchas.md#gotcha-43-lokala-supabase-storage-buckets-saknas-utan-config-deklaration).
 
 6. **Starta utvecklingsservern**
    ```bash

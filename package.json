@@ -65,6 +65,7 @@
     "migrate:check": "bash scripts/migrate-check.sh",
     "migrate:status": "bash scripts/migrate-status.sh",
     "check:rls-coverage": "npx prisma db execute --file scripts/check-rls-coverage.sql --schema prisma/schema.prisma",
+    "verify:local-storage-buckets": "tsx scripts/verify-local-storage-buckets.ts",
     "db:backup": "bash scripts/db-backup.sh",
     "db:restore": "bash scripts/db-restore.sh",
     "db:drift-check": "bash scripts/drift-check.sh",

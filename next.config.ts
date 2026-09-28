@@ -6,7 +6,10 @@ import withBundleAnalyzer from "@next/bundle-analyzer";
 
 const revision = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf-8" }).stdout?.trim() ?? crypto.randomUUID();
 
-const nextConfig: NextConfig = {
+// Exported (not just used below) so next.config.test.ts can call headers()
+// directly against different env vars, without importing the heavier
+// Sentry/Serwist/bundle-analyzer-wrapped default export.
+export const nextConfig: NextConfig = {
   // Allow external images from Supabase Storage
   images: {
     remotePatterns: [
@@ -70,7 +73,7 @@ const nextConfig: NextConfig = {
                 ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'" // Dev: React DevTools need unsafe-eval
                 : "script-src 'self' 'unsafe-inline'", // Prod: SRI hashes don't cover inline scripts on Vercel
               "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
-              "img-src 'self' data: blob: https:",
+              `img-src 'self' data: blob: https:${localSupabaseCsp}`, // + local Supabase Storage in dev/E2E (uploaded attachment images)
               "font-src 'self' data:",
               `connect-src 'self' https://router.project-osrm.org ${supabaseOrigin} https://*.sentry.io${localSupabaseCsp}`, // Allow OSRM API + Supabase + Sentry (+ local Supabase in dev/E2E)
               "frame-ancestors 'none'",
@@ -123,7 +126,7 @@ const nextConfig: NextConfig = {
                 ? "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com" // Dev: React DevTools + Stripe
                 : "script-src 'self' 'unsafe-inline' https://js.stripe.com", // Prod: inline needed + Stripe Payment Element
               "style-src 'self' 'unsafe-inline'", // Required: Tailwind CSS + dynamic style={} attributes
-              "img-src 'self' data: blob: https:", // blob: for image uploads
+              `img-src 'self' data: blob: https:${localSupabaseCsp}`, // blob: for image uploads (+ local Supabase Storage in dev/E2E)
               "font-src 'self' data:", // Next.js Google Fonts self-hosting
               `connect-src 'self' ${supabaseOrigin} https://*.sentry.io https://api.stripe.com https://js.stripe.com${localSupabaseCsp}`, // API calls + Supabase + Sentry + Stripe API + Stripe.js (js.stripe.com needed in connect-src: the service worker re-fetches the Stripe.js script, which is governed by connect-src) (+ local Supabase in dev/E2E)
               "frame-src https://js.stripe.com", // Stripe Payment Element renders in iframe

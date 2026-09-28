@@ -381,9 +381,12 @@ jobs:
 
       - name: Export Supabase DATABASE_URL
         run: |
-          DB_URL=$(npx supabase status -o json | jq -r '.DB_URL' | sed 's/127.0.0.1/localhost/')
+          SUPABASE_STATUS=$(npx supabase status -o json)
+          DB_URL=$(echo $SUPABASE_STATUS | jq -r '.DB_URL' | sed 's/127.0.0.1/localhost/')
           echo "DATABASE_URL=$DB_URL" >> $GITHUB_ENV
           echo "DIRECT_DATABASE_URL=$DB_URL" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_URL=$(echo $SUPABASE_STATUS | jq -r '.API_URL')" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(echo $SUPABASE_STATUS | jq -r '.SERVICE_ROLE_KEY')" >> $GITHUB_ENV
 
       - name: Generate Prisma Client
         run: npx prisma generate
@@ -397,6 +400,12 @@ jobs:
         # Guardrail mot precis den bugklass som orsakade BookingSeries-incidenten
         # (RLS-policies utan ENABLE ROW LEVEL SECURITY). Se scripts/check-rls-coverage.sql.
         run: npm run check:rls-coverage
+
+      - name: Verify local Storage buckets exist (fresh-volume regression guard)
+        # Bekräftar att supabase/config.toml:s deklarativa buckets faktiskt
+        # skapades av `supabase start` ovan — samma sak som orsakade
+        # "Bucket not found" för meddelandebilagor lokalt (Gotcha #43).
+        run: npm run verify:local-storage-buckets
 
       - name: Stop Supabase
         if: always()
