@@ -97,8 +97,27 @@ DerivedData/
 
 # Superpowers (per-machine)
 .agents/
-.claude/skills/
+# Glob (not the directory) so the negations below can re-include tool skills.
+# Tracked project skills (implement, retro, ...) stay tracked regardless.
+.claude/skills/*
 skills-lock.json
+
+# BMAD + Impeccable (experimental dev tooling, see docs/guides/ai-dev-tools.md)
+!.claude/skills/bmad-*/
+!.claude/skills/impeccable/
+# Platform binary: the launcher downloads the pinned, sha256-checked version
+.claude/skills/impeccable/scripts/bin/
+# Personal install answers (user_name, language)
+_bmad/config.user.toml
+# Generated artifacts and session logs; may describe unfixed vulnerabilities (public repo)
+_bmad-output/
+# Per-developer consent/settings and live-mode sessions
+.impeccable/config.local.json
+.impeccable/live/
+# GitHub Copilot copy of Impeccable: not used; committing the hook would auto-run it for Copilot agents
+.github/skills/impeccable/
+.github/agents/impeccable-*
+.github/hooks/impeccable.json
 
 # E2E visual snapshots (generated, machine-specific)
 e2e/__snapshots__/
