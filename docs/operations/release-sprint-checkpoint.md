@@ -11,12 +11,14 @@ related:
   - docs/operations/dependabot.md
 sections:
   - Syfte
+  - "Dataklassificering: v0.3.0 är en Customer Preview (endast fiktiv testdata)"
   - Slutförda slices
   - Mergade PR:ar och commits
   - Nuläge (SHA:er)
   - Verifierat, utan hemligheter
   - Inte gjort
   - Kända blockerare och återstående slices
+  - Framtida krav före användning med riktiga personuppgifter
   - Paus- och återupptagningsprotokoll
   - Rollbackplan för stagingsteget
   - Rollbackplan för produktion (inför en framtida, separat godkänd produktionsdeploy)
@@ -30,6 +32,16 @@ sections:
 Detta dokument är den enda källan till sanning för var release-ready-sprinten står, för en människa eller en ny agent-session som behöver återuppta arbetet utan att gissa. Uppdateras vid varje betydande checkpoint. Ersätter INTE sprintplanen (publicerad som Artifact, "Release-Ready Sprint") -- den beskriver *vad* som ska göras och i vilken ordning; detta dokument beskriver *var vi faktiskt står just nu*.
 
 **Ingen hemlig information finns eller ska någonsin läggas till i detta dokument** -- inga tokenvärden, inga secret-namn utöver vad som redan är offentligt dokumenterat i `docs/operations/vercel-token-sync-and-production-deploy.md`, inga databas-URL:er eller uppkopplingssträngar.
+
+## Dataklassificering: v0.3.0 är en Customer Preview (endast fiktiv testdata)
+
+**Fastställt av Johan 2026-09-29.** Detta gäller v0.3.0-releasekandidaten (`4973f6e919339b022425063bd8a280fa2bbe9b41`) i alla miljöer den körs i, inklusive `equinet-staging.johanlindengard.com` idag och en eventuell framtida produktionsdeploy av samma SHA.
+
+- **v0.3.0 är en Customer Preview / pre-release för demonstration och återkoppling** -- inte en bred, skarp lansering till riktiga slutanvändare.
+- **Endast fiktiv testdata får finnas i miljön**: demo-personas och seed-data (t.ex. "Lisa Andersson", "Erik Järnfot"/Järnfots Hovslageri -- se Slice 3.2-verifieringen ovan). Detta är samma etablerade demo-datamodell som redan används i `NEXT_PUBLIC_DEMO_MODE`.
+- **Ingen skarp kund-, häst-, boknings-, betalnings- eller kontaktinformation får läggas in** i någon miljö som kör denna release-kandidat -- varken i staging eller i en eventuell framtida produktionsdeploy -- **förrän GDPR-arbetet nedan är slutfört.**
+- **GDPR-arbetet är följaktligen INTE en blockerare för att dela ut v0.3.0 som Customer Preview med fiktiv data.** Det är däremot ett förutsättningskrav som måste vara uppfyllt innan plattformen tas i bruk med riktiga personuppgifter (dvs. innan en bred, skarp lansering). Se "Framtida krav före användning med riktiga personuppgifter" under "Kända blockerare och återstående slices" för den fullständiga, orörda listan (bolagsuppgifter, DPO-bedömning, personuppgiftsbiträdesavtal, SCC-status).
+- Denna klassificering är också införd i release-utkastets `body` (GitHub Release `id: 398976758`) -- se "Verifierat, utan hemligheter" nedan för detaljer om den uppdateringen.
 
 ## Slutförda slices
 
@@ -117,9 +129,16 @@ Senast verifierat 2026-09-29 (oberoende slutkontroll, se "Rättelse av release n
   - `git log --follow -- src/app/api/providers/route.ts` visar att pagineringen infördes i commit `99c509c2` (`2026-01-27`) -- **5 dagar efter v0.2.0** (`2026-01-22`), dvs i praktiken i början av hela v0.3.0-utvecklingsperioden, inte en färsk ändring i denna release.
   - Webb-konsumenten (`src/hooks/useProviderSearch.ts:125`) läser redan `result.data` -- redan anpassad, inget aktuellt uppgraderingsproblem.
   - Ingen träff för `/api/providers` i `ios/` -- ingen iOS-konsument berörs alls.
-  - **Åtgärd**: "Breaking changes"-avsnittet togs bort helt från release-utkastets `body` (inte omformulerat till en historisk notering -- bedömdes inte tillföra värde i ett "vad är nytt"-dokument för en 8 månader gammal, redan fullt absorberad ändring). Uppdaterat via `gh api ... -X PATCH -f body=@<fil>`.
+  - **Åtgärd (metoden misslyckades tyst, se nästa punkt för den faktiska korrigeringen)**: avsikten var att ta bort "Breaking changes"-avsnittet via `gh api ... -X PATCH -f body=@<fil>`.
   - **Bieffekt upptäckt och åtgärdad**: PATCH-anropet (som bara skickade `body`) fick GitHub att nollställa draftens `tag_name` från `v0.3.0` till ett auto-genererat `untagged-<hash>` -- ett känt kvirk i GitHubs Releases API för otaggade drafts (PATCH utan explicit `tag_name` kan tappa den tilltänkta taggen). Upptäckt genom oberoende `GET` direkt efter PATCH, åtgärdat med en uppföljande `PATCH` som explicit satte `tag_name=v0.3.0` + `target_commitish` igen. Verifierat på nytt efteråt: `tag_name=v0.3.0` korrekt, och `git ls-remote --tags origin` visar fortfarande bara de tre kända taggarna -- ingen riktig Git-tagg skapades av någon av PATCH-anropen.
   - **Lärdom för framtida uppdateringar av denna draft**: en PATCH mot `/repos/.../releases/398976758` MÅSTE alltid inkludera `tag_name=v0.3.0` (och gärna `target_commitish`) explicit, annars riskerar draften att tappa sin tilltänkta version igen.
+- **Rättelsen (ovan) misslyckades tyst -- upptäckt och korrekt åtgärdad (2026-09-29, samma dag, vid nästa granskning):** `gh api ... -f "body=@/tmp/fil.md"` läste ALDRIG filen -- `gh api`s `-f`-flagga stöder inte `@fil`-syntax för att läsa filinnehåll (det är inte samma sak som `gh release`-kommandonas `-F`/`--notes-file`). Resultatet blev att release-draftens `body` bokstavligen sattes till strängen `"@/tmp/release-body-current.md"` -- inte till det avsedda innehållet.
+  - **Varför det inte upptäcktes direkt**: den ursprungliga verifieringen (`grep -c "Breaking changes"` -> `0`) gav en falsk positiv -- söksträngen fanns förvisso inte i body, men det gjorde ingenting annat heller. En ren "innehåller-inte-X"-kontroll är otillräcklig efter en skrivning; en riktig diff mot den avsedda källfilen krävs.
+  - **Upptäckt**: vid nästa arbetspass (GDPR-omklassificeringen nedan) hämtades body på nytt för att bygga vidare på den -- då visade sig innehållet vara den trasiga strängen, inte de riktiga release notes.
+  - **Korrekt åtgärd denna gång**: hela body (inklusive GDPR-omklassificeringen, se nedan) byggdes som en fullständig, korrekt markdown-fil i scratchpad, paketerades till giltig JSON med `jq -n --rawfile body <fil> '{tag_name:..., target_commitish:..., draft:true, body:$body}'` (undviker alla escaping-problem med citattecken/specialtecken), och skickades med `gh api ... --input <json-fil>` -- samma anrop satte ALLA fyra fälten samtidigt för att undvika den tidigare `tag_name`-bieffekten.
+  - **Verifiering denna gång**: en fräsch `GET` direkt efter, `diff` mot den lokala källfilen (identiskt bortsett från en trivial trailing newline), `git ls-remote --tags origin` (samma tre taggar, ingen ny), samt riktade `grep`-kontroller för både frånvaro av det gamla avsnittet och närvaro av det nya GDPR-avsnittet.
+  - **Konsekvens**: den tidigare rapporten till Johan om att "release notes är rättade och verifierade" (efter PR #519) var FELAKTIG för själva innehållet -- metadata (`tag_name`, `draft`, `target_commitish`) var korrekt, men `body` var trasigt under hela den perioden. Detta är nu korrigerat och grundligare verifierat.
+- **GDPR-omklassificering (2026-09-29, Johans explicita beslut):** GDPR-arbetet (bolagsuppgifter, DPO, DPA, SCC) flyttat från "blockerare inför produktion" till en egen sektion "Framtida krav före användning med riktiga personuppgifter" (se ovan) -- eftersom miljön endast används för kontrollerad Customer Preview med fiktiv testdata, inte skarpa personuppgifter. Ny sektion "Dataklassificering: v0.3.0 är en Customer Preview" tillagd nära dokumentets topp för maximal synlighet. Release-draftens `body` uppdaterad i samma PATCH som body-rättelsen ovan -- innehåller nu en framträdande varningsruta om Customer Preview-status och fiktiv-data-kravet, plus en omformulerad "Framtida krav"-sektion istället för GDPR under "Kända begränsningar".
 
 ## Inte gjort
 
@@ -129,10 +148,22 @@ Senast verifierat 2026-09-29 (oberoende slutkontroll, se "Rättelse av release n
 
 ## Kända blockerare och återstående slices
 
-- **GDPR-öppna frågor** (bolagsuppgifter, DPO-beslut, SCC-status för amerikanska underleverantörer) kvarstår som Johans/juridisk rådgivnings beslut, orört av denna sprint. Nämnt explicit som känd begränsning i v0.3.0-release-utkastets release notes.
+**Inga av punkterna nedan är GDPR-relaterade.** GDPR-arbetet är omklassificerat (2026-09-29, Johans beslut) och beskrivs separat under "Framtida krav före användning med riktiga personuppgifter" -- se den sektionen och "Dataklassificering: v0.3.0 är en Customer Preview" ovan. Det är INTE en blockerare för denna release.
+
 - **CHANGELOG.md är INTE uppdaterad** -- `standard-version` kördes endast som `--dry-run` (research). En riktig körning (`npm run release:minor`) skulle bumpa `package.json`-versionen, skriva `CHANGELOG.md` och skapa en lokal Git-tagg -- görs medvetet INTE förrän Johan godkänner att gå vidare mot faktisk taggning/publicering.
 - **GitHub Release-utkast (Workstream 6) är klart** -- draft `id: 398976758` skapat för v0.3.0, mål-SHA `4973f6e919339b022425063bd8a280fa2bbe9b41`, ingen tagg skapad. Väntar på Johans godkännande för publicering.
 - **Vercel-auto-mode-klassificeraren blockerar agentens direkta `request_promote`-anrop** (klassad "Production Deploy"), oavsett godkännande i konversationen. Framtida promotions mot `equinet-staging-app` eller `equinet-app` kräver därför Johans egen interaktiva `vercel promote`-körning, precis som tokenrotation och rollback redan gjorde. Dokumenterat som ett etablerat mönster, inte en öppen fråga.
+
+## Framtida krav före användning med riktiga personuppgifter
+
+**Detta är INTE en blockerare för v0.3.0 som Customer Preview.** Se "Dataklassificering" ovan för resonemanget. Följande kvarstår orört, som Johans/juridisk rådgivnings beslut, och måste vara löst innan plattformen används med riktiga personuppgifter (dvs. innan en bred, skarp lansering bortom Customer Preview-stadiet):
+
+- **Bolagsuppgifter** -- vem är personuppgiftsansvarig, organisationsform.
+- **DPO-bedömning** -- behövs ett dataskyddsombud (Data Protection Officer)?
+- **Personuppgiftsbiträdesavtal (DPA)** med underleverantörer som hanterar data (Supabase, Vercel, Stripe, Resend, m.fl.).
+- **SCC-status** (Standard Contractual Clauses) för amerikanska underleverantörer.
+
+Nämnt explicit under motsvarande rubrik i v0.3.0-release-utkastets release notes (`id: 398976758`).
 
 ## Paus- och återupptagningsprotokoll
 
