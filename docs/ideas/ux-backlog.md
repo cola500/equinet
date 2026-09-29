@@ -4,12 +4,13 @@ description: "UX-backlog fran branschjamforelse med Booksy, Acuity och Calendly"
 category: idea
 tags: [ux, backlog, booking, recurring, waitlist, calendar-sync]
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-09-29
 sections:
   - Implementerat
   - B-kategori -- Medelstor insats
   - C-kategori -- Större insats
   - Prioriteringsförslag
+  - "Design-debt: Leverantörskalendern (Impeccable-kritik 2026-09-29)"
 ---
 
 # UX-förbättringar -- Backlog
@@ -128,4 +129,20 @@ Framtida:    C2 (väntlista) -- större projekt, event-driven arkitektur
 
 ---
 
-*Skapad: 2026-02-17, uppdaterad: 2026-02-21 (B2, C1 implementerade)*
+## Design-debt: Leverantörskalendern (Impeccable-kritik 2026-09-29)
+
+> **Detta är en analys/backlog, INTE beslutade designändringar.** En `/impeccable critique`-genomlysning av leverantörskalendern (`src/app/provider/calendar/page.tsx` + `WeekCalendar`/`MonthCalendar`/`BookingDetailDialog`/`ProviderRescheduleDialog`) kördes 2026-09-29, efter att `v0.3.0` redan var släppt i produktion. Fullständig rapport: [`.impeccable/critique/2026-09-29T15-15-16Z__src-app-provider-calendar-page-tsx.md`](../../.impeccable/critique/2026-09-29T15-15-16Z__src-app-provider-calendar-page-tsx.md) (Design Health Score 23/40, "Acceptabel"). Beslut: låt en användare prova `v0.3.0` i befintligt skick först och väg samman denna analys med faktisk feedback innan något av punkterna nedan prioriteras in i en sprint.
+
+| # | Fynd | Användarpåverkan | Yta/komponent | Prioritet | Föreslagen verifiering | Status |
+|---|------|-------------------|----------------|-----------|--------------------------|--------|
+| D1 | Klicka-för-att-boka i veckovyn saknar tangentbordsstöd (`role`/`tabIndex`/`onKeyDown`) -- `MonthCalendar` har mönstret korrekt, `WeekCalendar` saknar det helt | Tangentbordsanvändare kan inte skapa en bokning alls i standardvyn (vecka är default på desktop) -- fullständig uppgiftsblockering, inte bara friktion | `src/components/calendar/WeekCalendar.tsx` (dagkolumnens klick-handler) | P0 | Tangentbordsnavigering (Tab + Enter/Space) genom veckovyn i en E2E- eller manuell test; jämför med `MonthCalendar`s redan fungerande mönster | Deferred -- efter användarfeedback på v0.3.0 |
+| D2 | Flera interaktiva element understiger produktens egna 44px-touch-target-golv (`BookingBlock` 28px, vyväxlingsknappar 32px, färgkod-toggle utan padding) | Svårare att träffa rätt tappmål på mobil, där leverantören ofta använder appen enhandsfattat mellan uppdrag | `src/components/calendar/BookingBlock.tsx`, `src/components/calendar/CalendarHeader.tsx`, `src/app/provider/calendar/page.tsx` (färgkod-knapp) | P1 | Mät faktisk renderad höjd/bredd på berörda element i Chrome DevTools vid 390px bredd; jämför mot det dokumenterade 44px-golvet i `DESIGN.md` | Deferred -- efter användarfeedback på v0.3.0 |
+| D3 | Bokningsstatus (väntande/bekräftad/avbokad/genomförd) renderas med tre oberoende, inbördes avvikande färgimplementationer inom samma feature (`BookingBlock`, `BookingDetailDialog`, `MonthCalendar`), som inte matchar sidans egen färgkod-legend | Legenden lär ut fel färgkod för minst en av vyerna -- användaren kan inte lita på att en given färg betyder samma sak överallt i kalendern | `src/components/calendar/BookingBlock.tsx`, `src/components/calendar/BookingDetailDialog.tsx`, `src/components/calendar/MonthCalendar.tsx`, `src/app/provider/calendar/page.tsx` (`LEGEND_ITEMS`) | P1 | Visuell sida-vid-sida-jämförelse av samma bokningsstatus i alla tre vyer + legenden; se även den redan dokumenterade "Duplicated Status Rule" i `DESIGN.md` | Deferred -- efter användarfeedback på v0.3.0 |
+| D4 | Månadsvyn kommunicerar bokningsstatus enbart via färg på mobil -- tjänstenamnet döljs (`hidden md:inline`), ingen statusikon | Användare som inte kan skilja på liknande färger (eller inte har lärt sig legenden) får ingen alternativ signal för att avgöra bokningsstatus på mobil | `src/components/calendar/MonthCalendar.tsx` | P2 | Manuell granskning vid 390px bredd; kontrollera mot WCAG "använd inte enbart färg för att förmedla information" | Deferred -- efter användarfeedback på v0.3.0 |
+| D5 | De två handkodade popup-vyerna (`slotPopup`, `dayPopup`) saknar `role="dialog"`, fokushantering och Escape-stängning, till skillnad från de Radix-baserade dialogerna på samma sida | Skärmläsaranvändare får ingen signal om att en popup öppnats; tangentbordsanvändare kan inte stänga den med Escape som de kan med alla andra dialoger på sidan | `src/components/calendar/WeekCalendar.tsx`, `src/components/calendar/MonthCalendar.tsx` | P2 | Manuell VoiceOver/tangentbordsgenomgång; jämför beteende mot `BookingDetailDialog`/`ProviderRescheduleDialog` | Deferred -- efter användarfeedback på v0.3.0 |
+
+**Ej med i tabellen men noterat i rapporten** (mindre observationer, se fullständig rapport): terminologimismatch i avvisnings-dialogen ("Avboka bokning?" vid "Avvisa"), saknad laddningsindikator på statusknappar i `BookingDetailDialog`, triplicerad `getStatusStyles`/`getStatusLabel`-logik, samt en flytande röstlogg-FAB som i en skärmdump observerades överlappa en tidslucka i kalendergridet på mobil (bör verifieras separat, inte bekräftat som ett faktiskt klickproblem).
+
+---
+
+*Skapad: 2026-02-17, uppdaterad: 2026-09-29 (design-debt-sektion från Impeccable-kritik tillagd)*
