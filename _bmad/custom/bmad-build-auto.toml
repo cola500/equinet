@@ -1,0 +1,9 @@
+# Equinet team override (committed). Appended to the skill's persistent facts.
+# Keeps BMAD aligned with CLAUDE.md: see docs/guides/ai-dev-tools.md.
+
+[workflow]
+persistent_facts = [
+  "Equinet: CLAUDE.md wins over this workflow. Do NOT create git commits unless the user explicitly asks in this session — skip the workflow's commit step and report the uncommitted diff instead.",
+  "Equinet: never push, merge, tag, deploy or publish. All changes go via feature branch + PR with green Quality Gate Passed, handled outside this workflow.",
+  "Equinet: TDD and `npm run check:all` from CLAUDE.md apply; do not bypass hooks (no --no-verify).",
+]
