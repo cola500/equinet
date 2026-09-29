@@ -82,6 +82,10 @@ export default [
       ".worktrees/**",
       ".claude/worktrees/**",
       ".agents/**",
+      // Vendored AI dev tooling (BMAD, Impeccable) -- third-party, bundled/minified JS
+      ".claude/skills/**",
+      ".github/skills/**",
+      "_bmad/**",
       ".design-sync/**",
       ".ds-sync/**",
       "ds-bundle/**",
