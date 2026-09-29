@@ -1,9 +1,11 @@
 ---
+paths:
+  - "docs/sprints/**"
 title: "Autonom sprint-körning"
 description: "Hur en Claude-session kör en hel sprint autonomt — förenklat 4-stegsflöde"
 category: rule
 status: active
-last_updated: 2026-04-24
+last_updated: 2026-09-29
 tags: [workflow, autonomous, sprint]
 sections:
   - Trigger

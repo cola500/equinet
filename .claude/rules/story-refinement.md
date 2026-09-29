@@ -1,9 +1,12 @@
 ---
+paths:
+  - "docs/ideas/**"
+  - "docs/sprints/**"
 title: "Story Refinement -- Seven Dimensions"
 description: "Hur vi slicear feature-idéer till värde-drivna stories med Richard Lawrence's Seven Dimensions-ramverk"
 category: rule
 status: active
-last_updated: 2026-04-18
+last_updated: 2026-09-29
 tags: [process, business-analysis, seven-dimensions, story-splitting, refinement]
 sections:
   - När använda

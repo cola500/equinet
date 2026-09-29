@@ -1,9 +1,11 @@
 ---
+paths:
+  - "docs/sprints/**"
 title: "Auto-assign vid sessionsstart"
 description: "Hur agenter plockar stories och kör dem — förenklat flöde"
 category: rule
 status: active
-last_updated: 2026-04-24
+last_updated: 2026-09-29
 tags: [workflow, team, automation, parallel]
 sections:
   - Roller och kommandon
