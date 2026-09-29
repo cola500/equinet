@@ -11,6 +11,7 @@ related:
   - docs/operations/dependabot.md
 sections:
   - Syfte
+  - "v0.3.0 ÄR SLÄPPT (2026-09-29) -- release-ready-sprinten är avslutad"
   - "Dataklassificering: v0.3.0 är en Customer Preview (endast fiktiv testdata)"
   - Slutförda slices
   - Mergade PR:ar och commits
@@ -23,7 +24,7 @@ sections:
   - Paus- och återupptagningsprotokoll
   - Rollbackplan för stagingsteget
   - Rollbackplan för produktion (inför en framtida, separat godkänd produktionsdeploy)
-  - "Tydlig paus- och återupptagningspunkt: FÖRE produktion"
+  - "Paus- och återupptagningspunkt: EFTER produktionsrelease (historisk -- steget är genomfört)"
 ---
 
 # Release-Ready Sprint -- Checkpoint
@@ -33,6 +34,56 @@ sections:
 Detta dokument är den enda källan till sanning för var release-ready-sprinten står, för en människa eller en ny agent-session som behöver återuppta arbetet utan att gissa. Uppdateras vid varje betydande checkpoint. Ersätter INTE sprintplanen (publicerad som Artifact, "Release-Ready Sprint") -- den beskriver *vad* som ska göras och i vilken ordning; detta dokument beskriver *var vi faktiskt står just nu*.
 
 **Ingen hemlig information finns eller ska någonsin läggas till i detta dokument** -- inga tokenvärden, inga secret-namn utöver vad som redan är offentligt dokumenterat i `docs/operations/vercel-token-sync-and-production-deploy.md`, inga databas-URL:er eller uppkopplingssträngar.
+
+## v0.3.0 ÄR SLÄPPT (2026-09-29) -- release-ready-sprinten är avslutad
+
+**Detta är den auktoritativa slutstatusen.** Johan gav uttryckligt godkännande för produktionsdeploy, tagg och publicering 2026-09-29. Allt genomfört i given ordning, med en stopp-och-åtgärda-cykel för en genuin blockerare (ogiltig `VERCEL_TOKEN`) på vägen.
+
+### Produktionsdeploy
+
+- **Deployad SHA**: `4973f6e919339b022425063bd8a280fa2bbe9b41` (produktkandidaten, oförändrad sedan Slice 3.1--3.3).
+- **Ny produktionsdeployment**: `dpl_5v8gEkuRDeg1TmWZBB6CJNuj7Shj` (`equinet-app`, target=production), `state: READY`.
+- **Workflow-körning**: `deploy-production.yml`, `dry_run=false`, run-ID `36584375136` -- `Validate deploy candidate` och `Deploy to Production` båda `success`.
+- **Nytt rollback-mål**: `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa`, SHA `4284202221f07216269659873cacf1f9b9f64f04` (PR #503) -- föregående produktionsdeployment, live genom hela release-sprinten fram till denna deploy. Finns kvar, inspekterbar, orörd.
+
+### Blockerare hittad och löst under preflighten (2026-09-29, samma dag)
+
+En första `dry_run=true`-körning (`36582792319`) misslyckades: `Error: The token provided via --token argument is not valid.` -- `VERCEL_TOKEN` hade slutat fungera sedan den senaste verifieringen tidigare i sprinten. Johan körde `bash scripts/sync-vercel-token.sh` i sin egen Vercel-session. En ny `dry_run=true`-körning (`36583908788`) verifierade båda jobben gröna innan den riktiga deployen (`dry_run=false`) startades. Ingen produktionspåverkan skedde under den misslyckade dry_run-körningen (dry_run muterar aldrig produktionen).
+
+### Migrationsavvikelse -- utredd, bedömd ofarlig, INTE en blockerare
+
+`20260906120000_enable_rls_staging_parity_ten_tables` finns i produktkandidatens kod men saknas i produktionens `_prisma_migrations`-tabell (verifierat via direkt SQL-fråga mot `xybyzflfxnqqyxnvjklv`). Migrationens egen kommentar förklarar varför: den är en **staging-parity-fix** -- produktionen hade redan RLS aktiverat på dessa tio tabeller (via tidigare, ospårad manuell/historisk ändring), bara staging saknade det. Verifierat direkt mot produktionsdatabasen (`pg_class.relrowsecurity`) innan deploy: samtliga tio tabeller har `rls_enabled: true`. Migrationen (`ENABLE ROW LEVEL SECURITY`, idempotent) skulle vara en ren no-op om körd mot produktion. Ingen migrering applicerades eller behövde appliceras för denna deploy.
+
+### Kontroll efter deploy (2026-09-29, direkt efter deploy), alla punkter gröna
+
+- **Domän**: `equinet.johanlindengard.com` bekräftat i `dpl_5v8gEkuRDeg1TmWZBB6CJNuj7Shj`s aliaslista.
+- **SHA**: `get_deployment`/`list_deployments` bekräftar `meta.githubCommitSha = 4973f6e919339b022425063bd8a280fa2bbe9b41`.
+- **Hälsokoll**: `GET /api/health` -> `200 OK`, `{"status":"ok","checks":{"database":"connected"}}`.
+- **Startsida, `/providers`, `/login`**: alla renderar korrekt (Playwright-skärmdumpar tagna). `/providers` visar 7 riktiga leverantörer (befintlig produktionsdata, t.ex. "Spikes Hovservice", "Test Stall AB") -- orörd av denna deploy, som bara ändrade kod, ingen databas.
+- **Demo-läge**: INTE aktivt -- ingen demo-panel på startsidan, `/login` visar ett riktigt email/lösenord-formulär utan demo-genvägar (skiljer sig korrekt från stagings UI).
+- **Databas**: klientkod bekräftat anropar `xybyzflfxnqqyxnvjklv.supabase.co` (produktionens Supabase-projekt, separat från stagingens `zzdamokfeenencuggjjp`) -- verifierat via faktisk nätverkstrafik i en riktig browser-session, inte antaget.
+- **Inga nya app-relaterade fel**: konsolfel var `401` på `/api/auth/session` (förväntat, ej inloggad), samt Vercels egna `429`/`404` på manifest/insights-script (Vercel-infrastruktur, inte Equinet-kod) -- samma brusmönster som setts genomgående i sprinten, inget nytt eller blockerande.
+- **Staging**: bekräftat fortsatt frisk och helt separat (`GET https://equinet-staging.johanlindengard.com/api/health` -> `200 OK` direkt efter produktionsverifieringen).
+- **Ingen skarp testdata skapad**: inget konto registrerades, ingen bokning gjordes i produktionen under verifieringen (produktionen har inget demo-läge, så sådan data skulle räknas som skarp -- i strid med Customer Preview-policyn). Endast icke-muterande sidladdningar användes.
+
+### Tagg
+
+- **`v0.3.0`**, annoterad tagg, skapad lokalt och pushad till `origin`.
+- **Verifierat mål (två oberoende metoder)**: `git ls-remote --tags origin` visar `refs/tags/v0.3.0^{}` (dereferenserad) = `4973f6e919339b022425063bd8a280fa2bbe9b41`. GitHub API (`git/tags/<tag-sha>`) bekräftar samma sak: taggobjektets `object.sha` = `4973f6e919339b022425063bd8a280fa2bbe9b41`.
+
+### GitHub Release -- PUBLICERAD
+
+- **URL**: https://github.com/cola500/equinet/releases/tag/v0.3.0
+- **Titel**: "Equinet v0.3.0 – Customer Preview"
+- **Status**: `draft: false` (publicerad), `prerelease: true`, `tag_name: v0.3.0`, `target_commitish: 4973f6e919339b022425063bd8a280fa2bbe9b41`.
+- Verifierat efter publicering via två oberoende kommandon (`gh api` och `gh release view`) -- samma resultat båda gångerna.
+- Release notes innehåller den framträdande Customer Preview-varningsrutan (fiktiv testdata, tidig förhandsvisning) som skrevs under GDPR-omklassificeringen -- se historiken i "Verifierat, utan hemligheter" nedan.
+
+### Kända begränsningar (oförändrade av denna deploy, redan dokumenterade)
+
+- GDPR-arbetet (bolagsuppgifter, DPO-bedömning, personuppgiftsbiträdesavtal, SCC-status) kvarstår som framtida krav -- se "Framtida krav före användning med riktiga personuppgifter". Blockerar inte denna Customer Preview.
+- Migrationsspårnings-avvikelsen ovan (`20260906120000_enable_rls_staging_parity_ten_tables`) kvarstår i `_prisma_migrations` som "ej applicerad" trots att SQL-effekten redan finns -- kosmetiskt, men värt att städa upp i en framtida, separat migration som markerar den `resolve --applied` om det blir förvirrande.
+- Ingen fullständig regressionskörning av samtliga ~4946 tester har körts specifikt mot DENNA produktionsdeploy (CI:s testsvit körs i CI-miljö). Manuell verifiering ovan täcker kärnflöden, inte samtliga funktioner.
 
 ## Dataklassificering: v0.3.0 är en Customer Preview (endast fiktiv testdata)
 
@@ -171,17 +222,20 @@ Senast verifierat 2026-09-29 (efter rättelse -- se "Regel: vad flyttar den frys
 
 ## Inte gjort
 
-- **Ingen tagg har skapats** (den tillfälliga testtaggen för det negativa triggertestet skapades och raderades samma session -- se ovan; verifierat att v0.3.0-release-utkastet heller inte skapade någon tagg, se ovan).
-- **Ingen GitHub Release är publicerad.** Ett draft-utkast för v0.3.0 finns (`id: 398976758`, se ovan) -- `gh release list` visar den fortsatt inte (drafts listas inte som publicerade releaser).
-- **Ingen produktionsdeploy har körts** (`dry_run` har alltid varit `true` i varje test-dispatch mot `deploy-production.yml`; `equinet-app` är fortfarande oförändrad på SHA `42842022...`).
+**Historisk sektion -- beskrev läget FÖRE produktionssläppet 2026-09-29.** Se "v0.3.0 ÄR SLÄPPT" högst upp för aktuell status. Tagg (`v0.3.0`), publicerad GitHub Release och produktionsdeploy (`dpl_5v8gEkuRDeg1TmWZBB6CJNuj7Shj`) är alla genomförda och verifierade.
+
+Fortfarande INTE gjort:
+- Ingen ytterligare produktionsdeploy utöver denna.
+- Releasen är `prerelease: true` -- inte ändrad till en fullständig release.
+- Ingen breddning bortom Customer Preview (kräver GDPR-arbetet klart).
 
 ## Kända blockerare och återstående slices
 
 **Inga av punkterna nedan är GDPR-relaterade.** GDPR-arbetet är omklassificerat (2026-09-29, Johans beslut) och beskrivs separat under "Framtida krav före användning med riktiga personuppgifter" -- se den sektionen och "Dataklassificering: v0.3.0 är en Customer Preview" ovan. Det är INTE en blockerare för denna release.
 
-- **CHANGELOG.md är INTE uppdaterad** -- `standard-version` kördes endast som `--dry-run` (research). En riktig körning (`npm run release:minor`) skulle bumpa `package.json`-versionen, skriva `CHANGELOG.md` och skapa en lokal Git-tagg -- görs medvetet INTE förrän Johan godkänner att gå vidare mot faktisk taggning/publicering.
-- **GitHub Release-utkast (Workstream 6) är klart** -- draft `id: 398976758` skapat för v0.3.0, mål-SHA `4973f6e919339b022425063bd8a280fa2bbe9b41` (produktkandidaten, återställd efter rättelse -- se "Regel: vad flyttar den frysta produktkandidaten"), ingen tagg skapad. Väntar på Johans godkännande för publicering.
-- **Vercel-auto-mode-klassificeraren blockerar agentens direkta `request_promote`-anrop** (klassad "Production Deploy"), oavsett godkännande i konversationen. Framtida promotions mot `equinet-staging-app` eller `equinet-app` kräver därför Johans egen interaktiva `vercel promote`-körning, precis som tokenrotation och rollback redan gjorde. Dokumenterat som ett etablerat mönster, inte en öppen fråga.
+- **CHANGELOG.md är INTE uppdaterad** -- `standard-version` har aldrig körts på riktigt, bara `--dry-run`. `package.json`s `version`-fält är fortfarande `0.2.0` trots att `v0.3.0` är taggat och släppt. Kvarstår som en separat, framtida dokumentationsuppgift -- påverkar inte den redan skedda releasen.
+- **GitHub Release för v0.3.0 är PUBLICERAD** -- se "v0.3.0 ÄR SLÄPPT" högst upp. Detta var tidigare ett öppet steg, nu genomfört.
+- **Vercel-auto-mode-klassificeraren blockerade agentens direkta `request_promote`-anrop** tidigare i sprinten (klassad "Production Deploy"). Det faktiska produktionsdeploy-workflowet (`gh workflow run deploy-production.yml`) blockerades DÄREMOT INTE av klassificeraren -- det är ett GitHub Actions-anrop, inte ett direkt Vercel-verktygsanrop. Framtida Vercel `promote`-operationer (staging eller produktion) kräver fortsatt Johans egen interaktiva session.
 
 ## Framtida krav före användning med riktiga personuppgifter
 
@@ -237,15 +291,17 @@ Slice 3.1, 3.2 och 3.3 är klara. Produktkandidaten är, och förblir, `4973f6e9
 - Arbetsytan är inte ren, eller lokal `main` matchar inte `origin/main`.
 - Något GDPR-, säkerhets- eller drifts-relaterat fynd som kräver mänsklig bedömning enligt tidigare sprintarbete.
 
-### 5. Åtgärder som ALDRIG får antas vara godkända
+### 5. Åtgärder som ALDRIG får antas vara godkända (fortsatt gällande -- gäller FRAMTIDA sådana åtgärder)
 
-- **Produktionsdeploy** (`dry_run=false` i `deploy-production.yml`) -- kräver alltid Johans uttryckliga, aktuella instruktion att deploya en bestämd, verifierad SHA. En tidigare given instruktion gäller INTE automatiskt för en ny SHA.
-- **Skapande av en riktig Git-tagg** för en release (verifierat att detta INTE skedde när v0.3.0-draften skapades -- se "Verifierat" ovan; om samma väg används igen, verifiera på nytt).
-- **Publicering av en GitHub Release** (draft -> published), eller markering som pre-release. Ett DRAFT-utkast (som v0.3.0, `id: 398976758`) är uttryckligen godkänt att skapas -- se detta dokuments historik -- men publicering är ett separat, ej godkänt steg.
-- **Skrivning mot en fjärrdatabas** (staging eller produktion).
-- **Ändring av produktionskonfiguration** (Vercel-projektinställningar, environment-variabler, `vercel.json`, DNS).
+**Uppdatering 2026-09-29:** de tre första punkterna nedan GENOMFÖRDES 2026-09-29, men bara efter Johans nya, uttryckliga, i-sessionen givna godkännande -- se "v0.3.0 ÄR SLÄPPT" högst upp. Detta ÄNDRAR INTE principen: en tidigare given instruktion (eller det faktum att detta redan skett en gång) ger ALDRIG automatiskt tillstånd för NÄSTA produktionsdeploy, tagg eller publicering. Varje framtida sådan åtgärd kräver sitt eget, nytt, uttryckligt godkännande.
 
-Att CI är grönt, att en PR är mergad, eller att en tidigare slice godkändes, innebär ALDRIG i sig tillstånd för någon av dessa fem åtgärder.
+- **Produktionsdeploy** (`dry_run=false` i `deploy-production.yml`) -- kräver alltid Johans uttryckliga, aktuella instruktion att deploya en bestämd, verifierad SHA. En tidigare given instruktion gäller INTE automatiskt för en ny SHA. (Genomfört 2026-09-29 för `4973f6e9...`, med godkännande.)
+- **Skapande av en riktig Git-tagg** för en release. (Genomfört 2026-09-29: `v0.3.0` på `4973f6e9...`, med godkännande.)
+- **Publicering av en GitHub Release** (draft -> published), eller markering som pre-release. (Genomfört 2026-09-29, med godkännande.)
+- **Skrivning mot en fjärrdatabas** (staging eller produktion). Fortsatt INTE gjort -- ingen migrering applicerades under produktionsdeployen (se "v0.3.0 ÄR SLÄPPT" -- migrationsavvikelsen var en verifierad no-op, ingen skrivning gjordes).
+- **Ändring av produktionskonfiguration** (Vercel-projektinställningar, environment-variabler, `vercel.json`, DNS). Fortsatt INTE gjort.
+
+Att CI är grönt, att en PR är mergad, eller att en tidigare slice/release godkändes, innebär ALDRIG i sig tillstånd för nästa instans av någon av dessa fem åtgärdstyper.
 
 ## Rollbackplan för stagingsteget
 
@@ -281,21 +337,31 @@ Stagingmiljön har sin egen, separata Supabase-databas (`zzdamokfeenencuggjjp`, 
 **Verifiering att produktionen förblir oförändrad:**
 Efter varje stagingrelaterad åtgärd: `list_deployments` (target=production) mot `equinet-app` -- SHA:n ska fortfarande vara `42842022...` tills en separat, explicit godkänd produktionsdeploy sker. Detta ska köras och dokumenteras vid varje checkpoint-uppdatering i detta dokument tills produktionen faktiskt uppdateras med Johans godkännande.
 
-## Rollbackplan för produktion (inför en framtida, separat godkänd produktionsdeploy)
+## Rollbackplan för produktion
 
-Gäller Workstream 4 (produktionsdeploy), som INTE har påbörjats -- ingen `deploy-production.yml`-körning med `dry_run=false` har skett.
+**Status (2026-09-29): AKTIV, inte längre hypotetisk.** Workstream 4 (produktionsdeploy) är genomförd -- `deploy-production.yml` kördes med `dry_run=false` för SHA `4973f6e919339b022425063bd8a280fa2bbe9b41` (körning `36584375136`, success). Se "v0.3.0 ÄR SLÄPPT" högst upp i dokumentet för fullständiga detaljer.
 
-**Nuvarande produktionsdeployment (rollback-målet om/när en framtida produktionsdeploy behöver ångras):**
-Deployment-ID `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa`, SHA `4284202221f07216269659873cacf1f9b9f64f04` (PR #503), `equinet-app` (target=production). Detta är den deployment produktionen alltid kan återgå till fram tills en ny produktionsdeploy faktiskt sker.
+**Nuvarande produktionsdeployment:**
+`dpl_5v8gEkuRDeg1TmWZBB6CJNuj7Shj`, SHA `4973f6e919339b022425063bd8a280fa2bbe9b41`, `equinet-app` (target=production), `equinet.johanlindengard.com`.
 
-**Så här skulle en framtida produktionsrollback göras:**
+**Rollback-målet (om en rollback-trigger nedan inträffar):**
+Deployment-ID `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa`, SHA `4284202221f07216269659873cacf1f9b9f64f04` (PR #503), `equinet-app` (target=production). Detta är den föregående, tidigare live-deploymenten. Finns kvar, inspekterbar, orörd.
+
+**Så här görs en produktionsrollback:**
 `vercel rollback` eller `vercel promote dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa --scope cola500s-projects` mot `equinet-app` (kräver Johans Vercel-session -- agentens auto-mode-klassificerare blockerar denna typ av åtgärd, se Slice 3.3-erfarenheten ovan). Separat Vercel-projekt från staging -- rör aldrig `equinet-staging-app`.
 
 **Databas:** produktionen använder ett helt separat Supabase-projekt (`xybyzflfxnqqyxnvjklv`, Zurich) -- oberoende av stagingens `zzdamokfeenencuggjjp`. Samma migrations-varning som för staging gäller: en Vercel-rollback återställer aldrig databasschemat automatiskt.
 
-## Tydlig paus- och återupptagningspunkt: FÖRE produktion
+## Paus- och återupptagningspunkt: EFTER produktionsrelease (historisk -- steget är genomfört)
 
-**Detta är den aktuella statusen (2026-09-29, efter rättelse i PR #522):** release-ready-sprinten har verifierat och stagat produktkandidaten `4973f6e919339b022425063bd8a280fa2bbe9b41` -- källkodsmässigt liggande på `equinet-staging.johanlindengard.com` (via en doc-commit-build, se "Nuläge (SHA:er)"). Ett GitHub Release-utkast för v0.3.0 (`id: 398976758`, `target_commitish` = `4973f6e9...`) finns -- se "Verifierat, utan hemligheter" ovan för fullständiga detaljer och länk. Senare rena doc-/metadata-commits på `main` (Impeccable-filerna, denna checkpoint-rättelse) räknas INTE som en ny produktkandidat -- se "Regel: vad flyttar den frysta produktkandidaten".
+**Denna sektion beskrev tidigare en väntpunkt FÖRE produktion. Den är nu historisk.** 2026-09-29 gav Johan uttryckligt godkännande, och release-ready-sprinten slutfördes: produktionsdeploy, tagg `v0.3.0` och publicerad GitHub Release -- se "v0.3.0 ÄR SLÄPPT" högst upp i dokumentet för fullständiga detaljer, verifieringar och länkar.
+
+**Vad som INTE har skett, och som fortfarande kräver separat, ny, uttrycklig instruktion om det blir aktuellt:**
+- Ingen ytterligare produktionsdeploy utöver denna.
+- Releasen är publicerad men fortfarande markerad `prerelease: true` -- att ändra den till en fullständig, icke-pre-release är ett separat beslut.
+- Ingen breddning bortom Customer Preview-stadiet (kräver GDPR-arbetet klart, se "Framtida krav").
+
+En ny session som återupptar arbetet i detta dokument ska läsa "v0.3.0 ÄR SLÄPPT" FÖRST.
 
 **Explicit stopp här.** Följande har INTE skett och ska INTE ske utan att Johan uttryckligen initierar det i en ny, aktuell instruktion:
 - Ingen riktig Git-tagg är skapad (verifierat upprepade gånger via `git ls-remote --tags origin`, senast direkt efter SHA-uppdateringen).
