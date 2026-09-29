@@ -3,7 +3,7 @@ title: "Equinet -- Dokumentationsindex"
 description: "Centralt navigeringsdokument for all projektdokumentation"
 category: root
 status: active
-last_updated: 2026-09-28
+last_updated: 2026-09-29
 sections:
   - Arkitektur
   - Operations
@@ -91,6 +91,7 @@ sections:
 |----------|-------------|
 | [gotchas.md](guides/gotchas.md) | Vanliga gotchas och losningar |
 | [agents.md](guides/agents.md) | Agent-team guide for Claude Code |
+| [ai-dev-tools.md](guides/ai-dev-tools.md) | BMAD och Impeccable: användning, vad som versionshanteras, uppdatering/borttagning (experiment) |
 | [agent-operations/README.md](agent-operations/README.md) | Autonom feature-leverans -- orchestrator-modell, beslutsgranser, klistra-in-prompt |
 | [voice-logging.md](guides/voice-logging.md) | Rostloggning -- arkitektur och anvandning |
 | [feature-docs.md](guides/feature-docs.md) | Anvandardokumentation for funktioner |
