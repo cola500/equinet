@@ -15,6 +15,7 @@ sections:
   - Slutförda slices
   - Mergade PR:ar och commits
   - Nuläge (SHA:er)
+  - "Regel: vad flyttar den frysta produktkandidaten"
   - Verifierat, utan hemligheter
   - Inte gjort
   - Kända blockerare och återstående slices
@@ -35,7 +36,7 @@ Detta dokument är den enda källan till sanning för var release-ready-sprinten
 
 ## Dataklassificering: v0.3.0 är en Customer Preview (endast fiktiv testdata)
 
-**Fastställt av Johan 2026-09-29.** Detta gäller v0.3.0-releasekandidaten (nu `66fa2360a77f3c23fb1d03deb0b350d972ddc5bc`, tidigare `4973f6e919339b022425063bd8a280fa2bbe9b41` -- se "Ny releasekandidat 2026-09-29" nedan) i alla miljöer den körs i, inklusive `equinet-staging.johanlindengard.com` idag och en eventuell framtida produktionsdeploy av samma SHA.
+**Fastställt av Johan 2026-09-29.** Detta gäller v0.3.0-produktkandidaten (`4973f6e919339b022425063bd8a280fa2bbe9b41` -- se "Regel: vad flyttar den frysta produktkandidaten" nedan för varför detta är den enda SHA:n som räknas) i alla miljöer den körs i, inklusive `equinet-staging.johanlindengard.com` idag och en eventuell framtida produktionsdeploy.
 
 - **v0.3.0 är en Customer Preview / pre-release för demonstration och återkoppling** -- inte en bred, skarp lansering till riktiga slutanvändare.
 - **Endast fiktiv testdata får finnas i miljön**: demo-personas och seed-data (t.ex. "Lisa Andersson", "Erik Järnfot"/Järnfots Hovslageri -- se Slice 3.2-verifieringen ovan). Detta är samma etablerade demo-datamodell som redan används i `NEXT_PUBLIC_DEMO_MODE`.
@@ -54,8 +55,8 @@ Detta dokument är den enda källan till sanning för var release-ready-sprinten
 | 3.1 | Force-push av fryst releasekandidat-SHA till `preview/candidate` | ✅ Klar, verifierad (se nedan) |
 | 3.2 | Manuell rök-verifiering av releasekandidaten mot Preview-deploymenten `dpl_6VHpb2b3bUzBzYoHcgxJN1oYyYhd` (Playwright, demo-läge, auth, bokning end-to-end + städning av testdata i delad staging-databas) | ✅ Klar, verifierad (se nedan) |
 | 3.3 | Promotion av releasekandidaten till `equinet-staging-app`s levande produktionsalias (`equinet-staging.johanlindengard.com`) | ✅ Klar, verifierad (se nedan) |
-| 5/6 | Release notes förberedda + GitHub Release-utkast (draft) skapat för v0.3.0 | ✅ Klar, verifierad (se nedan) |
-| 7 (ny) | Impeccable `PRODUCT.md`/`DESIGN.md`/sidecar tillagda (PR #521); ny releasekandidat `66fa2360...` fastställd, CI-verifierad på `main`, promotad till staging och rök-verifierad | ✅ Klar, verifierad (se nedan) |
+| 5/6 | Release notes förberedda + GitHub Release-utkast (draft) skapat för v0.3.0, pekar på produktkandidaten `4973f6e9...` | ✅ Klar, verifierad (se nedan) |
+| 7 | Impeccable `PRODUCT.md`/`DESIGN.md`/sidecar tillagda (PR #521) -- ren dokumentation/metadata, ingen körbar kod. **Rättelse 2026-09-29**: felaktigt behandlad som en ny produktkandidat under en kort period samma dag; korrigerat -- se "Regel: vad flyttar den frysta produktkandidaten" nedan. `4973f6e9...` är och förblir produktkandidaten | ✅ Klar, rättad och verifierad (se nedan) |
 
 ## Mergade PR:ar och commits
 
@@ -68,23 +69,31 @@ Dessförinnan, samma dag, i samma sprint-kontext (dependabot-auto-merge-säkring
 
 ## Nuläge (SHA:er)
 
-Senast verifierat 2026-09-29 (ny releasekandidat efter PR #521, se "Ny releasekandidat 2026-09-29" nedan).
+Senast verifierat 2026-09-29 (efter rättelse -- se "Regel: vad flyttar den frysta produktkandidaten" nedan).
 
 | Vad | SHA | Deployment-ID | Källa |
 |-----|-----|----------------|-------|
-| **Fryst releasekandidat (enda giltiga)** | **`66fa2360a77f3c23fb1d03deb0b350d972ddc5bc`** | -- | `main`-HEAD efter att PR #521 (Impeccable PRODUCT.md/DESIGN.md) mergades. Grön `Quality Gate Passed` bekräftad för exakt denna SHA (körning `36552761430`, samtliga 8 jobb + aggregatorn `success`). Ersätter `4973f6e9...` (se historik nedan) |
-| **Staging -- NUVARANDE LIVE deployment** (`equinet-staging-app`, target=production, `equinet-staging.johanlindengard.com`) | **`66fa2360a77f3c23fb1d03deb0b350d972ddc5bc`** (= releasekandidaten) | `dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa` | Vercel `list_deployment_aliases` + `get_deployment`, verifierad efter ny promotion 2026-09-29; reducerad rök-verifiering grön (hälsokoll + startsida/demo-läge) |
-| **Staging -- ROLLBACK-MÅL** (samma projekt, INTE live just nu) | `4973f6e919339b022425063bd8a280fa2bbe9b41` | `dpl_HSFgtuY6d5kTfjoTVgC2GotHCZkL` | Föregående live-deployment (den tidigare releasekandidaten, promotad i Slice 3.3) -- finns kvar, inspekterbar, orörd. Se "Rollbackplan för stagingsteget" |
-| **Produktion -- NUVARANDE LIVE deployment** (`equinet-app`, target=production) | `4284202221f07216269659873cacf1f9b9f64f04` (PR #503) | `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa` | Vercel `list_deployments` -- **bekräftat oförändrad, verifierad flera gånger, senast direkt efter den nya stagingpromotionen 2026-09-29** |
+| **Verifierad produktkandidat (enda giltiga, oförändrad sedan Slice 3.1--3.3)** | **`4973f6e919339b022425063bd8a280fa2bbe9b41`** | -- | `main`-HEAD direkt efter checkpoint-PR #513. Grön `Quality Gate Passed` (körning `36435973623`). Manuellt rök-verifierad (Slice 3.2) och stagad (Slice 3.3). Detta är SHA:n release-utkastet och en framtida produktionsdeploy avser peka på |
+| **Senare doc-/metadata-commits på `main`** (rör INTE produktkandidaten) | `66fa2360...` (PR #521: `PRODUCT.md`/`DESIGN.md`/sidecar) och `e499b84fc8ec99a9b962fa75dc474707cea770e9` (PR #522: checkpoint-korrigering) | -- | Enbart `docs/`, `PRODUCT.md`, `DESIGN.md`, `.impeccable/design.json` -- verifierat innehåller noll ändringar i `src/`, `prisma/`, `ios/`, `package.json`, `next.config.*`, `vercel.json`, `.github/workflows/`, `tsconfig`. Se "Regel" nedan för varför detta inte flyttar produktkandidaten |
+| **Staging -- NUVARANDE LIVE deployment** (`equinet-staging-app`, target=production, `equinet-staging.johanlindengard.com`) | `66fa2360a77f3c23fb1d03deb0b350d972ddc5bc` (en doc-commit, men **källkoden är byte-för-byte identisk med produktkandidaten** `4973f6e9...` -- PR #521 ändrade inget i `src/` eller övrig körbar kod) | `dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa` | Vercel `list_deployment_aliases` + `get_deployment`. Ingen ny stagingdeploy krävs för att "rätta till" detta -- den körande koden motsvarar redan produktkandidaten fullt ut, se "Regel" nedan |
+| **Staging -- ROLLBACK-MÅL** (samma projekt, INTE live just nu) | `4973f6e919339b022425063bd8a280fa2bbe9b41` (produktkandidaten själv, byggd separat i Slice 3.3) | `dpl_HSFgtuY6d5kTfjoTVgC2GotHCZkL` | Finns kvar, inspekterbar, orörd. Se "Rollbackplan för stagingsteget" |
+| **Produktion -- NUVARANDE LIVE deployment** (`equinet-app`, target=production) | `4284202221f07216269659873cacf1f9b9f64f04` (PR #503) | `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa` | Vercel `list_deployments` -- **bekräftat oförändrad, verifierad flera gånger genom hela sprinten** |
 | **Produktion -- ROLLBACK-MÅL vid en framtida deploy** | Samma som ovan (produktionen har ännu inte deployats om) | Samma som ovan, `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa` | Produktionen är just nu sitt eget rollback-mål -- blir relevant först när/om en framtida produktionsdeploy sker. Se "Rollbackplan för produktion" |
 
-**Viktigt att inte blanda ihop:** stagings "nuvarande live deployment" och "rollback-mål" är två OLIKA deployment-ID:n i samma Vercel-projekt (`equinet-staging-app`) -- den ena (`...Fz5Gu3rD...`) är vad `equinet-staging.johanlindengard.com` faktiskt pekar på just nu, den andra (`...HSFgtuY6...`) är dit man går tillbaka om något går fel (den var själv "nuvarande" innan denna uppdatering). Produktionen (`equinet-app`) är ett helt separat Vercel-projekt och har bara haft EN deployment genom hela denna sprint -- den är alltså identisk med sitt eget rollback-mål tills en faktisk produktionsdeploy sker.
+**Viktigt att inte blanda ihop:** "produktkandidat" (den Git-SHA release-utkastet/taggen/en framtida produktionsdeploy avser) och "senaste `main`-HEAD" (som kan ligga steg före pga rena doc-commits) är INTE samma sak från och med denna rättelse. Stagingaliaset råkar just nu köra en deployment byggd från en doc-commit-SHA (`66fa2360...`) snarare än produktkandidat-SHA:n direkt -- det är ofarligt eftersom källkoden är identisk, men dokumentationen ska ALDRIG beskriva detta som att produktkandidaten "flyttat sig".
 
-### Ny releasekandidat 2026-09-29: `4973f6e9...` ersatt av `66fa2360...`
+## Regel: vad flyttar den frysta produktkandidaten
 
-Efter att Impeccable-filerna (`PRODUCT.md`, `DESIGN.md`, `.impeccable/design.json`, PR #521) mergades till `main`, blev `main`-HEAD en ny commit. Per samma princip som tidigare i sprinten ("enda giltiga releasekandidat är den senaste grönt CI-verifierade `main`-HEAD, inte en äldre SHA"): den gamla kandidaten `4973f6e919339b022425063bd8a280fa2bbe9b41` är ERSATT. Den nya kandidaten `66fa2360a77f3c23fb1d03deb0b350d972ddc5bc` är den enda giltiga från och med denna uppdatering. Bekräftat: en separat "Quality Gates"-körning (`36552761430`) triggades automatiskt på `main` för exakt denna SHA och blev grön (samtliga jobb inkl. `Quality Gate Passed`) innan den användes för något.
+**Fastställt av Johan 2026-09-29, efter en felaktig tillämpning samma dag (se nedan).**
 
-**Historik för frysningen:** en tidigare version av detta dokument (PR #513, innan merge) föreslog `759b7a75bb7637f623283aa08488f3aeb2728997` -- checkpoint-PR:ns egna commit, innehållsmässigt identisk med `main`-HEAD men vald bara för att den redan hade en bevisat grön CI-körning vid den tidpunkten. Johan instruerade uttryckligen att istället vänta in `main`-HEAD `4973f6e9...`s egen CI-körning och använda den som **enda** releasekandidat-SHA om den blev grön. Den blev grön (samtliga jobb, inkl. `Quality Gate Passed`). `759b7a75...` ska INTE användas för Slice 3.1 eller något senare steg. **Uppdatering 2026-09-29:** `4973f6e9...` självt är nu i sin tur ersatt av `66fa2360...` -- se "Ny releasekandidat 2026-09-29" ovan. `4973f6e9...` ska INTE längre användas för något steg i denna sprint.
+- Produktkandidaten (den SHA som release-utkastet, en framtida Git-tagg och en framtida produktionsdeploy avser) är **`4973f6e919339b022425063bd8a280fa2bbe9b41`**. Den ändras INTE av senare commits på `main` bara för att de råkar komma efter den kronologiskt.
+- **En ny produktkandidat krävs FÖRST om en commit ändrar**: körbar kod (`src/`, `ios/`), beroenden (`package.json`/`package-lock.json`), migreringar (`prisma/`), miljökonfiguration, eller bygg-/deploybeteende (`next.config.*`, `vercel.json`, `.github/workflows/`).
+- **Ren dokumentation och icke-körbar designmetadata flyttar INTE produktkandidaten**: `docs/`, `PRODUCT.md`, `DESIGN.md`, `.impeccable/`, checkpoint-uppdateringar, release notes-text. Sådana commits får ligga senare på `main` utan att kräva en ny produktdeploy, en ny stagingomgång eller en ny fullständig rök-verifiering.
+- **Vad detta innebär i praktiken**: `main`-HEAD och "produktkandidaten" kan vara olika SHA:er samtidigt, så länge skillnaden mellan dem enbart är dokumentation/metadata. Detta dokument ska alltid vara explicit om vilken av de två som avses.
+
+**Vad som gick fel (2026-09-29, samma dag, rättat inom timmar):** PR #521 (Impeccable `PRODUCT.md`/`DESIGN.md`/sidecar -- ren dokumentation) behandlades felaktigt som att den "ersatte" produktkandidaten med sin egen merge-commit-SHA (`66fa2360...`), vilket i sin tur triggade en HELT ONÖDIG ny stagingpromotion (force-push till `preview/candidate`, ny Vercel-build, ny `vercel promote`-körning av Johan). Ingen skada skedde (samma källkod deployades bara två gånger), men det var en felaktig tillämpning av principen som tidigare användes för att gå från `759b7a75...` till `4973f6e9...` (som VAR en giltig kandidat-ersättning, eftersom `4973f6e9...` var checkpoint-PR:ns egen, ursprungliga verifieringspunkt -- inte en efterföljande doc-ändring ovanpå en redan rök-verifierad och stagad kandidat). Skillnaden: `759f7a75...`→`4973f6e9...` var ett val MELLAN två kandidater till SAMMA ursprungliga frysningsbeslut, innan något stagats. `4973f6e9...`→`66fa2360...` var en efterföljande, ren dokumentationsändring EFTER att kandidaten redan var fullt verifierad och stagad -- en annan situation som denna nya regel nu särskiljer.
+
+**Historik för frysningen:** en tidigare version av detta dokument (PR #513, innan merge) föreslog `759b7a75bb7637f623283aa08488f3aeb2728997` -- checkpoint-PR:ns egna commit, innehållsmässigt identisk med `main`-HEAD men vald bara för att den redan hade en bevisat grön CI-körning vid den tidpunkten. Johan instruerade uttryckligen att istället vänta in `main`-HEAD `4973f6e9...`s egen CI-körning och använda den som **enda** releasekandidat-SHA om den blev grön. Den blev grön (samtliga jobb, inkl. `Quality Gate Passed`). `759b7a75...` ska INTE användas för något steg i denna sprint. `4973f6e9...` är, och förblir, den enda giltiga produktkandidaten -- se "Regel" ovan.
 
 ## Verifierat, utan hemligheter
 
@@ -150,10 +159,15 @@ Efter att Impeccable-filerna (`PRODUCT.md`, `DESIGN.md`, `.impeccable/design.jso
   - **Faktakontroll mot koden (två avvikelser hittade och korrigerade INNAN commit, inte gömda)**: (1) bokningsstatus-märken i 29 filer använder hårdkodade Tailwind-pastellfärger (`bg-yellow-100 text-yellow-800` osv.), INTE de definierade men helt oanvända `--status-*`-CSS-variablerna i `globals.css` -- DESIGN.md skrevs om för att dokumentera detta ärligt ("The Duplicated Status Rule") istället för att presentera den oanvända tokenuppsättningen som sanning. (2) statusmärkena är 4px-rundade (`rounded`), inte pill-formade (`rounded-full`) som ursprungligen antaget utifrån den generella `<Badge>`-komponenten.
   - **Runtime/build/deploy-kontroll**: `grep` bekräftade att ingen av de tre filerna refereras i `src/`, `next.config.*`, `vercel.json` eller `.github/workflows/` -- noll påverkan på körbar kod.
   - **Känd, icke-blockerande avvikelse**: `docs:validate` flaggar båda `.md`-filerna för att sakna projektets CLAUDE.md-frontmatter-schema (`title`/`category`/`status`/`last_updated`/`sections`) -- förväntat och korrekt, filerna följer istället Impeccable/DESIGN.md-spec:ens egna, fasta, portabla format (ren token-YAML för DESIGN.md, ingen frontmatter alls för PRODUCT.md). `docs:validate` körs varken i CI eller pre-commit/pre-push -- blockerar inte `Quality Gate Passed`.
-  - **PR #521 mergad**, ny `main`-HEAD `66fa2360a77f3c23fb1d03deb0b350d972ddc5bc`. En separat, automatiskt triggad "Quality Gates"-körning på `main` (`36552761430`) verifierades grön för exakt denna SHA (samtliga jobb inkl. `Quality Gate Passed`) innan den användes för något -- se "Ny releasekandidat 2026-09-29" ovan.
+  - **PR #521 mergad**, ny `main`-HEAD `66fa2360a77f3c23fb1d03deb0b350d972ddc5bc`. En separat, automatiskt triggad "Quality Gates"-körning på `main` (`36552761430`) verifierades grön för exakt denna SHA (samtliga jobb inkl. `Quality Gate Passed`) innan den användes för något. (Denna SHA behandlades vid tillfället felaktigt som en ny produktkandidat -- se rättelsebullet nedan och "Regel: vad flyttar den frysta produktkandidaten" ovan.)
   - **Ny stagingpromotion**: eftersom PR #521 var docs-only triggade push till `main` ingen automatisk Vercel-build (samma "Ignored Build Step"-mönster som tidigare i sprinten). Releasekandidaten force-pushades därför till `preview/candidate` (samma mekanism som Slice 3.1) -> Preview-build `dpl_4xYE4m13ZSmDaeTPRV5dFNTt9T8q` blev `READY` -> Johan körde `vercel promote` i sin egen session (samma mönster som Slice 3.3, agentens auto-mode-klassificerare blockerar detta för agenten) -> ny production-build `dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa` för `equinet-staging-app`.
   - **Reducerad rök-verifiering (2026-09-29), alla punkter gröna**: rätt SHA/deployment bekräftat via `list_deployment_aliases` (`equinet-staging.johanlindengard.com` pekar på `dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa`) · `GET /api/health` -> `200 OK`, `{"status":"ok","checks":{"database":"connected"}}` · startsida + demo-läge visuellt bekräftat (Playwright-skärmdump, identiskt utseende med tidigare verifiering) · produktion (`equinet-app`) bekräftat oförändrad direkt efteråt, fortfarande `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa`/`42842022...`.
   - **Release-draften uppdaterad till ny SHA**: `target_commitish` och de två SHA-referenserna i `body` (Mål-SHA-raden + jämförelselänken) uppdaterade från `4973f6e9...` till `66fa2360...` via samma robusta `jq --rawfile` + `gh api --input`-metod som GDPR-rättelsen, med samma grundliga efterkontroll (diff mot källfil, `tag_name` explicit satt i samma anrop, `git ls-remote --tags` oförändrat). "Rök-verifierad på staging"-påståendet i Mål-SHA-raden korrigerades tillfälligt till "staging-verifiering pågår" under tiden den faktiska rök-verifieringen genomfördes, för att aldrig påstå ett resultat som ännu inte var sant.
+- **Rättelse (2026-09-29, samma dag, inom timmar): produktkandidaten återställd till `4973f6e9...`.** Johan fastslog principen i "Regel: vad flyttar den frysta produktkandidaten" ovan -- ren dokumentation/metadata (som Impeccable-filerna) ska aldrig tvinga fram en ny produktkandidat, en ny stagingomgång eller en fullständig rök-verifiering.
+  - **Verifiering**: `git diff --name-status 4973f6e9..origin/main` kontrollerad två gånger (före och efter PR #522) -- exakt fyra filer i hela intervallet: `PRODUCT.md`, `DESIGN.md`, `.impeccable/design.json` (nya), `docs/operations/release-sprint-checkpoint.md` (ändrad). Riktad `grep` efter `^src/|^prisma/|^ios/|package(-lock)?\.json|next\.config|vercel\.json|^\.github/workflows/|tsconfig` -- noll träffar, båda gångerna.
+  - **Produktkandidaten**: återställd till `4973f6e919339b022425063bd8a280fa2bbe9b41` i denna checkpoint (tabellen ovan) och i release-draftens `target_commitish` + `body` (samma robusta `jq --rawfile` + `gh api --input`-metod, samma grundliga efterkontroll som tidigare rättelser).
+  - **Ingen ny stagingdeploy eller rullback utförd**: staging kör fortsatt `66fa2360...` (byggd i den nu ångrade promotionen) -- detta lämnas MEDVETET orört, eftersom källkoden är identisk med produktkandidaten och en ny deploy bara skulle vara ytterligare en onödig operation av samma sort som just konstaterades vara felaktig. Dokumenterat tydligt i "Nuläge (SHA:er)" som en ofarlig avvikelse, inte en okänd risk.
+  - **Ingen ny PR för Impeccable-filerna i sig** -- de är redan mergade (PR #521) och förblir på `main`; det som ångras är enbart klassificeringen av dem som "ny produktkandidat", inte deras innehåll.
 
 ## Inte gjort
 
@@ -166,7 +180,7 @@ Efter att Impeccable-filerna (`PRODUCT.md`, `DESIGN.md`, `.impeccable/design.jso
 **Inga av punkterna nedan är GDPR-relaterade.** GDPR-arbetet är omklassificerat (2026-09-29, Johans beslut) och beskrivs separat under "Framtida krav före användning med riktiga personuppgifter" -- se den sektionen och "Dataklassificering: v0.3.0 är en Customer Preview" ovan. Det är INTE en blockerare för denna release.
 
 - **CHANGELOG.md är INTE uppdaterad** -- `standard-version` kördes endast som `--dry-run` (research). En riktig körning (`npm run release:minor`) skulle bumpa `package.json`-versionen, skriva `CHANGELOG.md` och skapa en lokal Git-tagg -- görs medvetet INTE förrän Johan godkänner att gå vidare mot faktisk taggning/publicering.
-- **GitHub Release-utkast (Workstream 6) är klart** -- draft `id: 398976758` skapat för v0.3.0, mål-SHA uppdaterad till `66fa2360a77f3c23fb1d03deb0b350d972ddc5bc`, ingen tagg skapad. Väntar på Johans godkännande för publicering.
+- **GitHub Release-utkast (Workstream 6) är klart** -- draft `id: 398976758` skapat för v0.3.0, mål-SHA `4973f6e919339b022425063bd8a280fa2bbe9b41` (produktkandidaten, återställd efter rättelse -- se "Regel: vad flyttar den frysta produktkandidaten"), ingen tagg skapad. Väntar på Johans godkännande för publicering.
 - **Vercel-auto-mode-klassificeraren blockerar agentens direkta `request_promote`-anrop** (klassad "Production Deploy"), oavsett godkännande i konversationen. Framtida promotions mot `equinet-staging-app` eller `equinet-app` kräver därför Johans egen interaktiva `vercel promote`-körning, precis som tokenrotation och rollback redan gjorde. Dokumenterat som ett etablerat mönster, inte en öppen fråga.
 
 ## Framtida krav före användning med riktiga personuppgifter
@@ -203,14 +217,14 @@ Jämför resultatet mot tabellen i "Nuläge (SHA:er)" och listan i "Verifierat, 
 
 ### 3. Nästa säkra steg
 
-Slice 3.1, 3.2 och 3.3 (mot den ursprungliga kandidaten `4973f6e9...`) samt den efterföljande releasekandidat-uppdateringen till `66fa2360...` (Impeccable-filerna, PR #521) är alla klara. `equinet-staging.johanlindengard.com` (stagingaliaset) kör nu den NYA releasekandidaten (`66fa2360a77f3c23fb1d03deb0b350d972ddc5bc`, deployment `dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa`), verifierad med reducerad rök-verifiering (hälsokoll, startsida/demo-läge). Produktionen (`equinet-app`) är fortfarande helt oförändrad. Workstream 3 (staging av exakt releasekandidat) är därmed klar för den nya kandidaten också.
+Slice 3.1, 3.2 och 3.3 är klara. Produktkandidaten är, och förblir, `4973f6e919339b022425063bd8a280fa2bbe9b41` -- se "Regel: vad flyttar den frysta produktkandidaten" för varför senare doc-commits (Impeccable-filerna, PR #521; denna checkpoint-rättelse, PR #522) INTE räknas som nya kandidater. `equinet-staging.johanlindengard.com` (stagingaliaset) kör för närvarande en deployment byggd från `66fa2360...` (en doc-commit) -- källkodsmässigt identisk med produktkandidaten, lämnad orörd med avsikt (se "Nuläge (SHA:er)"). Produktionen (`equinet-app`) är fortfarande helt oförändrad. Workstream 3 (staging av produktkandidaten) är klar.
 
-**Workstream 5/6 är klara** (release notes förberedda och uppdaterade till ny SHA, GitHub Release-utkast pekar på `66fa2360...` -- se "Verifierat" ovan). **En eventuell produktionsdeploy (Workstream 4, `deploy-production.yml` med `dry_run=false`), publicering av release-utkastet, eller skapande av en riktig Git-tagg kräver alltjämt Johans nya, uttryckliga godkännande i den aktuella sessionen** -- godkännandet av alla tidigare steg gäller INTE automatiskt för dessa nästa steg.
+**Workstream 5/6 är klara** (release notes förberedda, GitHub Release-utkast pekar på produktkandidaten `4973f6e9...` -- se "Verifierat" ovan). **En eventuell produktionsdeploy (Workstream 4, `deploy-production.yml` med `dry_run=false`), publicering av release-utkastet, eller skapande av en riktig Git-tagg kräver alltjämt Johans nya, uttryckliga godkännande i den aktuella sessionen** -- godkännandet av alla tidigare steg gäller INTE automatiskt för dessa nästa steg.
 
-**Status vid denna checkpoint-uppdatering (2026-09-29, efter PR #521 och ny stagingpromotion):**
-- Releasekandidat-SHA: `66fa2360a77f3c23fb1d03deb0b350d972ddc5bc`, grön `Quality Gate Passed` på `main` (se "Nuläge (SHA:er)"). Ersätter `4973f6e9...`.
-- Rök-verifierad: fullständigt på `preview/candidate` + levande stagingalias för den ursprungliga kandidaten (Slice 3.2/3.3); reducerad (hälsokoll, startsida/demo-läge, SHA-bekräftelse, produktion oförändrad) för den nya kandidaten efter Impeccable-filerna, eftersom ändringen bevisligen bara var dokumentation/metadata.
-- Stagingaliasets levande deployment: `dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa`, SHA `66fa2360...` -- rollback-målet är nu `dpl_HSFgtuY6d5kTfjoTVgC2GotHCZkL` (den förra releasekandidaten) -- se uppdaterad rollbackplan nedan.
+**Status vid denna checkpoint-uppdatering (2026-09-29, efter rättelse i PR #522):**
+- Produktkandidat-SHA: `4973f6e919339b022425063bd8a280fa2bbe9b41`, grön `Quality Gate Passed` (se "Nuläge (SHA:er)"). INTE ersatt av något senare -- se "Regel" ovan.
+- Rök-verifierad fullständigt på `preview/candidate` + levande stagingalias (Slice 3.2/3.3).
+- Stagingaliasets levande deployment: `dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa`, SHA `66fa2360...` (doc-commit, källkodsidentisk med produktkandidaten). Rollback-målet är `dpl_HSFgtuY6d5kTfjoTVgC2GotHCZkL` (produktkandidaten, byggd i Slice 3.3) -- se rollbackplan nedan.
 - Produktionens levande deployment (`equinet-app`): fortfarande `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa`, SHA `42842022...` (PR #503) -- oförändrad.
 - Testdata från Slice 3.2 är avbokad (status `cancelled`), ingen kvarvarande `pending`/`confirmed`-konflikt i staging-databasen.
 
@@ -235,16 +249,16 @@ Att CI är grönt, att en PR är mergad, eller att en tidigare slice godkändes,
 
 ## Rollbackplan för stagingsteget
 
-Gäller Workstream 3 (staging av exakt releasekandidat). **Status (2026-09-29, uppdaterad efter PR #521): en andra promotion har skett -- stagingaliaset kör nu den NYA releasekandidaten (`66fa2360...`). Kedjan av deploymenter, äldst till nyast:**
+Gäller Workstream 3 (staging av produktkandidaten). **Status (2026-09-29, efter rättelse i "Regel: vad flyttar den frysta produktkandidaten"): stagingaliaset kör just nu en deployment byggd från en doc-commit (`66fa2360...`), lämnad medvetet orörd eftersom källkoden är identisk med produktkandidaten -- se "Nuläge (SHA:er)". Kedjan av deploymenter, äldst till nyast:**
 
 1. `dpl_A1S3vbfA2M6fDjvZFEKRup1AgUH8`, SHA `42842022...` (PR #503) -- live innan hela release-sprinten.
-2. `dpl_HSFgtuY6d5kTfjoTVgC2GotHCZkL`, SHA `4973f6e919339b022425063bd8a280fa2bbe9b41` -- live efter Slice 3.3, **nuvarande rollback-mål**.
-3. `dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa`, SHA `66fa2360a77f3c23fb1d03deb0b350d972ddc5bc` -- **live nu**, efter PR #521 (Impeccable-filerna).
+2. `dpl_HSFgtuY6d5kTfjoTVgC2GotHCZkL`, SHA `4973f6e919339b022425063bd8a280fa2bbe9b41` -- **produktkandidaten sjäv**, live efter Slice 3.3, **nuvarande rollback-mål**.
+3. `dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa`, SHA `66fa2360a77f3c23fb1d03deb0b350d972ddc5bc` (doc-commit, källkodsidentisk med #2) -- **live nu**, byggd under den sedan ångrade "ny produktkandidat"-tillämpningen (se "Regel" ovan). Lämnas orört -- ingen ny deploy görs bara för att flytta tillbaka till exakt SHA #2, eftersom det inte skulle ändra något körbart.
 
 Alla tre deploymenter finns kvar, inspekterbara, orörda -- bara aliaset har flyttats mellan dem.
 
 **Nuvarande stagingdeployment och alias:**
-Deployment-ID `dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa`, SHA `66fa2360a77f3c23fb1d03deb0b350d972ddc5bc` (den nya releasekandidaten), `equinet-staging.johanlindengard.com`.
+Deployment-ID `dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa`, SHA `66fa2360a77f3c23fb1d03deb0b350d972ddc5bc` (doc-commit, INTE produktkandidaten i sig men källkodsidentisk med den), `equinet-staging.johanlindengard.com`.
 
 **Så här återställs stagingaliaset till föregående kandidat (om en rollback-trigger nedan inträffar):**
 `vercel rollback` eller `vercel promote dpl_HSFgtuY6d5kTfjoTVgC2GotHCZkL --scope cola500s-projects` mot `equinet-staging-app` (kräver Johans Vercel-session, samma mönster som redan använts tre gånger i denna sprint -- agentens auto-mode-klassificerare blockerar denna typ av åtgärd för agenten). Vill man gå ännu längre tillbaka, till innan hela release-sprinten: `dpl_A1S3vbfA2M6fDjvZFEKRup1AgUH8`. Ingen av dessa kommandon rör produktionen (separat Vercel-projekt).
@@ -281,7 +295,7 @@ Deployment-ID `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa`, SHA `4284202221f07216269659873
 
 ## Tydlig paus- och återupptagningspunkt: FÖRE produktion
 
-**Detta är den aktuella statusen (2026-09-29, efter PR #521 och en andra stagingpromotion):** release-ready-sprinten har verifierat och stagat den NYA releasekandidaten (`66fa2360a77f3c23fb1d03deb0b350d972ddc5bc`) hela vägen till `equinet-staging.johanlindengard.com`. Ett GitHub Release-utkast för v0.3.0 (`id: 398976758`, `target_commitish` = den nya releasekandidaten, uppdaterad) finns -- se "Verifierat, utan hemligheter" ovan för fullständiga detaljer och länk.
+**Detta är den aktuella statusen (2026-09-29, efter rättelse i PR #522):** release-ready-sprinten har verifierat och stagat produktkandidaten `4973f6e919339b022425063bd8a280fa2bbe9b41` -- källkodsmässigt liggande på `equinet-staging.johanlindengard.com` (via en doc-commit-build, se "Nuläge (SHA:er)"). Ett GitHub Release-utkast för v0.3.0 (`id: 398976758`, `target_commitish` = `4973f6e9...`) finns -- se "Verifierat, utan hemligheter" ovan för fullständiga detaljer och länk. Senare rena doc-/metadata-commits på `main` (Impeccable-filerna, denna checkpoint-rättelse) räknas INTE som en ny produktkandidat -- se "Regel: vad flyttar den frysta produktkandidaten".
 
 **Explicit stopp här.** Följande har INTE skett och ska INTE ske utan att Johan uttryckligen initierar det i en ny, aktuell instruktion:
 - Ingen riktig Git-tagg är skapad (verifierat upprepade gånger via `git ls-remote --tags origin`, senast direkt efter SHA-uppdateringen).
