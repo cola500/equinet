@@ -1,10 +1,10 @@
 ---
 title: "Agent-Team Guide"
-description: "Guide for the 3 specialized review agents: security-reviewer, tech-architect, cx-ux-reviewer"
+description: "Guide for review agents (tech-architect, cx-ux-reviewer, ios-expert) and built-in review skills (/security-review, /code-review)"
 category: guide
 tags: [agents, security-review, architecture, ux-review, workflow]
 status: active
-last_updated: 2026-03-16
+last_updated: 2026-09-29
 related:
   - CLAUDE.md
   - docs/guides/gotchas.md
@@ -33,7 +33,7 @@ sections:
 
 | Agent | Ansvar | Trigger |
 |-------|--------|---------|
-| **security-reviewer** | Säkerhetsrevision (OWASP, auth, data) | Efter nya/ändrade API-routes |
+| **`/security-review`** (inbyggd skill) | Säkerhetsrevision (OWASP, auth, data) | Efter nya/ändrade API-routes |
 | **tech-architect** | Arkitektur, datamodellering, performance | Nya features, schema-design, performance-problem |
 | **cx-ux-reviewer** | UX/användarupplevelse | Efter nya sidor eller UI-flöden |
 
@@ -50,7 +50,7 @@ sections:
 
 ## Trigger-kriterier
 
-### security-reviewer
+### /security-review (inbyggd skill)
 
 Kör **efter** att nya eller ändrade API-routes är implementerade:
 
@@ -98,7 +98,7 @@ Efter cx-ux-reviewer har gett feedback, verifiera visuellt med **Playwright MCP*
 
 ### DO
 
-- **Kör security-reviewer på alla nya API-routes** -- det är den enda agenten som har bevisat värde konsekvent
+- **Kör `/security-review` på alla nya API-routes** -- det är den granskning som har bevisat värde konsekvent
 - **Kör tech-architect tidigt** -- före implementation, inte efter
 - **Kör cx-ux-reviewer på nya sidor** -- fångar UX-problem innan användare gör det
 
@@ -114,7 +114,7 @@ Efter cx-ux-reviewer har gett feedback, verifiera visuellt med **Playwright MCP*
 
 ```
 Ny feature med arkitektur?   -> tech-architect (FÖRE implementation)
-Nya API-routes?              -> security-reviewer (EFTER implementation)
+Nya API-routes?              -> `/security-review` (EFTER implementation)
 Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 Datamodellering/Prisma?      -> tech-architect
 Performance-problem?         -> tech-architect

@@ -4,7 +4,7 @@ description: "Projektöversikt, setup-guide, teknisk stack och implementerade fu
 category: root
 tags: [setup, overview, getting-started]
 status: active
-last_updated: 2026-09-28
+last_updated: 2026-09-29
 related:
   - CLAUDE.md
   - NFR.md
@@ -48,7 +48,7 @@ Men för dig som tittar in från GitHub är repot framförallt något annat: **e
 - **TDD och BDD dual-loop som dagligt arbete** — `RED → GREEN → REFACTOR`, integration → unit → integration. `npm run check:all` är fyra gates som måste vara gröna före PR.
 - **Refactor under disciplin** — `docs/architecture/refactor-triggers.md` listar T1–T12. Refactor som inte mappar till en konkret trigger händer inte.
 - **Story splitting i sju dimensioner** — Richard Lawrence's metod operationaliserad i `docs/ideas/epic-*.md` och `.claude/rules/story-refinement.md`.
-- **Review-matris styrd av filändringar** — `.claude/rules/review-matrix.md` mappar `src/app/api/**/route.ts` → security-reviewer + code-reviewer automatiskt.
+- **Review-matris styrd av filändringar** — `.claude/rules/review-matrix.md` mappar `src/app/api/**/route.ts` → `/security-review` + `/code-review` automatiskt.
 - **Worktree-parallellt arbete** — flera Claude-sessioner kan jobba i olika git-worktrees mot olika domäner samtidigt utan att krocka.
 - **Säkerhet i bredd** — Supabase RLS (28 policies, 24 bevistester), Custom Access Token Hook (PL/pgSQL), HTTP-only cookies, rate limiting (Upstash), admin audit log, Sentry.
 - **Kontextspecifika regler för AI** — `.claude/rules/api-routes.md`, `ios-learnings.md`, `rls-learnings.md` laddas automatiskt beroende på vilka filer som rörs.

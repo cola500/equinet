@@ -1,9 +1,9 @@
 ---
 title: "Review-manifest"
-description: "Deklarativa checklistor per story-typ/domän för cx-ux-reviewer, code-reviewer och security-reviewer"
+description: "Deklarativa checklistor per story-typ/domän för cx-ux-reviewer, `/code-review` och `/security-review`"
 category: rule
 status: draft
-last_updated: 2026-04-19
+last_updated: 2026-09-29
 sections:
   - Syfte
   - Hur du använder manifestet

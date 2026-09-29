@@ -86,7 +86,7 @@ Finns det en ANNAN aktiv session (in_progress)?
 6. Kör storyn enligt 4-stegsflödet (se `team-workflow.md`):
    - TDD: RED → GREEN
    - `npm run check:all`
-   - Review om det behövs (ny API-route → security-reviewer, väsentlig logik → code-reviewer)
+   - Review om det behövs (ny API-route → `/security-review`, väsentlig logik → `/code-review`)
    - Push → PR → merge
 7. Uppdatera `status.md`: story → `done` + commit-hash
 8. Gå till nästa pending story
@@ -101,7 +101,7 @@ PR-description är tillräcklig historik.
 **Fullstack:**
 - Verifiering: `npm run check:all`
 - Tester: Vitest (BDD dual-loop för API/services)
-- Review: security-reviewer (API-routes), code-reviewer (väsentlig logik)
+- Review: `/security-review` (API-routes), `/code-review` (väsentlig logik)
 
 **iOS:**
 - Verifiering: `xcodebuild test` (se `.claude/rules/ios-learnings.md`)
@@ -111,7 +111,7 @@ PR-description är tillräcklig historik.
 
 **Tech lead / review:**
 - Läs `git diff` + `status.md`
-- Kör code-reviewer + security-reviewer vid behov
+- Kör `/code-review` + `/security-review` vid behov
 - Merga via `gh pr merge`
 - Uppdatera `status.md` med done + commit-hash
 

@@ -29,7 +29,7 @@ if echo "$COMMAND" | grep -qE '^git (diff|log.*--stat)'; then
   # API routes
   API_COUNT=$(echo "$CHANGED" | grep -c 'src/app/api/.*route\.ts$' || true)
   if [ "$API_COUNT" -gt 0 ]; then
-    SUGGEST="${SUGGEST}\n- ${API_COUNT} API routes -> security-reviewer"
+    SUGGEST="${SUGGEST}\n- ${API_COUNT} API routes -> /security-review"
   fi
 
   # New API routes (native endpoints)
@@ -54,12 +54,12 @@ if echo "$COMMAND" | grep -qE '^git (diff|log.*--stat)'; then
 
   # Prisma schema
   if echo "$CHANGED" | grep -q 'prisma/schema'; then
-    SUGGEST="${SUGGEST}\n- Prisma schema andrad -> tech-architect + security-reviewer"
+    SUGGEST="${SUGGEST}\n- Prisma schema andrad -> tech-architect + /security-review"
   fi
 
   # Architecture files
   if echo "$CHANGED" | grep -q 'middleware\|auth\.\|proxy\.ts'; then
-    SUGGEST="${SUGGEST}\n- Auth/middleware andrad -> security-reviewer"
+    SUGGEST="${SUGGEST}\n- Auth/middleware andrad -> /security-review"
   fi
 
   if [ -n "$SUGGEST" ]; then

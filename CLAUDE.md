@@ -28,7 +28,7 @@ sections:
   - Gotchas
   - Definition of Done
   - Säkerhet
-  - "Agent-Team (3 agenter)"
+  - "Agent-Team (3 agenter + 2 review-skills)"
   - "Key Learnings (tvärgående)"
   - "Debugging: 5 Whys"
   - "Version & SDK Policy"
@@ -180,13 +180,13 @@ Innan du verifierar en demo-UX-ändring:
 
 ---
 
-## Agent-Team (3 agenter)
+## Agent-Team (3 agenter + 2 review-skills)
 
 > Se [docs/guides/agents.md](docs/guides/agents.md) för fullständig guide.
 
 ```
 Ny feature med arkitektur?   -> tech-architect (FÖRE implementation)
-Nya API-routes?              -> security-reviewer (EFTER implementation)
+Nya API-routes?              -> `/security-review` (EFTER implementation)
 Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 ```
 
