@@ -19,6 +19,8 @@ sections:
   - Kända blockerare och återstående slices
   - Paus- och återupptagningsprotokoll
   - Rollbackplan för stagingsteget
+  - Rollbackplan för produktion (inför en framtida, separat godkänd produktionsdeploy)
+  - "Tydlig paus- och återupptagningspunkt: FÖRE produktion"
 ---
 
 # Release-Ready Sprint -- Checkpoint
@@ -40,6 +42,7 @@ Detta dokument är den enda källan till sanning för var release-ready-sprinten
 | 3.1 | Force-push av fryst releasekandidat-SHA till `preview/candidate` | ✅ Klar, verifierad (se nedan) |
 | 3.2 | Manuell rök-verifiering av releasekandidaten mot Preview-deploymenten `dpl_6VHpb2b3bUzBzYoHcgxJN1oYyYhd` (Playwright, demo-läge, auth, bokning end-to-end + städning av testdata i delad staging-databas) | ✅ Klar, verifierad (se nedan) |
 | 3.3 | Promotion av releasekandidaten till `equinet-staging-app`s levande produktionsalias (`equinet-staging.johanlindengard.com`) | ✅ Klar, verifierad (se nedan) |
+| 5/6 | Release notes förberedda + GitHub Release-utkast (draft) skapat för v0.3.0, mål-SHA `4973f6e919339b022425063bd8a280fa2bbe9b41` | ✅ Klar, verifierad (se nedan) |
 
 ## Mergade PR:ar och commits
 
@@ -92,18 +95,32 @@ Insamlat 2026-09-28.
   - **Visuell koll**: landningssidan på det nu levande aliaset renderar korrekt med demo-läge aktivt (samma innehåll som redan verifierades i Slice 3.2, eftersom det är exakt samma källkod).
   - **Produktionen fortsatt oförändrad**: `equinet-app` (target=production) fortfarande `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa`, SHA `42842022...` (PR #503) -- verifierat efter promotionen.
   - **Nytt rollback-mål**: se uppdaterad "Rollbackplan för stagingsteget" nedan -- den gamla deploymenten `dpl_A1S3vbfA2M6fDjvZFEKRup1AgUH8` finns kvar, inspekterbar, och är nu rollback-målet om Slice 3.3 behöver rullas tillbaka.
+- **Sista preflight inför v0.3.0-release-utkast (2026-09-29, efter merge av Slice 3.3-checkpointen):** ny, oberoende kontroll av att staging fortfarande kör exakt releasekandidaten, utförd innan ett GitHub Release-utkast förbereds.
+  - `get_deployment(dpl_HSFgtuY6d5kTfjoTVgC2GotHCZkL)` -> `meta.githubCommitSha = 4973f6e919339b022425063bd8a280fa2bbe9b41` (exakt match), `target = "production"`, `readyState = "READY"`, `alias` inkluderar `equinet-staging.johanlindengard.com`.
+  - `GET https://equinet-staging.johanlindengard.com/api/health` -> `200 OK`, `{"status":"ok","checks":{"database":"connected"}}` (ny mätning, oberoende av Slice 3.3:s ursprungliga koll).
+  - Produktion (`equinet-app`, target=production) verifierad på nytt: fortfarande `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa`, SHA `42842022...` (PR #503) -- helt oförändrad.
+  - Lokal `main` matchar `origin/main` exakt (`9075ab0653b86b2dbfa5e4074af46ff2f4ccfc03`), arbetsytan ren (bortsett från kända, orelaterade ospårade filer). PR #517 bekräftat `MERGED`.
+- **v0.3.0-release-utkast klart (2026-09-29):** release notes förberedda och ett GitHub Release-utkast skapat, utan att skapa någon Git-tagg.
+  - **Metod**: eftersom `gh release create --help` uttryckligen dokumenterar att en saknad tagg "automatiskt skapas" (utan att undanta draft-läge), och detta motsäger vad GitHub Community-dokumentation säger gäller för det rena REST-API:et (draft=true skapar INTE en tagg-ref förrän publicering), undveks `gh release create`-bekvämlighetskommandot. Draften skapades istället direkt via `POST /repos/cola500/equinet/releases` (via `gh api`) med `draft: true`, `tag_name: "v0.3.0"`, `target_commitish: "4973f6e919339b022425063bd8a280fa2bbe9b41"`.
+  - **Verifierat att ingen tagg skapades**: `git ls-remote --tags origin` kördes både före och efter draft-skapandet -- exakt samma tre taggar (`v0.1.0`, `v0.2.0`, `staging-pre-sync-2026-09-26`) i båda fallen. Releasens egen `html_url` bekräftar detta indirekt (`.../releases/tag/untagged-<hash>`, inte `.../tag/v0.3.0` -- GitHubs eget tecken på att taggen inte existerar än).
+  - **Release-ID**: `398976758`. **URL**: https://github.com/cola500/equinet/releases/tag/untagged-f7d1be2c76204eecf5c3 (synlig endast för repo-ägaren tills publicerad; permalänken ändras till `/tag/v0.3.0` vid publicering).
+  - **Mål-commit verifierat**: `target_commitish` = `4973f6e919339b022425063bd8a280fa2bbe9b41` (exakt releasekandidaten).
+  - **Ingen deployment triggas**: `grep -rl "release:" .github/workflows/*.yml` gav noll träffar -- inget workflow i repot lyssnar på `release`-events (varken `created`, `published` eller annat). Konsekvent med tidigare verifiering att `deploy-production.yml` enbart har `workflow_dispatch`.
+  - **Release notes-källa**: kuraterade från README:s "Implementerade Funktioner", `standard-version --dry-run`s BREAKING CHANGES-sektion (en breaking change identifierad: `/api/providers`-svarsformat), samt denna checkpoints egna verifieringsresultat. Fullständig text sparad lokalt i scratchpad (`v0.3.0-release-notes.md`) och i release-utkastets `body`-fält.
+  - **`npm run release`/`standard-version` kördes ALDRIG på riktigt** -- endast `--dry-run` (research, inga sidoeffekter, verifierat via `git status` + `package.json`-version oförändrad direkt efteråt). `package.json`, `package-lock.json` och `CHANGELOG.md` är alla oförändrade.
+  - **Draften är INTE publicerad.** Publicering, taggning och produktionsdeploy kräver separat, nytt uttryckligt godkännande -- se "Tydlig paus- och återupptagningspunkt: FÖRE produktion" nedan.
 
 ## Inte gjort
 
-- **Ingen tagg har skapats** (den tillfälliga testtaggen för det negativa triggertestet skapades och raderades samma session -- se ovan).
-- **Ingen GitHub Release har skapats.** `gh release list` är fortsatt tom.
+- **Ingen tagg har skapats** (den tillfälliga testtaggen för det negativa triggertestet skapades och raderades samma session -- se ovan; verifierat att v0.3.0-release-utkastet heller inte skapade någon tagg, se ovan).
+- **Ingen GitHub Release är publicerad.** Ett draft-utkast för v0.3.0 finns (`id: 398976758`, se ovan) -- `gh release list` visar den fortsatt inte (drafts listas inte som publicerade releaser).
 - **Ingen produktionsdeploy har körts** (`dry_run` har alltid varit `true` i varje test-dispatch mot `deploy-production.yml`; `equinet-app` är fortfarande oförändrad på SHA `42842022...`).
 
 ## Kända blockerare och återstående slices
 
-- **GDPR-öppna frågor** (bolagsuppgifter, DPO-beslut, SCC-status för amerikanska underleverantörer) kvarstår som Johans/juridisk rådgivnings beslut, orört av denna sprint.
-- **CHANGELOG/version** (Workstream 5) inte påbörjat.
-- **GitHub Release-utkast** (Workstream 6) inte påbörjat -- väntar på grön staging-verifiering. Staging (Workstream 3) är nu klar och verifierad (Slice 3.1--3.3) -- Workstream 5/6 kan nu övervägas.
+- **GDPR-öppna frågor** (bolagsuppgifter, DPO-beslut, SCC-status för amerikanska underleverantörer) kvarstår som Johans/juridisk rådgivnings beslut, orört av denna sprint. Nämnt explicit som känd begränsning i v0.3.0-release-utkastets release notes.
+- **CHANGELOG.md är INTE uppdaterad** -- `standard-version` kördes endast som `--dry-run` (research). En riktig körning (`npm run release:minor`) skulle bumpa `package.json`-versionen, skriva `CHANGELOG.md` och skapa en lokal Git-tagg -- görs medvetet INTE förrän Johan godkänner att gå vidare mot faktisk taggning/publicering.
+- **GitHub Release-utkast (Workstream 6) är klart** -- draft `id: 398976758` skapat för v0.3.0, mål-SHA `4973f6e919339b022425063bd8a280fa2bbe9b41`, ingen tagg skapad. Väntar på Johans godkännande för publicering.
 - **Vercel-auto-mode-klassificeraren blockerar agentens direkta `request_promote`-anrop** (klassad "Production Deploy"), oavsett godkännande i konversationen. Framtida promotions mot `equinet-staging-app` eller `equinet-app` kräver därför Johans egen interaktiva `vercel promote`-körning, precis som tokenrotation och rollback redan gjorde. Dokumenterat som ett etablerat mönster, inte en öppen fråga.
 
 ## Paus- och återupptagningsprotokoll
@@ -131,7 +148,7 @@ Jämför resultatet mot tabellen i "Nuläge (SHA:er)" och listan i "Verifierat, 
 
 Slice 3.1, 3.2 och 3.3 är klara. `equinet-staging.johanlindengard.com` (stagingaliaset) kör nu releasekandidaten (`4973f6e919339b022425063bd8a280fa2bbe9b41`, deployment `dpl_HSFgtuY6d5kTfjoTVgC2GotHCZkL`), verifierad med hälsokoll och visuell koll. Produktionen (`equinet-app`) är fortfarande helt oförändrad. Workstream 3 (staging av exakt releasekandidat) är därmed klar.
 
-**Nästa steg är Workstream 5/6** (CHANGELOG/version, GitHub Release-utkast) -- inte påbörjat, se "Kända blockerare och återstående slices". **En eventuell produktionsdeploy (Workstream 4, `deploy-production.yml` med `dry_run=false`) kräver alltjämt Johans nya, uttryckliga godkännande i den aktuella sessionen** -- godkännandet av Slice 3.1--3.3 gäller endast staging och täcker INTE produktion.
+**Workstream 5/6 är klara** (release notes förberedda, GitHub Release-utkast skapat för v0.3.0 -- se "Verifierat" ovan). **En eventuell produktionsdeploy (Workstream 4, `deploy-production.yml` med `dry_run=false`), publicering av release-utkastet, eller skapande av en riktig Git-tagg kräver alltjämt Johans nya, uttryckliga godkännande i den aktuella sessionen** -- godkännandet av Slice 3.1--3.3 och release-utkastets skapande gäller INTE automatiskt för dessa nästa steg.
 
 **Status vid denna checkpoint-uppdatering (2026-09-29):**
 - Releasekandidat-SHA: `4973f6e919339b022425063bd8a280fa2bbe9b41`, grön `Quality Gate Passed` (se "Nuläge (SHA:er)").
@@ -152,8 +169,8 @@ Slice 3.1, 3.2 och 3.3 är klara. `equinet-staging.johanlindengard.com` (staging
 ### 5. Åtgärder som ALDRIG får antas vara godkända
 
 - **Produktionsdeploy** (`dry_run=false` i `deploy-production.yml`) -- kräver alltid Johans uttryckliga, aktuella instruktion att deploya en bestämd, verifierad SHA. En tidigare given instruktion gäller INTE automatiskt för en ny SHA.
-- **Skapande av Git-tagg** för en release.
-- **Skapande av GitHub Release** (publicerad eller pre-release).
+- **Skapande av en riktig Git-tagg** för en release (verifierat att detta INTE skedde när v0.3.0-draften skapades -- se "Verifierat" ovan; om samma väg används igen, verifiera på nytt).
+- **Publicering av en GitHub Release** (draft -> published), eller markering som pre-release. Ett DRAFT-utkast (som v0.3.0, `id: 398976758`) är uttryckligen godkänt att skapas -- se detta dokuments historik -- men publicering är ett separat, ej godkänt steg.
 - **Skrivning mot en fjärrdatabas** (staging eller produktion).
 - **Ändring av produktionskonfiguration** (Vercel-projektinställningar, environment-variabler, `vercel.json`, DNS).
 
@@ -189,3 +206,28 @@ Stagingmiljön har sin egen, separata Supabase-databas (`zzdamokfeenencuggjjp`, 
 
 **Verifiering att produktionen förblir oförändrad:**
 Efter varje stagingrelaterad åtgärd: `list_deployments` (target=production) mot `equinet-app` -- SHA:n ska fortfarande vara `42842022...` tills en separat, explicit godkänd produktionsdeploy sker. Detta ska köras och dokumenteras vid varje checkpoint-uppdatering i detta dokument tills produktionen faktiskt uppdateras med Johans godkännande.
+
+## Rollbackplan för produktion (inför en framtida, separat godkänd produktionsdeploy)
+
+Gäller Workstream 4 (produktionsdeploy), som INTE har påbörjats -- ingen `deploy-production.yml`-körning med `dry_run=false` har skett.
+
+**Nuvarande produktionsdeployment (rollback-målet om/när en framtida produktionsdeploy behöver ångras):**
+Deployment-ID `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa`, SHA `4284202221f07216269659873cacf1f9b9f64f04` (PR #503), `equinet-app` (target=production). Detta är den deployment produktionen alltid kan återgå till fram tills en ny produktionsdeploy faktiskt sker.
+
+**Så här skulle en framtida produktionsrollback göras:**
+`vercel rollback` eller `vercel promote dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa --scope cola500s-projects` mot `equinet-app` (kräver Johans Vercel-session -- agentens auto-mode-klassificerare blockerar denna typ av åtgärd, se Slice 3.3-erfarenheten ovan). Separat Vercel-projekt från staging -- rör aldrig `equinet-staging-app`.
+
+**Databas:** produktionen använder ett helt separat Supabase-projekt (`xybyzflfxnqqyxnvjklv`, Zurich) -- oberoende av stagingens `zzdamokfeenencuggjjp`. Samma migrations-varning som för staging gäller: en Vercel-rollback återställer aldrig databasschemat automatiskt.
+
+## Tydlig paus- och återupptagningspunkt: FÖRE produktion
+
+**Detta är den aktuella statusen (2026-09-29):** release-ready-sprinten har verifierat och stagat releasekandidaten (`4973f6e919339b022425063bd8a280fa2bbe9b41`) hela vägen till `equinet-staging.johanlindengard.com`. Ett GitHub Release-utkast för v0.3.0 (`id: 398976758`, `target_commitish` = releasekandidaten) är skapat -- se "Verifierat, utan hemligheter" ovan för fullständiga detaljer och länk.
+
+**Explicit stopp här.** Följande har INTE skett och ska INTE ske utan att Johan uttryckligen initierar det i en ny, aktuell instruktion:
+- Ingen riktig Git-tagg är skapad (verifierat två gånger via `git ls-remote --tags origin`).
+- Release-utkastet för v0.3.0 är INTE publicerat (fortfarande `draft: true`).
+- `CHANGELOG.md`/`package.json` är INTE uppdaterade -- `standard-version` har enbart körts som `--dry-run`.
+- `deploy-production.yml` har aldrig körts med `dry_run=false`.
+- Produktionen (`equinet-app`) är fortfarande exakt PR #503, `42842022...`.
+
+En ny session som återupptar arbetet ska läsa denna sektion FÖRST och behandla den som den auktoritativa statusen -- inte anta att release-utkastets existens (draft) betyder att publicering eller produktionsdeploy är godkänt.
