@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-29T09:44:39Z",
+  "title": "Design System: Equinet",
+  "extensions": {
+    "colorMeta": {
+      "deep-pine": {
+        "role": "primary",
+        "displayName": "Deep Pine",
+        "canonical": "oklch(0.42 0.09 160)",
+        "tonalRamp": [
+          "oklch(0.15 0.09 160)",
+          "oklch(0.26 0.09 160)",
+          "oklch(0.38 0.09 160)",
+          "oklch(0.49 0.09 160)",
+          "oklch(0.61 0.09 160)",
+          "oklch(0.72 0.09 160)",
+          "oklch(0.84 0.09 160)",
+          "oklch(0.95 0.09 160)"
+        ]
+      },
+      "warm-ochre": {
+        "role": "secondary",
+        "displayName": "Warm Ochre",
+        "canonical": "oklch(0.65 0.12 70)",
+        "tonalRamp": [
+          "oklch(0.15 0.12 70)",
+          "oklch(0.26 0.12 70)",
+          "oklch(0.38 0.12 70)",
+          "oklch(0.49 0.12 70)",
+          "oklch(0.61 0.12 70)",
+          "oklch(0.72 0.12 70)",
+          "oklch(0.84 0.12 70)",
+          "oklch(0.95 0.12 70)"
+        ]
+      },
+      "neutral-bg": {
+        "role": "neutral",
+        "displayName": "Warm Paper",
+        "canonical": "oklch(0.98 0.005 80)",
+        "tonalRamp": [
+          "oklch(0.15 0.005 80)",
+          "oklch(0.26 0.005 80)",
+          "oklch(0.38 0.005 80)",
+          "oklch(0.49 0.005 80)",
+          "oklch(0.61 0.005 80)",
+          "oklch(0.72 0.005 80)",
+          "oklch(0.84 0.005 80)",
+          "oklch(0.95 0.005 80)"
+        ]
+      },
+      "card": { "role": "neutral", "displayName": "Card White", "canonical": "oklch(1 0 0)" },
+      "neutral-fg": { "role": "neutral", "displayName": "Ink", "canonical": "oklch(0.145 0 0)" },
+      "muted-foreground": { "role": "neutral", "displayName": "Quiet Gray", "canonical": "oklch(0.556 0 0)" },
+      "border": { "role": "neutral", "displayName": "Hairline Border", "canonical": "oklch(0.92 0.01 75)" },
+      "destructive": { "role": "error", "displayName": "Alert Red", "canonical": "oklch(0.577 0.245 27.325)" },
+      "status-pending": {
+        "role": "status",
+        "displayName": "Pending (Tailwind yellow-100/800, hårdkodat, ej projekttoken)",
+        "canonical": "#fef9c3"
+      },
+      "status-confirmed": {
+        "role": "status",
+        "displayName": "Confirmed (Tailwind green-100/800, hårdkodat, ej projekttoken)",
+        "canonical": "#dcfce7"
+      },
+      "status-cancelled": {
+        "role": "status",
+        "displayName": "Cancelled (Tailwind red-100/800, hårdkodat, ej projekttoken)",
+        "canonical": "#fee2e2"
+      },
+      "status-completed": {
+        "role": "status",
+        "displayName": "Completed (Tailwind blue-100/800, hårdkodat, ej projekttoken)",
+        "canonical": "#dbeafe"
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero-rubrik (H1) på landningssidan, bara där." },
+      "headline": { "displayName": "Headline", "purpose": "Sektionsrubriker (H2) genom hela appen." },
+      "title": { "displayName": "Title", "purpose": "Kortrubriker, panelrubriker." },
+      "body": { "displayName": "Body", "purpose": "Brödtext, formulärfält, listor -- Inter." },
+      "label": { "displayName": "Label", "purpose": "Knapptext, metadata, badge-text -- Inter medium." }
+    },
+    "shadows": [
+      { "name": "xs", "value": "0 1px 2px rgba(0,0,0,0.05)", "purpose": "Outline-knappar och inputs -- markerar interaktiv kant." },
+      { "name": "sm", "value": "0 1px 3px rgba(0,0,0,0.1)", "purpose": "Kort -- markerar en yta som ligger ovanpå sidbakgrunden." }
+    ],
+    "motion": [
+      { "name": "fade-in-up", "value": "translateY(8px)->translateY(0), opacity 0->1, 0.4s ease-out", "purpose": "Standard entrance-animation för nytt innehåll (fadeInUp keyframe i globals.css)." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Huvudaktionsknapp -- Deep Pine bakgrund, används för primära CTA:er.",
+      "html": "<button class=\"ds-btn-primary\">Boka nu</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--primary); color: var(--primary-foreground); border: none; border-radius: var(--radius-md); padding: 8px 16px; min-height: 44px; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.15s, box-shadow 0.15s; } .ds-btn-primary:hover { background: color-mix(in oklch, var(--primary) 90%, transparent); } .ds-btn-primary:focus-visible { outline: none; border: 1px solid var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Sekundär knapp -- transparent, tunn kant, för mindre framträdande åtgärder (Avboka, Avbryt).",
+      "html": "<button class=\"ds-btn-outline\">Avbryt</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: transparent; color: var(--foreground); border: 1px solid var(--input); border-radius: var(--radius-md); padding: 8px 16px; min-height: 44px; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: background 0.15s; } .ds-btn-outline:hover { background: var(--accent); color: var(--accent-foreground); } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Standardkort -- håller bokningar, hästprofiler, leverantörskort.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Molly</h3><p class=\"ds-card-body\">Welsh ponny &middot; 9 år</p></div>",
+      "css": ".ds-card { background: var(--card); color: var(--card-foreground); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 8px; } .ds-card-title { font-family: 'DM Serif Display', Georgia, serif; font-weight: 700; font-size: 18px; margin: 0; } .ds-card-body { font-family: Inter, system-ui, sans-serif; font-size: 14px; color: var(--muted-foreground); margin: 0; }"
+    },
+    {
+      "name": "Status Badge (Pending)",
+      "kind": "chip",
+      "refersTo": "status-pill",
+      "description": "Statusindikator för bokningar, observerad implementation (BookingCard.tsx/BookingDetailDialog.tsx) -- hårdkodade Tailwind-färger, INTE shadcn Badge-komponenten. Exempel visar 'väntar på svar'-tillståndet.",
+      "html": "<span class=\"ds-status-pending\">Väntar på svar</span>",
+      "css": ".ds-status-pending { display: inline-block; border-radius: 4px; padding: 4px 8px; font-family: Inter, system-ui, sans-serif; font-size: 12px; background: #fef9c3; color: #854d0e; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Textfält -- formulär, sökfält.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Sök efter företagsnamn...\" />",
+      "css": ".ds-input { width: 100%; min-height: 44px; border: 1px solid var(--input); border-radius: var(--radius-md); background: transparent; padding: 4px 12px; font-family: Inter, system-ui, sans-serif; font-size: 16px; color: var(--foreground); box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: border-color 0.15s, box-shadow 0.15s; } .ds-input::placeholder { color: var(--muted-foreground); } .ds-input:focus-visible { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Trusted Stable Hand",
+    "overview": "Equinet ska kännas pålitlig, varm och utan krusiduller -- som en erfaren stalldräng som får saker gjorda utan dramatik. Systemet balanserar två register: en lugn, funktionell 'Operate'-ton i kalender, bokningar och kundregister, och en varmare, mer övertygande 'Persuade'-ton på landningssidan. Det är inte ett lantligt pastisch-tema -- inga träpaneler, ingen kursiv skript-font, inga hästskor som dekorativa ikoner överallt. Istället: en varm, nästan-vit bakgrund, en dov djupgrön primärfärg och en elegant seriff-rubrik som ger auktoritet utan att kännas som ett uppstartsföretag.",
+    "keyCharacteristics": [
+      "Varm, nästan-vit bakgrund (aldrig kall grå) mot en dov skogsgrön primärfärg",
+      "Elegant seriff-rubriker (DM Serif Display) mot ren sans-serif brödtext (Inter)",
+      "Subtila skuggor, tydliga gränser -- flat-by-default, skugga signalerar lager, inte dekoration",
+      "Mjukt avrundade hörn (8-14px) på kort och knappar; bokningsstatus-märken är mindre avrundade (4px), inte pill",
+      "44px touch-targets som obligatorisk golv på mobil för alla interaktiva element"
+    ],
+    "rules": [
+      { "name": "The Duplicated Status Rule", "body": "Statuslogiken (färg + svensk etikett) är kopierad, inte delad, över minst 29 filer -- och en mer genomtänkt OKLCH-tokenuppsättning finns definierad i globals.css men aldrig kopplad in. Replikera inte mönstret; fråga om konsolidering hör till uppgiften innan du kopierar styles-objektet igen.", "section": "colors" },
+      { "name": "The Serif-Is-Sparse Rule", "body": "DM Serif Display används ENDAST för rubriker (h1-h3/korttitlar) -- aldrig för brödtext, knappar eller formulärfält.", "section": "typography" }
+    ],
+    "dos": [
+      "Do använda semantiska tokens (bg-primary, text-foreground, border-input) -- aldrig råa Tailwind-gråtoner eller hex-värden direkt i komponenter.",
+      "Do hålla skuggor subtila och funktionella (xs/sm) -- skugga kommunicerar lagerordning, inte dekoration.",
+      "Do applicera 44px touch-target-golvet på ALLA interaktiva element på mobil, inklusive size=\"sm\"-knappar där de är primära tappmål.",
+      "Do reservera DM Serif Display för rubriker -- aldrig för brödtext eller UI-kontroller."
+    ],
+    "donts": [
+      "Don't hårdkoda Tailwind-gråtoner (text-gray-900, text-gray-600) i nya komponenter.",
+      "Don't introducera dramatiska skuggor, lyft-på-hover-effekter eller glasmorphism.",
+      "Don't använda status-färgerna för något annat än faktisk bokningsstatus.",
+      "Don't kopiera getStatusBadge/styles-objektet till fil nummer 30 -- konsolidera eller flagga skulden istället.",
+      "Don't lägga till lantlig pastisch-dekoration (träpanel-texturer, kursiv skript-font, hästskor som ikonspam)."
+    ]
+  }
+}
