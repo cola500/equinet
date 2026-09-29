@@ -3,7 +3,7 @@ title: "Documentation Frontmatter Standard"
 description: "YAML frontmatter-schema och valideringsregler for alla markdown-filer"
 category: rule
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-09-29
 tags: [documentation, frontmatter, yaml, validation]
 paths:
   - "docs/**/*.md"
@@ -14,6 +14,7 @@ sections:
   - Validerade varden
   - Validering
   - "Checklista: Ny .md-fil"
+  - Docs-matris
 ---
 
 # Documentation Frontmatter Standard
@@ -74,3 +75,26 @@ Kor `npm run docs:validate` for att validera alla filer.
 - [ ] `depends_on` listar prereqs (om relevant)
 - [ ] `related` listar korsreferenser (om relevant)
 - [ ] Kor `npm run docs:validate`
+
+## Docs-matris
+
+Vilka docs som MÅSTE uppdateras per story-typ. Återinförd 2026-09-29 (togs bort i `0772fdc9` men refererades fortfarande från Definition of Done i CLAUDE.md).
+
+| Story-typ | Docs som MÅSTE uppdateras |
+|-----------|----------------------------|
+| Ny säkerhetsfunktion (MFA, auth, härdning) | README.md (Säkerhet), NFR.md (relevant NFR-rad), `docs/security/<feature>.md`, `docs/operations/incident-runbook.md` (om operativa implikationer), **hjälpartikel** om det påverkar slutanvändare |
+| Ny feature med användarvänd UI | README.md (Implementerade Funktioner), `docs/guides/feature-docs.md`, **hjälpartikel** för relevant roll, **testing-guide** med test-scenario |
+| Schema-ändring | `docs/architecture/database.md` |
+| Ny ops-procedur (CI, deploy, monitoring) | `docs/operations/<procedur>.md` |
+| Ny arkitekturkomponent | `docs/architecture/<komponent>.md`, CLAUDE.md snabbreferens |
+| Ny gotcha eller mönster | CLAUDE.md Key Learnings eller `.claude/rules/<domän>-learnings.md` |
+| Beteendeändring i befintlig feature | README.md + relevant feature-doc + **hjälpartikel** (om beteendet ändras synligt) + **testing-guide** (uppdatera relevant scenario) |
+| Testantal ändrat med 50+ | README.md (Testning), NFR.md (Testning) |
+| Borttagen feature | README.md (ta bort rad), `docs/guides/feature-docs.md`, **hjälpartikel** (ta bort), **testing-guide** (ta bort scenario) |
+
+- **Hjälpartikel** = `src/lib/help/articles/<roll>/<slug>.md` (roll: `admin`, `customer`, `provider`)
+- **Testing-guide** = `docs/testing/testing-guide.md`
+
+**Regel:** PR-beskrivningen listar vilka docs som uppdaterats. Om inga -- motivera varför ("ren intern refactoring, ingen användarvänd ändring").
+
+**Content ska matcha kod:** När en feature påverkar vad användaren ser eller gör är hjälpartiklar och testing-guide INTE valfria -- samma nivå som tester för ny logik.

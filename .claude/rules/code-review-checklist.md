@@ -1,9 +1,9 @@
 ---
 title: "Code Review Checklist"
-description: "Strukturerad checklista for code-reviewer-agenten vid station 4 (Review)"
+description: "Strukturerad checklista for kodgranskning vid station 4 (Review)"
 category: rule
 status: active
-last_updated: 2026-04-12
+last_updated: 2026-09-29
 tags: [review, quality, security, team]
 paths:
   - "src/**"
@@ -23,7 +23,7 @@ sections:
 ## Hur man kor review
 
 Code review kors i station 4 av stationsfloden.
-Normalt via `code-reviewer` subagent, eller manuellt av tech lead.
+Normalt via inbyggda `/code-review`-skillen, eller manuellt av tech lead. Skillen kanner inte till denna checklista -- bocka av den mot skillens resultat.
 
 **Input**: Git diff fran feature branch mot main + planen fran station 1.
 **Output**: Lista over findings med allvarlighetsgrad.

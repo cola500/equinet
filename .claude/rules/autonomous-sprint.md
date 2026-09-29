@@ -1,9 +1,11 @@
 ---
+paths:
+  - "docs/sprints/**"
 title: "Autonom sprint-körning"
 description: "Hur en Claude-session kör en hel sprint autonomt — förenklat 4-stegsflöde"
 category: rule
 status: active
-last_updated: 2026-04-24
+last_updated: 2026-09-29
 tags: [workflow, autonomous, sprint]
 sections:
   - Trigger
@@ -44,8 +46,8 @@ För varje story i `status.md` prioritetsordning:
 npm run check:all   # MÅSTE vara 4/4 gröna
 ```
 Kör sedan review baserat på vad storyn ändrade:
-- Ny API-route → security-reviewer
-- Väsentlig ny logik → code-reviewer
+- Ny API-route → `/security-review`
+- Väsentlig ny logik → `/code-review`
 - Trivial fix (<15 min, ≤1 fil, ingen ny logik) → ingen review
 
 Om blocker/major hittas: fixa och kör check:all igen. Max 3 försök, sedan STOPP.
@@ -126,7 +128,7 @@ Agent(
     REGLER:
     - TDD obligatoriskt (RED → GREEN)
     - npm run check:all måste vara grön
-    - security-reviewer om ny API-route
+    - `/security-review` om ny API-route
     - Pusha INTE."
 )
 ```

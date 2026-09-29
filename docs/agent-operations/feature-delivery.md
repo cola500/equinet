@@ -3,7 +3,7 @@ title: "Feature Delivery -- operativ modell"
 description: "Flodet en orchestrator foljer for autonom feature-leverans: fran utfall till verifierad, granskningsklar PR"
 category: guide
 status: active
-last_updated: 2026-08-09
+last_updated: 2026-09-29
 tags: [agent-operations, orchestrator, workflow, decision-boundaries]
 related:
   - docs/agent-operations/README.md
@@ -87,23 +87,21 @@ Skapa **inga** nya permanenta roller. Använd de agenter/mekanismer som redan fi
 |------|----------|-----|
 | Bred, läs-bar utforskning | `Explore`-agenten | Innan scope/plan bestäms, vid utforskning över flera filer eller domäner |
 | Arkitekturbeslut, schemadesign | `tech-architect`-subagenten | Före implementation vid arkitekturpåverkande ändringar |
-| Kodgranskning | `code-reviewer`-subagenten (fallback: `/code-review`-skillen) | Alltid obligatorisk -- station 4 i `team-workflow.md` |
-| Säkerhetsgranskning | `security-reviewer`-subagenten (fallback: `/security-review`-skillen) | Nya/ändrade API-routes, auth-ändringar -- se `review-matrix.md` |
+| Kodgranskning | Inbyggda `/code-review`-skillen | Alltid obligatorisk -- station 4 i `team-workflow.md` |
+| Säkerhetsgranskning | Inbyggda `/security-review`-skillen | Nya/ändrade API-routes, auth-ändringar -- se `review-matrix.md` |
 | UX-granskning | `cx-ux-reviewer`-subagenten | Nya sidor eller väsentligt ändrade UI-flöden -- se `review-matrix.md` |
 | iOS-granskning | `ios-expert`-subagenten | Swift/SwiftUI-ändringar -- se `review-matrix.md` |
 | Oberoende "vad missade jag?" | `general-purpose`-agent, briefad enligt tech-lead.md:s djävulens-advokat-mönster | Se [Oberoende/adversarial granskning](#oberoendeadversarial-granskning) |
 
-> **Om `code-reviewer`/`security-reviewer` inte är tillgängliga som namngivna subagenter i
-> sessionen:** använd `/code-review`- respektive `/security-review`-skillen som täcker samma
-> checklistor (`code-review-checklist.md` respektive säkerhetssektionen i `api-routes.md`).
-> `AGENTS.md` listar dem som etablerade specialistagenter -- namnet i briefen till
-> `Agent`-verktyget är det som avgör om de är tillgängliga i en given session.
+> **`code-reviewer`/`security-reviewer` finns inte som subagenter** (äldre dokument använder
+> namnen). Skillsen känner inte till Equinets checklistor -- bocka själv av
+> `code-review-checklist.md` respektive säkerhetssektionen i `api-routes.md` mot resultatet.
 
 Om en uppgift kräver kompetens som inte täcks ovan: briefa `general-purpose` tydligt i den
 enskilda sessionen. Skapa inte en ny fil i `.claude/agents/` för en enstaka feature.
 
 **Kör reviewers seriellt, inte parallellt** (samma disciplin som `review-matrix.md` redan
-definierar): code-reviewer först. Kör bara specialist-reviewers om code-reviewer flaggar
+definierar): `/code-review` först. Kör bara specialist-reviewers om `/code-review` flaggar
 Blocker/Major eller fynd inom deras domän. Detta är redan Equinets etablerade sätt att hålla
 `verifierad framdrift / mänsklig uppmärksamhet` högt.
 
@@ -152,7 +150,7 @@ fråga inte öppet, föreslå.
 
 - Destruktiva dataoperationer (`db:nuke`, `db:reset` mot delad miljö, force-push)
 - Auth-/auktoriseringsmodellen (`src/lib/*auth*`, `middleware.ts`) -- kräver alltid
-  security-reviewer + Johan
+  `/security-review` + Johan
 - Väsentliga säkerhetsändringar
 - Produktionsinfrastruktur (deploy, Vercel-/Supabase-konfiguration)
 - Irreversibla migrationer (`prisma/schema.prisma` -- kräver alltid tech-architect + PR,
@@ -201,7 +199,7 @@ Använd den starkaste relevanta feedback-loopen -- inte alla vid varje ändring:
 | Domänlogik / API-route | Vitest unit + integration (BDD dual-loop) + `check:all` |
 | UI-flöde | `cx-ux-reviewer` + visuell verifiering med Playwright MCP ([agents.md](../guides/agents.md)) |
 | Schemaändring | `npm run migrate:check` + `migration-from-scratch`-CI-jobbet + `tech-architect`-review |
-| Säkerhetskänslig kod | `security-reviewer` + säkerhetssektionen i [code-review-checklist.md](../../.claude/rules/code-review-checklist.md) |
+| Säkerhetskänslig kod | `/security-review` + säkerhetssektionen i [code-review-checklist.md](../../.claude/rules/code-review-checklist.md) |
 | iOS/Swift | `xcodebuild test` + `ios-expert` |
 | Offline/PWA | `npm run test:e2e:offline` |
 

@@ -3,7 +3,7 @@ title: "Team Workflow — 4-stegsflöde"
 description: "Minimalt flöde per story: Branch → TDD → Check → Ship"
 category: rule
 status: active
-last_updated: 2026-04-24
+last_updated: 2026-09-29
 tags: [workflow, team, tdd, quality]
 paths:
   - "src/**"
@@ -73,13 +73,13 @@ Alla 4 gates MÅSTE vara gröna innan SHIP.
 
 | Situation | Kör |
 |-----------|-----|
-| Ny eller ändrad API-route | security-reviewer |
-| Väsentlig ny logik (>1 timme implementation) | code-reviewer |
+| Ny eller ändrad API-route | `/security-review` |
+| Väsentlig ny logik (>1 timme implementation) | `/code-review` |
 | Ny iOS-vy eller komplex SwiftUI | ios-expert |
 | UI-flöde som påverkar slutanvändare | cx-ux-reviewer |
 | Enkel fix, docs, config, trivialt (<15 min, ≤1 fil) | Ingen review |
 
-Kör reviewers seriellt: code-reviewer FÖRST. Om inga blockers/majors — skippa specialist-reviewer.
+Kör reviewers seriellt: `/code-review` FÖRST. Om inga blockers/majors — skippa specialist-reviewer.
 
 ---
 
@@ -110,7 +110,7 @@ Skippa all review när ALLA dessa stämmer:
 - [ ] Inget UI ändras
 - [ ] Tester finns och passerar
 
-Vid osäkerhet: kör code-reviewer. Kostar 5 min, sparar potentiell bugg.
+Vid osäkerhet: kör `/code-review`. Kostar 5 min, sparar potentiell bugg.
 
 ---
 

@@ -4,7 +4,7 @@ description: "Arbetsprocesser, patterns, arkitektur och key learnings för utvec
 category: root
 tags: [development, workflow, architecture, patterns]
 status: active
-last_updated: 2026-08-09
+last_updated: 2026-09-29
 related:
   - README.md
   - NFR.md
@@ -28,11 +28,10 @@ sections:
   - Gotchas
   - Definition of Done
   - Säkerhet
-  - "Agent-Team (3 agenter)"
+  - "Agent-Team (3 agenter + 2 review-skills)"
   - "Key Learnings (tvärgående)"
   - "Debugging: 5 Whys"
   - "Version & SDK Policy"
-  - Automated Quality Gates
   - Sprintar
   - Resurser
 ---
@@ -171,25 +170,23 @@ Innan du verifierar en demo-UX-ändring:
 - [ ] Säker (Zod, error handling, ingen XSS/injection)
 - [ ] Tester skrivna FÖRST, coverage >= 70%
 - [ ] Feature branch, `check:all` grön, mergad via PR
-- [ ] **Content matchar kod:** Om feature-ändringen påverkar slutanvändaren -- hjälpartikel uppdaterad (`src/lib/help/articles/<roll>/<slug>.md`) och admin testing-guide uppdaterad (`docs/testing/testing-guide.md`). Samma nivå av obligatoriskt som tester. Se `.claude/rules/auto-assign.md` Docs-matris.
+- [ ] **Content matchar kod:** Om feature-ändringen påverkar slutanvändaren -- hjälpartikel uppdaterad (`src/lib/help/articles/<roll>/<slug>.md`) och admin testing-guide uppdaterad (`docs/testing/testing-guide.md`). Samma nivå av obligatoriskt som tester. Se Docs-matris i `.claude/rules/documentation.md`.
 
 ---
 
 ## Säkerhet
 
-**Implementerat:** Supabase Auth (managed lösenord, sessions, email-verifiering, Custom Access Token Hook), RLS (28 policies på 7 kärndomäner, 24 bevistester), HTTP-only cookies, Prisma (SQL injection), React (XSS), Zod, ownership guards (`findByIdForProvider`), rate limiting (Upstash Redis), admin audit log (AdminAuditLog, automatisk via `withApiHandler({ auth: "admin" })`), admin session-timeout (15 min via JWT iat), Sentry.
-
 > Se `.claude/rules/api-routes.md` för detaljerad API-säkerhetschecklist.
 
 ---
 
-## Agent-Team (3 agenter)
+## Agent-Team (3 agenter + 2 review-skills)
 
 > Se [docs/guides/agents.md](docs/guides/agents.md) för fullständig guide.
 
 ```
 Ny feature med arkitektur?   -> tech-architect (FÖRE implementation)
-Nya API-routes?              -> security-reviewer (EFTER implementation)
+Nya API-routes?              -> `/security-review` (EFTER implementation)
 Nya sidor/UI-flöden?         -> cx-ux-reviewer (EFTER implementation)
 ```
 
@@ -265,19 +262,11 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 
 ---
 
-## Automated Quality Gates
-
-- **Pre-commit:** `check:swedish` + `typecheck` (om .ts/.tsx staged) + plan-commit-gate (varning om story in_progress utan plan) + sprint-avslut-gate (varning om alla stories done utan retro)
-- **Pre-push:** `check:swedish` + `test:run` + `typecheck` + `lint` + multi-commit-gate (varning om <2 commits på feature branch)
-- **Allt-i-ett:** `npm run check:all` (alla 4 gates)
-- **CI:** Unit tests + coverage, E2E, Offline E2E smoke, TypeScript, Build, Lint, Security Audit, Migration From Scratch. Körs på PR mot **både `main` och `staging`** (2026-06-07). Tunga Playwright-jobb (E2E + Offline smoke) körs **bara mot `main`**, skippas på staging-PR. `type-check`/`lint` kör utan postgres-service.
-- **Hooks:** 10 Claude Code hooks i `.claude/hooks/` (API-check, TDD-reminder, DoD, etc)
-
----
-
 ## Sprintar
 
 > Se [docs/sprints/](docs/sprints/) för aktuell och tidigare sprintar.
+>
+> **"kör" / "kör S24-1" / "kör sprint X"** → läs `docs/sprints/status.md` först (laddar `.claude/rules/auto-assign.md` + `autonomous-sprint.md`).
 
 ---
 
@@ -287,7 +276,6 @@ När vi hittar en bugg, kör alltid "5 Whys" innan vi börjar fixa. Fråga "varf
 - **src/lib/auth-dual.ts** - Auth helper (Supabase Auth, DB-lookup för providerId)
 - **src/lib/supabase/server.ts** - Supabase server client
 - **src/lib/supabase/browser.ts** - Supabase browser client
-- [Next.js Docs](https://nextjs.org/docs) | [Prisma Docs](https://www.prisma.io/docs) | [shadcn/ui Docs](https://ui.shadcn.com)
 
 ---
 

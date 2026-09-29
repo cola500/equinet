@@ -39,12 +39,15 @@
 - **Begransningar**: Committar ALDRIG till main utan Leads OK. Far bara rora .github/**, AGENTS.md, .claude/rules/**, docs/** (aldrig src/** eller ios/** utan explicit godkannande)
 - **Stationsflode**: Samma som utvecklare (plan -> red -> green -> review -> verify -> push -> merge)
 
+### Review-skills (inbyggda)
+
+- **`/security-review`**: Kallas EFTER implementation av API-routes eller auth-andringar
+- **`/code-review`**: Kallas vid station 4 (Review) i stationsfloden
+
 ### Specialistagenter
 
-- **security-reviewer**: Kallas EFTER implementation av API-routes eller auth-andringar
 - **cx-ux-reviewer**: Kallas EFTER implementation av UI-andringar
 - **tech-architect**: Kallas FORE implementation av nya features med arkitekturpaverkan
-- **code-reviewer**: Kallas vid station 4 (Review) i stationsfloden
 - **ios-expert**: Kallas vid SwiftUI-implementation for kodgranskning
 
 ---
@@ -58,7 +61,7 @@ Detaljerade checklistor finns i `.claude/rules/team-workflow.md`.
 1. PLAN    -- Design, schema, API-kontrakt (fran sprint-dokumentet).
 2. RED     -- Failande tester skrivna (TDD). Inga implementationsandringar.
 3. GREEN   -- Minimum implementation for att passera tester.
-4. REVIEW  -- AUTOMATISK: code-reviewer + security/ux/ios-agenter vid behov.
+4. REVIEW  -- AUTOMATISK: /code-review + /security-review/ux/ios vid behov.
 5. VERIFY  -- check:all (webb) eller xcodebuild test (iOS). Alla gates grona.
 6. PUSH    -- Pusha FEATURE BRANCH (aldrig main). Status -> "review_requested".
 7. MERGE   -- Tech lead skapar PR, CI passerar, mergar via GitHub.
@@ -158,7 +161,7 @@ Nar en session avslutas, lamna:
 | Situation | Eskalera till |
 |-----------|--------------|
 | Arkitekturfragor | Tech lead (tech-architect agent) |
-| Sakerhetsoro | security-reviewer agent + Johan |
+| Sakerhetsoro | `/security-review` + Johan |
 | UX-beslut | cx-ux-reviewer agent + Johan |
 | Blockerad av beroende | Johan (projektbeslut) |
 | Osaker pa scope | Johan (affärsbeslut) |

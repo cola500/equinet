@@ -3,7 +3,7 @@ title: "Tech Lead -- arbetssätt"
 description: "Hur tech lead-sessionen arbetar: plan-review, code review, merge, kommunikation"
 category: rule
 status: active
-last_updated: 2026-04-22
+last_updated: 2026-09-29
 tags: [workflow, team, tech-lead, review]
 paths:
   - "docs/sprints/*"
@@ -37,7 +37,7 @@ Utvecklaren committar en plan på sin feature branch (lokalt).
    - [ ] API route eller webhook? -> tech-architect
    - [ ] iOS Swift-filer? -> SwiftUI Pro
    - [ ] UI-komponenter? -> cx-ux-reviewer
-   - [ ] Säkerhet/auth? -> security-reviewer
+   - [ ] Säkerhet/auth? -> `/security-review`
    - [ ] Ingen av ovan? -> bara Lead
 4. Bedöm:
    - Är scope avgränsat?
