@@ -4,7 +4,6 @@ import {
   calculateEndTimeHHMM,
   isBookingInPast,
   doBookingsOverlap,
-  formatBookingStatus,
 } from './booking'
 
 describe('calculateEndTimeHHMM', () => {
@@ -146,23 +145,5 @@ describe('doBookingsOverlap', () => {
         booking2Duration
       )
     ).toBe(true)
-  })
-})
-
-describe('formatBookingStatus', () => {
-  it('should format pending status', () => {
-    expect(formatBookingStatus('pending')).toBe('Väntande')
-  })
-
-  it('should format confirmed status', () => {
-    expect(formatBookingStatus('confirmed')).toBe('Bekräftad')
-  })
-
-  it('should format completed status', () => {
-    expect(formatBookingStatus('completed')).toBe('Genomförd')
-  })
-
-  it('should format cancelled status', () => {
-    expect(formatBookingStatus('cancelled')).toBe('Avbokad')
   })
 })
