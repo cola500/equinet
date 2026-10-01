@@ -3,7 +3,7 @@ title: "Manuell testningsguide"
 description: "Komplett checklista for manuell testning av Equinet -- alla floden, feature flags, mobil"
 category: testing
 status: active
-last_updated: 2026-06-14
+last_updated: 2026-10-01
 tags: [testing, manual, checklist, qa]
 sections:
   - Startsida och offentliga sidor
@@ -157,6 +157,9 @@ sections:
 - [ ] Redigera oppettider
 - [ ] Tillganglighetsundantag
 - [ ] Manuell bokning via "+"
+- [ ] Tangentbord, veckovy: Tab till en dagkolumn, Enter/mellanslag öppnar "Ny bokning"-dialogen med fokus på "Skapa bokning"; Escape stänger och fokus återgår till kolumnen
+- [ ] Tangentbord, månadsvy: Tab når varje dags datumknapp ("Ny bokning 14 oktober") och varje bokningschip; Enter på datumknappen öppnar dialogen (fokus i den), Escape stänger och återställer fokus; Enter på ett chip öppnar bokningen
+- [ ] Månadsvy på mobil (360-412 px): varje bokningschip visar statusikon + klockslag utan att texten spiller utanför chipet; väntande (klocka) och bekräftad (bock) går att skilja utan färg
 
 ### Manuell bokning
 
