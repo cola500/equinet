@@ -4,7 +4,7 @@ description: "Projektöversikt, setup-guide, teknisk stack och implementerade fu
 category: root
 tags: [setup, overview, getting-started]
 status: active
-last_updated: 2026-09-29
+last_updated: 2026-10-01
 related:
   - CLAUDE.md
   - NFR.md
@@ -200,9 +200,9 @@ Automatiserade quality gates säkerställer kodkvalitet:
 - Pre-commit: Swedish character check + TypeScript (om .ts/.tsx staged)
 - Pre-push: Swedish character check + Unit tests + TypeScript + Lint
 
-**CI Gate (GitHub Actions, `quality-gates.yml`):** körs på PR mot **både `main` och `staging`**.
+**CI Gate (GitHub Actions, `quality-gates.yml`):** körs på PR mot **alla baser** (inklusive stackade PR:er) och på push till `main`/`staging`.
 - Unit Tests & Coverage, TypeScript Check, Lint, Build Check, Security Audit, Migration From Scratch -- på alla PR
-- **E2E Tests + Offline E2E Smoke** (prod-build + Serwist SW) -- körs **bara mot `main`**, hoppas över på staging-PR:er för snabb feedback
+- **E2E Tests + Offline E2E Smoke** (prod-build + Serwist SW) -- körs på allt utom staging-PR:er (som hoppas över för snabb feedback). Installerar bara Chromium; steget har 10 min timeout och jobben 25 min
 - `type-check` och `lint` kör utan postgres-service (de ansluter aldrig till en databas)
 
 **Branch Protection:** Kräver PR för merge till main, CI måste passera. Ingen force push tillåten.

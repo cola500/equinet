@@ -1,8 +1,9 @@
 name: Quality Gates
 
 on:
+  # No branch filter on pull_request: stacked PRs (base = another feature
+  # branch) must get CI too. Heavy jobs below still skip staging-bound runs.
   pull_request:
-    branches: [main, staging]
   push:
     branches: [main, staging]
 
@@ -49,12 +50,14 @@ jobs:
         run: npx vitest run --coverage
 
   # E2E tests -- uses Supabase local dev for real auth
-  # Tungt Playwright-jobb: kör bara mot main. Hoppas över på staging-PR:er för
-  # snabb feedback (unit/typecheck/lint/build räcker som gate på staging).
+  # Tungt Playwright-jobb: kör på main och på stackade PR:er, men hoppas över
+  # på staging-PR:er för snabb feedback (unit/typecheck/lint/build räcker som
+  # gate på staging).
   e2e-tests:
     name: E2E Tests
-    if: github.base_ref == 'main' || github.ref_name == 'main'
+    if: github.base_ref != 'staging' && github.ref_name != 'staging'
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     env:
       # Dummy URL for prisma generate during npm ci (overridden after supabase start)
       DATABASE_URL: postgresql://postgres:postgres@localhost:54322/postgres
@@ -114,7 +117,11 @@ jobs:
           key: playwright-${{ hashFiles('package-lock.json') }}
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        timeout-minutes: 10
+        # Only Chromium is used (Desktop Chrome + Pixel 7 + offline-chromium in
+        # playwright.config.ts). Installing system deps for Firefox/WebKit too
+        # meant ~180 apt packages and made this step vulnerable to slow mirrors.
+        run: npx playwright install --with-deps chromium
 
       - name: Wait for dev server readiness
         run: |
@@ -139,11 +146,13 @@ jobs:
         run: npx supabase stop
 
   # Offline E2E smoke -- production build with Service Worker on port 3001
-  # Tungt Playwright-jobb: kör bara mot main, hoppas över på staging-PR:er.
+  # Tungt Playwright-jobb: kör på main och stackade PR:er, hoppas över på
+  # staging-PR:er.
   offline-smoke:
     name: Offline E2E Smoke
-    if: github.base_ref == 'main' || github.ref_name == 'main'
+    if: github.base_ref != 'staging' && github.ref_name != 'staging'
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:54322/postgres
 
@@ -202,7 +211,11 @@ jobs:
           key: playwright-${{ hashFiles('package-lock.json') }}
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        timeout-minutes: 10
+        # Only Chromium is used (Desktop Chrome + Pixel 7 + offline-chromium in
+        # playwright.config.ts). Installing system deps for Firefox/WebKit too
+        # meant ~180 apt packages and made this step vulnerable to slow mirrors.
+        run: npx playwright install --with-deps chromium
 
       - name: Build PWA (production build with Service Worker)
         run: npm run build:pwa
