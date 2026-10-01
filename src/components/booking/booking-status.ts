@@ -112,7 +112,9 @@ export function getBookingStatusStyle(
   isPaid: boolean
 ): BookingStatusStyle {
   if (isPaid) return STYLES.paid
-  if (status in STYLES && status !== "paid") return STYLES[status as BookingStatusKey]
+  if (Object.hasOwn(STYLES, status) && status !== "paid") {
+    return STYLES[status as BookingStatusKey]
+  }
   return {
     label: status,
     icon: null,

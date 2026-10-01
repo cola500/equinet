@@ -29,6 +29,15 @@ describe("getBookingStatusStyle", () => {
     expect(hues(style.block)).toEqual(new Set(["emerald"]))
   })
 
+  it.each(["constructor", "toString", "__proto__", "paid"])(
+    "behandlar '%s' som okänd status, inte som en stil",
+    (status) => {
+      const style = getBookingStatusStyle(status, false)
+      expect(style.label).toBe(status)
+      expect(style.dot).toBe("bg-gray-400")
+    }
+  )
+
   it("okänd status faller tillbaka på grått och råtext som etikett", () => {
     const style = getBookingStatusStyle("something_new", false)
     expect(style.label).toBe("something_new")
