@@ -45,7 +45,11 @@ export function MonthCalendar({
 }: MonthCalendarProps) {
   // Kontextuell popup vid klick på dag
   const popupRef = useRef<HTMLDivElement>(null)
+  const popupButtonRef = useRef<HTMLButtonElement>(null)
   const gridRef = useRef<HTMLDivElement>(null)
+  const focusPopupOnOpenRef = useRef(false)
+  // Date button that opened the popup, so focus can return there when it closes
+  const popupOriginRef = useRef<HTMLElement | null>(null)
   const [dayPopup, setDayPopup] = useState<{
     date: string
     label: string
@@ -58,19 +62,35 @@ export function MonthCalendar({
     setDayPopup(null)
   }, [currentDate])
 
+  // Tangentbordsöppnad popup: flytta fokus till första knappen
+  useEffect(() => {
+    if (dayPopup && focusPopupOnOpenRef.current) {
+      focusPopupOnOpenRef.current = false
+      popupButtonRef.current?.focus()
+    }
+  }, [dayPopup])
+
   // Stäng popup vid klick utanför (ref-check, samma mönster som WeekCalendar)
+  // och med Escape (fokus tillbaka till datumknappen)
   useEffect(() => {
     if (!dayPopup) return
     const handleClickOutside = (e: MouseEvent) => {
       if (popupRef.current?.contains(e.target as Node)) return
       setDayPopup(null)
     }
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return
+      setDayPopup(null)
+      popupOriginRef.current?.focus()
+    }
     const timer = setTimeout(() => {
       document.addEventListener("mousedown", handleClickOutside)
     }, 0)
+    document.addEventListener("keydown", handleEscape)
     return () => {
       clearTimeout(timer)
       document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("keydown", handleEscape)
     }
   }, [dayPopup])
   // Build array of all days to display (6 weeks grid)
@@ -147,54 +167,76 @@ export function MonthCalendar({
             bgClass = "bg-gray-50"
           }
 
+          const isInteractive = !!(onTimeSlotClick || onDateClick)
+          const dayLabel = format(day, "d MMMM", { locale: sv })
+          const dayNumberClass = `text-sm font-medium inline-flex items-center justify-center ${
+            today
+              ? "bg-green-600 text-white rounded-full w-7 h-7"
+              : inMonth
+                ? "text-gray-900"
+                : "text-gray-400"
+          }`
+
           return (
             <div
               key={dateKey}
-              role="button"
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation()
-                if (onTimeSlotClick) {
-                  const label = format(day, "d MMMM", { locale: sv })
-                  const gridRect = gridRef.current!.getBoundingClientRect()
-                  const topPx = e.clientY - gridRect.top
-                  const leftPx = e.clientX - gridRect.left
-                  setDayPopup({ date: dateKey, label, topPx, leftPx })
-                } else {
-                  onDateClick?.(dateKey)
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault()
-                  if (onTimeSlotClick) {
-                    const label = format(day, "d MMMM", { locale: sv })
-                    // Fallback: centrera popup på cellen
-                    const cellRect = e.currentTarget.getBoundingClientRect()
-                    const gridRect = gridRef.current!.getBoundingClientRect()
-                    const topPx = cellRect.top - gridRect.top + cellRect.height / 2
-                    const leftPx = cellRect.left - gridRect.left + cellRect.width / 2
-                    setDayPopup({ date: dateKey, label, topPx, leftPx })
-                  } else {
-                    onDateClick?.(dateKey)
-                  }
-                }
-              }}
-              className={`relative min-h-[80px] md:min-h-[100px] p-1 md:p-2 border-b border-r text-left hover:bg-gray-100 transition-colors cursor-pointer ${bgClass}`}
+              onClick={
+                isInteractive
+                  ? (e) => {
+                      // Mouse convenience: the whole cell opens the popup at the click point.
+                      // Keyboard and screen reader users use the date button below.
+                      e.stopPropagation()
+                      popupOriginRef.current = e.currentTarget.querySelector<HTMLElement>(
+                        "button[data-day-button]"
+                      )
+                      if (onTimeSlotClick) {
+                        const label = format(day, "d MMMM", { locale: sv })
+                        const gridRect = gridRef.current!.getBoundingClientRect()
+                        const topPx = e.clientY - gridRect.top
+                        const leftPx = e.clientX - gridRect.left
+                        setDayPopup({ date: dateKey, label, topPx, leftPx })
+                      } else {
+                        onDateClick?.(dateKey)
+                      }
+                    }
+                  : undefined
+              }
+              className={`relative min-h-[80px] md:min-h-[100px] p-0.5 md:p-2 border-b border-r text-left transition-colors ${
+                isInteractive ? "hover:bg-gray-100 cursor-pointer" : ""
+              } ${bgClass}`}
             >
               {/* Day number */}
               <div className="flex items-center justify-between mb-1">
-                <span
-                  className={`text-sm font-medium inline-flex items-center justify-center ${
-                    today
-                      ? "bg-green-600 text-white rounded-full w-7 h-7"
-                      : inMonth
-                        ? "text-gray-900"
-                        : "text-gray-400"
-                  }`}
-                >
-                  {format(day, "d")}
-                </span>
+                {isInteractive ? (
+                  <button
+                    type="button"
+                    data-day-button
+                    aria-label={onTimeSlotClick ? `Ny bokning ${dayLabel}` : `Ändra tillgänglighet ${dayLabel}`}
+                    onClick={(e) => {
+                      // Pointer clicks (detail > 0) bubble to the cell, which opens the popup at
+                      // the click point. Clicks from keyboard or assistive tech have detail 0.
+                      if (e.detail > 0) return
+                      e.stopPropagation()
+                      popupOriginRef.current = e.currentTarget
+                      if (onTimeSlotClick) {
+                        // Popup centred on the date button (no pointer position for keyboard)
+                        const btnRect = e.currentTarget.getBoundingClientRect()
+                        const gridRect = gridRef.current!.getBoundingClientRect()
+                        const topPx = btnRect.top - gridRect.top + btnRect.height
+                        const leftPx = btnRect.left - gridRect.left + btnRect.width / 2
+                        focusPopupOnOpenRef.current = true
+                        setDayPopup({ date: dateKey, label: dayLabel, topPx, leftPx })
+                      } else {
+                        onDateClick?.(dateKey)
+                      }
+                    }}
+                    className={`${dayNumberClass} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600`}
+                  >
+                    {format(day, "d")}
+                  </button>
+                ) : (
+                  <span className={dayNumberClass}>{format(day, "d")}</span>
+                )}
                 {hasException && (
                   <span className="text-xs text-orange-600 hidden md:inline">
                     {exception?.reason || "Stängt"}
@@ -207,24 +249,31 @@ export function MonthCalendar({
                 <div className="space-y-0.5">
                   {dayBookings.slice(0, MAX_VISIBLE_BOOKINGS).map((booking) => {
                     const isPaid = booking.payment?.status === "succeeded"
+                    const status = getBookingStatusStyle(booking.status, isPaid)
+                    const StatusIcon = status.icon
+                    const serviceName = booking.service?.name || "Bokning"
                     return (
-                      <div
+                      <button
                         key={booking.id}
+                        type="button"
+                        aria-label={`${booking.startTime} ${serviceName}, ${status.label}`}
                         onClick={(e) => {
                           e.stopPropagation()
                           onBookingClick(booking)
                         }}
-                        className={`text-xs truncate rounded px-1 py-0.5 cursor-pointer hover:opacity-80 ${getBookingStatusStyle(booking.status, isPaid).dot} ${
+                        className={`flex w-full items-center gap-0.5 md:gap-1 overflow-hidden text-left text-[10px] md:text-xs rounded px-0.5 md:px-1 py-0.5 cursor-pointer hover:opacity-80 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-green-600 ${status.dot} ${
                           isPaid ? "text-white" : ""
                         }`}
                       >
-                        <span className="hidden md:inline">
-                          {booking.startTime} {booking.service?.name || "Bokning"}
+                        {/* Status is also conveyed by icon + label, not only by colour */}
+                        {StatusIcon && (
+                          <StatusIcon className="h-2.5 w-2.5 md:h-3 md:w-3 shrink-0" aria-hidden="true" />
+                        )}
+                        <span className="truncate hidden md:inline">
+                          {booking.startTime} {serviceName}
                         </span>
-                        <span className="md:hidden">
-                          {booking.startTime}
-                        </span>
-                      </div>
+                        <span className="md:hidden">{booking.startTime}</span>
+                      </button>
                     )
                   })}
                   {dayBookings.length > MAX_VISIBLE_BOOKINGS && (
@@ -250,6 +299,8 @@ export function MonthCalendar({
         {dayPopup && (
           <div
             ref={popupRef}
+            role="dialog"
+            aria-label={`Ny bokning ${dayPopup.label}`}
             className="absolute z-30 -translate-x-1/2"
             style={{ top: `${dayPopup.topPx}px`, left: `${dayPopup.leftPx}px` }}
             onClick={(e) => e.stopPropagation()}
@@ -259,8 +310,11 @@ export function MonthCalendar({
                 {dayPopup.label}
               </p>
               <button
+                ref={popupButtonRef}
                 className="w-full bg-green-600 text-white rounded px-3 py-1.5 text-sm font-medium hover:bg-green-700 transition-colors"
                 onClick={() => {
+                  // Focus the date button first so a dialog opened below returns focus here on close
+                  popupOriginRef.current?.focus()
                   onTimeSlotClick!(dayPopup.date, "")
                   setDayPopup(null)
                 }}
@@ -270,6 +324,7 @@ export function MonthCalendar({
               <button
                 className="w-full mt-1 text-gray-600 hover:text-gray-800 text-xs py-1"
                 onClick={() => {
+                  popupOriginRef.current?.focus()
                   onDateClick?.(dayPopup.date)
                   setDayPopup(null)
                 }}

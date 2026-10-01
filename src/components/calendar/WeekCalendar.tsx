@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useId, useMemo, useRef, useState } from "react"
 import {
   format,
   startOfWeek,
@@ -141,6 +141,7 @@ export function WeekCalendar({
   // Kontextuell popup vid klick i dagkolumnen
   const popupRef = useRef<HTMLDivElement>(null)
   const popupButtonRef = useRef<HTMLButtonElement>(null)
+  const popupTitleId = useId()
   const focusPopupOnOpenRef = useRef(false)
   // Column that opened the popup, so focus can return there when it closes
   const popupOriginRef = useRef<HTMLElement | null>(null)
@@ -483,11 +484,13 @@ export function WeekCalendar({
         {slotPopup && (
           <div
             ref={popupRef}
+            role="dialog"
+            aria-labelledby={popupTitleId}
             className="absolute left-[60px] right-0 z-20 px-4"
             style={{ top: `${slotPopup.topPx}px` }}
           >
             <div className="bg-white border border-green-300 rounded-lg shadow-lg px-3 py-2 text-sm max-w-sm mx-auto">
-              <p className="text-gray-700 mb-1.5">
+              <p id={popupTitleId} className="text-gray-700 mb-1.5">
                 Ny bokning {slotPopup.dateLabel} kl {slotPopup.time}?
               </p>
               <button
