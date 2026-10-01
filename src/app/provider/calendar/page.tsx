@@ -27,17 +27,19 @@ import { AvailabilityEditDialog } from "@/components/calendar/AvailabilityEditDi
 import { DayExceptionDialog } from "@/components/calendar/DayExceptionDialog"
 import { ManualBookingDialog } from "@/components/calendar/ManualBookingDialog"
 import { PendingBookingsBanner } from "@/components/calendar/PendingBookingsBanner"
+import { LEGEND_STATUS_KEYS, getLegendStatusStyle } from "@/components/calendar/booking-status"
 import { CalendarSkeleton } from "@/components/loading/CalendarSkeleton"
 import { CalendarBooking, AvailabilityDay } from "@/types"
 import { clientLogger } from "@/lib/client-logger"
 
 // Shared by the popover (full mode) and the inline panel (demo mode).
+// Status rows come from the shared status module so the legend can't drift
+// from what the calendar views actually render.
 const LEGEND_ITEMS: { swatch: string; label: string }[] = [
-  { swatch: "bg-yellow-50 border-l-2 border-yellow-500", label: "Väntar på svar" },
-  { swatch: "bg-green-50 border-l-2 border-green-600", label: "Bekräftad" },
-  { swatch: "bg-blue-50 border-l-2 border-blue-600", label: "Genomförd" },
-  { swatch: "bg-red-50 border-l-2 border-red-500", label: "Avbokad" },
-  { swatch: "bg-emerald-100 border-l-2 border-emerald-600", label: "Betald" },
+  ...LEGEND_STATUS_KEYS.map((key) => {
+    const { swatch, label } = getLegendStatusStyle(key)
+    return { swatch, label }
+  }),
   { swatch: "bg-green-100 border border-green-200", label: "Öppet" },
   { swatch: "bg-gray-200 border border-gray-300", label: "Stängt" },
   { swatch: "bg-orange-200 border border-orange-300", label: "Ledig/undantag" },

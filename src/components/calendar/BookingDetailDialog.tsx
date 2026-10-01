@@ -32,6 +32,7 @@ import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { ProviderRescheduleDialog } from "@/components/calendar/ProviderRescheduleDialog"
 import Link from "next/link"
+import { getBookingStatusStyle } from "./booking-status"
 
 interface BookingDetailDialogProps {
   booking: CalendarBooking | null
@@ -41,36 +42,6 @@ interface BookingDetailDialogProps {
   onReviewSuccess?: () => void
   onNotesUpdate?: (bookingId: string, providerNotes: string | null) => void
   onReschedule?: (bookingId: string, bookingDate: string, startTime: string) => Promise<void>
-}
-
-function getStatusLabel(status: string, isPaid: boolean): string {
-  if (isPaid) return "Betald"
-
-  const labels: Record<string, string> = {
-    pending: "Väntar på svar",
-    confirmed: "Bekräftad",
-    completed: "Genomförd",
-    cancelled: "Avbokad",
-    no_show: "Ej infunnit",
-  }
-
-  return labels[status] || status
-}
-
-function getStatusStyles(status: string, isPaid: boolean): string {
-  if (isPaid) {
-    return "bg-emerald-100 text-emerald-800"
-  }
-
-  const styles: Record<string, string> = {
-    pending: "bg-yellow-100 text-yellow-800",
-    confirmed: "bg-green-100 text-green-800",
-    completed: "bg-blue-100 text-blue-800",
-    cancelled: "bg-red-100 text-red-800",
-    no_show: "bg-orange-100 text-orange-800",
-  }
-
-  return styles[status] || "bg-gray-100 text-gray-800"
 }
 
 export function BookingDetailDialog({
@@ -92,6 +63,7 @@ export function BookingDetailDialog({
   if (!booking) return null
 
   const isPaid = booking.payment?.status === "succeeded"
+  const status = getBookingStatusStyle(booking.status, isPaid)
 
   const handleCancelClick = () => {
     setShowCancelDialog(true)
@@ -132,13 +104,8 @@ export function BookingDetailDialog({
         <div className="space-y-4">
           {/* Status */}
           <div className="flex items-center gap-2">
-            <span
-              className={`px-2 py-1 rounded text-sm ${getStatusStyles(
-                booking.status,
-                isPaid
-              )}`}
-            >
-              {getStatusLabel(booking.status, isPaid)}
+            <span className={`px-2 py-1 rounded text-sm ${status.badge}`}>
+              {status.label}
             </span>
             <PendingSyncBadge entityId={booking.id} />
             {booking.isManualBooking && (
