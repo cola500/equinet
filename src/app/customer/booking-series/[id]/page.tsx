@@ -28,6 +28,7 @@ import { clientLogger } from "@/lib/client-logger"
 import { format, isPast } from "date-fns"
 import { sv } from "date-fns/locale"
 import { ChevronLeft } from "lucide-react"
+import { getBookingStatusStyle } from "@/components/booking/booking-status"
 
 interface SeriesBooking {
   id: string
@@ -53,22 +54,6 @@ interface BookingSeries {
   horse: { name: string } | null
   provider: { businessName: string }
   bookings: SeriesBooking[]
-}
-
-const BOOKING_STATUS_LABELS: Record<string, string> = {
-  pending: "Väntar på svar",
-  confirmed: "Bekräftad",
-  cancelled: "Avbokad",
-  completed: "Genomförd",
-  no_show: "Ej infunnit",
-}
-
-const BOOKING_STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  confirmed: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800",
-  completed: "bg-blue-100 text-blue-800",
-  no_show: "bg-orange-100 text-orange-800",
 }
 
 export default function BookingSeriesDetailPage({
@@ -344,7 +329,7 @@ function BookingDateRow({
   return (
     <div
       className={`flex items-center justify-between py-2 border-b last:border-0 ${dimmed ? "opacity-50" : ""}`}
-      aria-label={`Tillfälle ${index + 1}: ${format(new Date(booking.bookingDate), "d MMMM yyyy", { locale: sv })}, ${BOOKING_STATUS_LABELS[booking.status] || booking.status}`}
+      aria-label={`Tillfälle ${index + 1}: ${format(new Date(booking.bookingDate), "d MMMM yyyy", { locale: sv })}, ${getBookingStatusStyle(booking.status, false).label}`}
     >
       <div className="flex items-center gap-3">
         <span className="text-sm text-gray-400 w-5 text-right shrink-0">{index + 1}.</span>
@@ -358,9 +343,9 @@ function BookingDateRow({
         </div>
       </div>
       <span
-        className={`text-xs px-2 py-1 rounded shrink-0 ${BOOKING_STATUS_COLORS[booking.status] || "bg-gray-100 text-gray-800"}`}
+        className={`text-xs px-2 py-1 rounded shrink-0 ${getBookingStatusStyle(booking.status, false).badge}`}
       >
-        {BOOKING_STATUS_LABELS[booking.status] || booking.status}
+        {getBookingStatusStyle(booking.status, false).label}
       </span>
     </div>
   )

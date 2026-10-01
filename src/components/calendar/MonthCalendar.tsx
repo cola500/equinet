@@ -14,7 +14,7 @@ import {
 } from "date-fns"
 import { sv } from "date-fns/locale"
 import { CalendarBooking, AvailabilityDay, AvailabilityException } from "@/types"
-import { getBookingStatusStyle } from "./booking-status"
+import { getBookingStatusStyle } from "@/components/booking/booking-status"
 
 interface MonthCalendarProps {
   currentDate: Date

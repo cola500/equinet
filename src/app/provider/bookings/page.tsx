@@ -37,6 +37,7 @@ import { BookingCardSkeleton } from "@/components/loading/BookingCardSkeleton"
 import { FirstUseTooltip } from "@/components/ui/first-use-tooltip"
 import { sortBookings, filterBookings, countByStatus, type BookingFilter } from "./booking-utils"
 import { clientLogger } from "@/lib/client-logger"
+import { getBookingStatusStyle } from "@/components/booking/booking-status"
 
 // Demo: contextual copy for an empty status filter, in the same helpful tone as
 // the Tjänster empty state (so no demo surface shows a bare "Inga ...").
@@ -255,36 +256,14 @@ function ProviderBookingsContent() {
   const counts = countByStatus(bookings)
 
   const getStatusBadge = (booking: Booking) => {
-    const isPaid = booking.payment?.status === "succeeded"
-
-    // Om betald, visa alltid "Betald" oavsett bokningsstatus
-    if (isPaid) {
-      return (
-        <span className="text-xs px-2 py-1 rounded bg-emerald-100 text-emerald-800">
-          Betald
-        </span>
-      )
-    }
-
-    const styles = {
-      pending: "bg-yellow-100 text-yellow-800",
-      confirmed: "bg-green-100 text-green-800",
-      cancelled: "bg-red-100 text-red-800",
-      completed: "bg-blue-100 text-blue-800",
-      no_show: "bg-orange-100 text-orange-800",
-    }
-
-    const labels = {
-      pending: "Väntar på svar",
-      confirmed: "Bekräftad",
-      cancelled: "Avbokad",
-      completed: "Genomförd",
-      no_show: "Ej infunnit",
-    }
-
+    // Betald överstyr bokningsstatus
+    const status = getBookingStatusStyle(
+      booking.status,
+      booking.payment?.status === "succeeded"
+    )
     return (
-      <span className={`text-xs px-2 py-1 rounded ${styles[booking.status as keyof typeof styles]}`}>
-        {labels[booking.status as keyof typeof labels] || booking.status}
+      <span className={`text-xs px-2 py-1 rounded ${status.badge}`}>
+        {status.label}
       </span>
     )
   }

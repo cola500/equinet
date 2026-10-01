@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/responsive-alert-dialog"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { InfoPopover } from "@/components/ui/info-popover"
+import { getBookingStatusStyle } from "@/components/booking/booking-status"
 
 interface AdminBooking {
   id: string
@@ -38,22 +39,6 @@ interface BookingsResponse {
   total: number
   page: number
   totalPages: number
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Väntande",
-  confirmed: "Bekräftad",
-  completed: "Genomförd",
-  cancelled: "Avbokad",
-  no_show: "Ej infunnit",
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  confirmed: "bg-blue-100 text-blue-800",
-  completed: "bg-green-100 text-green-700",
-  cancelled: "bg-red-100 text-red-700",
-  no_show: "bg-orange-100 text-orange-800",
 }
 
 export default function AdminBookingsPage() {
@@ -181,8 +166,8 @@ export default function AdminBookingsPage() {
                     <CardContent className="pt-4 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{booking.customerName}</span>
-                        <Badge className={STATUS_COLORS[booking.status] || ""}>
-                          {STATUS_LABELS[booking.status] || booking.status}
+                        <Badge className={getBookingStatusStyle(booking.status, false).badge}>
+                          {getBookingStatusStyle(booking.status, false).label}
                         </Badge>
                       </div>
                       <p className="text-sm text-gray-600">{booking.providerBusinessName}</p>
@@ -237,8 +222,8 @@ export default function AdminBookingsPage() {
                         <td className="py-3">{booking.providerBusinessName}</td>
                         <td className="py-3 text-gray-600">{booking.serviceName}</td>
                         <td className="py-3">
-                          <Badge className={STATUS_COLORS[booking.status] || ""}>
-                            {STATUS_LABELS[booking.status] || booking.status}
+                          <Badge className={getBookingStatusStyle(booking.status, false).badge}>
+                            {getBookingStatusStyle(booking.status, false).label}
                           </Badge>
                           {booking.isManualBooking && (
                             <span className="inline-flex items-center gap-0.5 ml-1">

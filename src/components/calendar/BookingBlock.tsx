@@ -2,7 +2,7 @@
 
 import { Repeat } from "lucide-react"
 import { CalendarBooking } from "@/types"
-import { getBookingStatusStyle } from "./booking-status"
+import { getBookingStatusStyle } from "@/components/booking/booking-status"
 
 interface BookingBlockProps {
   booking: CalendarBooking

@@ -32,7 +32,7 @@ import { PendingSyncBadge } from "@/components/ui/PendingSyncBadge"
 import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { ProviderRescheduleDialog } from "@/components/calendar/ProviderRescheduleDialog"
 import Link from "next/link"
-import { getBookingStatusStyle } from "./booking-status"
+import { getBookingStatusStyle } from "@/components/booking/booking-status"
 
 interface BookingDetailDialogProps {
   booking: CalendarBooking | null

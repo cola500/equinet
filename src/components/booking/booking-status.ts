@@ -23,6 +23,8 @@ export interface BookingStatusStyle {
   dot: string
   /** Legend swatch */
   swatch: string
+  /** Left accent border for list cards (empty for unknown statuses) */
+  accent: string
 }
 
 export type BookingStatusKey =
@@ -41,6 +43,7 @@ const STYLES: Record<BookingStatusKey, BookingStatusStyle> = {
     badge: "bg-yellow-100 text-yellow-800",
     dot: "bg-yellow-400",
     swatch: "bg-yellow-50 border-l-2 border-yellow-500",
+    accent: "border-l-4 border-l-yellow-400",
   },
   confirmed: {
     label: "Bekräftad",
@@ -49,6 +52,7 @@ const STYLES: Record<BookingStatusKey, BookingStatusStyle> = {
     badge: "bg-green-100 text-green-800",
     dot: "bg-green-400",
     swatch: "bg-green-50 border-l-2 border-green-600",
+    accent: "border-l-4 border-l-green-500",
   },
   completed: {
     label: "Genomförd",
@@ -57,6 +61,7 @@ const STYLES: Record<BookingStatusKey, BookingStatusStyle> = {
     badge: "bg-blue-100 text-blue-800",
     dot: "bg-blue-400",
     swatch: "bg-blue-50 border-l-2 border-blue-600",
+    accent: "border-l-4 border-l-blue-400",
   },
   cancelled: {
     label: "Avbokad",
@@ -65,6 +70,7 @@ const STYLES: Record<BookingStatusKey, BookingStatusStyle> = {
     badge: "bg-red-100 text-red-800",
     dot: "bg-red-400",
     swatch: "bg-red-50 border-l-2 border-red-500",
+    accent: "border-l-4 border-l-red-400",
   },
   no_show: {
     label: "Ej infunnit",
@@ -73,6 +79,7 @@ const STYLES: Record<BookingStatusKey, BookingStatusStyle> = {
     badge: "bg-orange-100 text-orange-800",
     dot: "bg-orange-400",
     swatch: "bg-orange-50 border-l-2 border-orange-500",
+    accent: "border-l-4 border-l-orange-400",
   },
   paid: {
     label: "Betald",
@@ -81,6 +88,7 @@ const STYLES: Record<BookingStatusKey, BookingStatusStyle> = {
     badge: "bg-emerald-100 text-emerald-800",
     dot: "bg-emerald-500",
     swatch: "bg-emerald-100 border-l-2 border-emerald-600",
+    accent: "border-l-4 border-l-emerald-500",
   },
 }
 
@@ -114,5 +122,6 @@ export function getBookingStatusStyle(
     badge: "bg-gray-100 text-gray-800",
     dot: "bg-gray-400",
     swatch: "bg-gray-100 border-l-2 border-gray-500",
+    accent: "",
   }
 }

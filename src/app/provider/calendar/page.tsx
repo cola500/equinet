@@ -27,7 +27,7 @@ import { AvailabilityEditDialog } from "@/components/calendar/AvailabilityEditDi
 import { DayExceptionDialog } from "@/components/calendar/DayExceptionDialog"
 import { ManualBookingDialog } from "@/components/calendar/ManualBookingDialog"
 import { PendingBookingsBanner } from "@/components/calendar/PendingBookingsBanner"
-import { LEGEND_STATUS_KEYS, getLegendStatusStyle } from "@/components/calendar/booking-status"
+import { LEGEND_STATUS_KEYS, getLegendStatusStyle } from "@/components/booking/booking-status"
 import { CalendarSkeleton } from "@/components/loading/CalendarSkeleton"
 import { CalendarBooking, AvailabilityDay } from "@/types"
 import { clientLogger } from "@/lib/client-logger"
