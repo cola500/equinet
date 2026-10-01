@@ -18,7 +18,7 @@ echo ""
 if [[ "$DB_URL" == *"127.0.0.1"* ]] || [[ "$DB_URL" == *"localhost"* ]]; then
   echo "  Databas: Lokal Supabase CLI"
   echo "  Källa:   $SOURCE"
-  if supabase status 2>/dev/null | grep -q "API URL"; then
+  if supabase status 2>/dev/null | grep -q "API[ _]URL"; then
     echo "  Status:  Kör"
   else
     echo "  Status:  Stoppad -- kör 'npm run db:up'"
