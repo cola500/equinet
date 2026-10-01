@@ -148,6 +148,29 @@ describe("WeekCalendar -- tangentbordsbokning i dagkolumnen", () => {
     expect(screen.queryByText(/Ny bokning 16 mars kl/)).not.toBeInTheDocument()
   })
 
+  it("Escape stänger popupen och återställer fokus till dagkolumnen", async () => {
+    const user = userEvent.setup()
+    renderCalendar()
+    const column = screen.getByRole("button", { name: /ny bokning.*16 mars/i })
+    column.focus()
+    await user.keyboard("{Enter}")
+    expect(screen.getByText(/kl 09:00/)).toBeInTheDocument()
+    await user.keyboard("{Escape}")
+    expect(screen.queryByText(/kl 09:00/)).not.toBeInTheDocument()
+    expect(column).toHaveFocus()
+  })
+
+  it("återställer fokus till dagkolumnen efter Skapa bokning", async () => {
+    const user = userEvent.setup()
+    const { onTimeSlotClick } = renderCalendar()
+    const column = screen.getByRole("button", { name: /ny bokning.*16 mars/i })
+    column.focus()
+    await user.keyboard("{Enter}")
+    await user.keyboard("{Enter}")
+    expect(onTimeSlotClick).toHaveBeenCalledTimes(1)
+    expect(column).toHaveFocus()
+  })
+
   it("är inte en knapp när onTimeSlotClick saknas", () => {
     renderCalendar({ onTimeSlotClick: undefined })
     expect(

@@ -142,6 +142,8 @@ export function WeekCalendar({
   const popupRef = useRef<HTMLDivElement>(null)
   const popupButtonRef = useRef<HTMLButtonElement>(null)
   const focusPopupOnOpenRef = useRef(false)
+  // Column that opened the popup, so focus can return there when it closes
+  const popupOriginRef = useRef<HTMLElement | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
   const [slotPopup, setSlotPopup] = useState<{
     date: string
@@ -170,13 +172,20 @@ export function WeekCalendar({
       if (popupRef.current?.contains(e.target as Node)) return
       setSlotPopup(null)
     }
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return
+      setSlotPopup(null)
+      popupOriginRef.current?.focus()
+    }
     // setTimeout så att det inte triggas av samma klick som öppnade popupen
     const timer = setTimeout(() => {
       document.addEventListener("mousedown", handleClickOutside)
     }, 0)
+    document.addEventListener("keydown", handleEscape)
     return () => {
       clearTimeout(timer)
       document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("keydown", handleEscape)
     }
   }, [slotPopup])
 
@@ -352,6 +361,7 @@ export function WeekCalendar({
                   colRect.top - gridRect.top + (openStart / 100) * colRect.height
                 const dateLabel = format(day, "d MMM", { locale: sv })
                 focusPopupOnOpenRef.current = true
+                popupOriginRef.current = e.currentTarget
                 setSlotPopup({ date: dateKey, time, topPx, dateLabel })
               }}
               onClick={(e) => {
@@ -362,6 +372,7 @@ export function WeekCalendar({
                 const gridRect = gridRef.current!.getBoundingClientRect()
                 const topPx = e.clientY - gridRect.top
                 const dateLabel = format(day, "d MMM", { locale: sv })
+                popupOriginRef.current = e.currentTarget
                 setSlotPopup({ date: dateKey, time, topPx, dateLabel })
               }}
               className={`min-w-0 relative border-r last:border-r-0 cursor-pointer group focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-green-600 ${
@@ -484,6 +495,8 @@ export function WeekCalendar({
                 className="w-full bg-green-600 text-white rounded px-3 py-1.5 text-sm font-medium hover:bg-green-700 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation()
+                  // Focus the column first so a dialog opened below returns focus here on close
+                  popupOriginRef.current?.focus()
                   onTimeSlotClick!(slotPopup.date, slotPopup.time)
                   setSlotPopup(null)
                 }}
