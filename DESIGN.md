@@ -133,7 +133,7 @@ Två separata, oförenade system existerar samtidigt i koden:
 2. **En parallell, oanvänd tokenuppsättning** i `globals.css` (`--status-confirmed`, `--status-pending`, `--status-cancelled`, `--status-completed`, alla i OKLCH): definierade men refererade av NOLL komponenter i `src/`. Teknisk skuld -- inte source of truth, trots att de ser ut som det.
 
 ### Named Rules
-**The Duplicated Status Rule (observerad avvikelse, inte ett förebildligt mönster).** Statuslogiken (färg + svensk etikett) är kopierad, inte delad, över minst 29 filer -- och en mer genomtänkt OKLCH-tokenuppsättning finns definierad men aldrig kopplad in. Replikera INTE detta mönster i ny kod; om en ny statusindikator behövs, fråga om konsolidering till en delad komponent/token-källa hör till uppgiften innan du kopierar `styles`-objektet en 30:e gång.
+**The Duplicated Status Rule (delvis åtgärdad 2026-10-01).** Bokningsstatus (färg + svensk etikett + ikon) har nu en gemensam källa: `src/components/booking/booking-status.ts` (varianter: block, badge, prick, swatch, accent). Kalendern, kundens bokningskort, leverantörens bokningslista, bokningsserier, admin-bokningar och rutt-annonsernas bokningslista använder den. Kvar som kopior: statusar i andra domäner (gruppbokning, rutt-annonser, buggrapporter, verifiering, mutationskö) och `formatBookingStatus` i `src/lib/utils/booking.ts` ("Väntande"). Återanvänd modulen för bokningsstatus; kopiera ALDRIG `styles`-objektet. Den definierade men oanvända OKLCH-tokenuppsättningen är fortfarande inte kopplad in.
 
 ## Typography
 
@@ -191,7 +191,7 @@ Sturdy and unfussy -- solida, pålitliga ytor utan dekorativ flärd. Komponenter
 
 Två skilda komponenter, inte en:
 - **`<Badge>` (shadcn-komponenten, `src/components/ui/badge.tsx`):** `rounded-full` (pill), `px-2.5 py-0.5`, `text-xs font-semibold`. Variant → färg: default (primary/Deep Pine), secondary, destructive, outline. Används för generella etiketter, inte bokningsstatus.
-- **Statusmärken (bokningsstatus, egen ad-hoc-implementation per fil):** `<span>` med `text-xs px-2 py-1 rounded` (4px hörn, INTE pill) och det hårdkodade färgparet från "Status-färger" ovan. Bygger INTE på `<Badge>`-komponenten alls -- separat, duplicerad kod per fil. Se "The Duplicated Status Rule".
+- **Statusmärken (bokningsstatus, via `booking-status.ts`):** `<span>` med `text-xs px-2 py-1 rounded` (4px hörn, INTE pill) och det hårdkodade färgparet från "Status-färger" ovan. Bygger INTE på `<Badge>`-komponenten (admin-sidan använder `<Badge>` med modulens `badge`-klasser). Se "The Duplicated Status Rule".
 
 ### Cards / Containers
 - **Corner Style:** `rounded-xl` (14px).

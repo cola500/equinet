@@ -20,6 +20,7 @@ import {
   ResponsiveAlertDialogHeader,
   ResponsiveAlertDialogTitle,
 } from "@/components/ui/responsive-alert-dialog"
+import { getBookingStatusStyle } from "@/components/booking/booking-status"
 
 interface Booking {
   id: string
@@ -143,35 +144,6 @@ export default function AnnouncementDetailPage() {
     })
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800"
-      case "confirmed":
-        return "bg-green-100 text-green-800"
-      case "cancelled":
-        return "bg-red-100 text-red-800"
-      case "completed":
-        return "bg-gray-100 text-gray-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "Väntar"
-      case "confirmed":
-        return "Bekräftad"
-      case "cancelled":
-        return "Avbokad"
-      case "completed":
-        return "Genomförd"
-      default:
-        return status
-    }
-  }
 
   if (isLoading || !isProvider || pageLoading) {
     return (
@@ -288,8 +260,8 @@ export default function AnnouncementDetailPage() {
                       {formatDate(booking.bookingDate)} | {booking.startTime} - {booking.endTime}
                     </CardDescription>
                   </div>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(booking.status)}`}>
-                    {getStatusText(booking.status)}
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${getBookingStatusStyle(booking.status, false).badge}`}>
+                    {getBookingStatusStyle(booking.status, false).label}
                   </span>
                 </div>
               </CardHeader>

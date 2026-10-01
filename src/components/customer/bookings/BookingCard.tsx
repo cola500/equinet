@@ -16,6 +16,7 @@ import { format, formatDistanceToNow } from "date-fns"
 import { sv } from "date-fns/locale"
 import type { CombinedBooking, Booking } from "./types"
 import { MessagingDialog } from "./MessagingDialog"
+import { getBookingStatusStyle } from "@/components/booking/booking-status"
 
 interface BookingCardProps {
   booking: CombinedBooking
@@ -30,44 +31,29 @@ interface BookingCardProps {
   onDeleteReview: (reviewId: string) => void
 }
 
+// in_route belongs to route orders, not the booking state machine, so it is not
+// part of the shared booking status module.
+const IN_ROUTE_STATUS = {
+  label: "Inplanerad i rutt",
+  badge: "bg-purple-100 text-purple-800",
+  accent: "border-l-4 border-l-purple-500",
+}
+
+function resolveStatus(status: string) {
+  return status === "in_route" ? IN_ROUTE_STATUS : getBookingStatusStyle(status, false)
+}
+
 function getStatusBadge(status: string) {
-  const styles: Record<string, string> = {
-    pending: "bg-yellow-100 text-yellow-800",
-    confirmed: "bg-green-100 text-green-800",
-    cancelled: "bg-red-100 text-red-800",
-    completed: "bg-blue-100 text-blue-800",
-    no_show: "bg-orange-100 text-orange-800",
-    in_route: "bg-purple-100 text-purple-800",
-  }
-
-  const labels: Record<string, string> = {
-    pending: "Väntar på svar",
-    confirmed: "Bekräftad",
-    cancelled: "Avbokad",
-    completed: "Genomförd",
-    no_show: "Ej infunnit",
-    in_route: "Inplanerad i rutt",
-  }
-
+  const { badge, label } = resolveStatus(status)
   return (
-    <span
-      className={`text-xs px-2 py-1 rounded ${styles[status] || "bg-gray-100 text-gray-800"}`}
-    >
-      {labels[status] || status}
+    <span className={`text-xs px-2 py-1 rounded ${badge}`}>
+      {label}
     </span>
   )
 }
 
 function getStatusBorderClass(status: string): string {
-  const borders: Record<string, string> = {
-    pending: "border-l-4 border-l-yellow-400",
-    confirmed: "border-l-4 border-l-green-500",
-    cancelled: "border-l-4 border-l-red-400",
-    completed: "border-l-4 border-l-blue-400",
-    no_show: "border-l-4 border-l-orange-400",
-    in_route: "border-l-4 border-l-purple-500",
-  }
-  return borders[status] || ""
+  return resolveStatus(status).accent
 }
 
 export function BookingCard({

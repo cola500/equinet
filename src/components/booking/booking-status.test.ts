@@ -2,14 +2,14 @@ import { describe, it, expect } from "vitest"
 import {
   getBookingStatusStyle,
   LEGEND_STATUS_KEYS,
-} from "./booking-status"
+} from "@/components/booking/booking-status"
 
 const STATUSES = ["pending", "confirmed", "completed", "cancelled", "no_show"] as const
 
 // Tailwind colour family used in a class string, e.g. "bg-yellow-50" -> "yellow"
 function hues(classes: string): Set<string> {
-  const found = classes.match(/(?:bg|border|text)-(yellow|green|blue|red|orange|emerald|gray)-\d+/g) ?? []
-  return new Set(found.map((c) => c.split("-")[1]))
+  const found = classes.match(/(?:bg|border(?:-l)?|text)-(yellow|green|blue|red|orange|emerald|gray)-\d+/g) ?? []
+  return new Set(found.map((c) => c.match(/-(yellow|green|blue|red|orange|emerald|gray)-/)![1]))
 }
 
 describe("getBookingStatusStyle", () => {
@@ -48,6 +48,7 @@ describe("getBookingStatusStyle", () => {
     expect(hues(style.badge)).toEqual(blockHue)
     expect(hues(style.dot)).toEqual(blockHue)
     expect(hues(style.swatch)).toEqual(blockHue)
+    expect(hues(style.accent)).toEqual(blockHue)
   })
 
   it("bevarar nuvarande färgklasser per variant", () => {
@@ -56,6 +57,7 @@ describe("getBookingStatusStyle", () => {
     expect(pending.badge).toBe("bg-yellow-100 text-yellow-800")
     expect(pending.dot).toBe("bg-yellow-400")
     expect(pending.swatch).toBe("bg-yellow-50 border-l-2 border-yellow-500")
+    expect(pending.accent).toBe("border-l-4 border-l-yellow-400")
   })
 
   it("betald bevarar nuvarande färgklasser", () => {
