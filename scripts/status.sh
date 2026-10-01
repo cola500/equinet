@@ -40,8 +40,8 @@ fi
 
 echo ""
 echo "=== Supabase (lokal) ==="
-if supabase status 2>/dev/null | grep -q "API URL"; then
-  supabase status 2>/dev/null | grep -E "API URL|DB URL|Studio URL" | sed 's/^/  /'
+if supabase status 2>/dev/null | grep -q "API[ _]URL"; then
+  supabase status 2>/dev/null | grep -iE "API[ _]URL|DB[ _]URL|Studio[ _]URL" | sed 's/^/  /'
 else
   echo "  Inte igång — starta med: npm run db:up"
 fi
