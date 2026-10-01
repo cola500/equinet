@@ -260,7 +260,7 @@ export default function AnnouncementDetailPage() {
                       {formatDate(booking.bookingDate)} | {booking.startTime} - {booking.endTime}
                     </CardDescription>
                   </div>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${getBookingStatusStyle(booking.status, false).badge}`}>
+                  <span className={`px-2 py-1 rounded text-xs font-medium shrink-0 whitespace-nowrap ${getBookingStatusStyle(booking.status, false).badge}`}>
                     {getBookingStatusStyle(booking.status, false).label}
                   </span>
                 </div>
