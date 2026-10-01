@@ -171,6 +171,16 @@ describe("WeekCalendar -- tangentbordsbokning i dagkolumnen", () => {
     expect(column).toHaveFocus()
   })
 
+  it("popupen är en dialog med ett namn som beskriver tid och dag", async () => {
+    const user = userEvent.setup()
+    renderCalendar()
+    screen.getByRole("button", { name: /ny bokning.*16 mars/i }).focus()
+    await user.keyboard("{Enter}")
+    expect(
+      screen.getByRole("dialog", { name: /ny bokning 16 mars kl 09:00/i })
+    ).toBeInTheDocument()
+  })
+
   it("är inte en knapp när onTimeSlotClick saknas", () => {
     renderCalendar({ onTimeSlotClick: undefined })
     expect(
