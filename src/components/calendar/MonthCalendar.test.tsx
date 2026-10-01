@@ -140,6 +140,61 @@ describe("MonthCalendar -- tangentbord och tillgänglighet", () => {
     expect(icon).toHaveAttribute("aria-hidden", "true")
   })
 
+  it("mus: klick på cellen öppnar dialogen utan att flytta fokus in i den", async () => {
+    const user = userEvent.setup()
+    renderMonth()
+    const dateButton = screen.getByRole("button", { name: "Ny bokning 14 oktober" })
+    // Cellen är dateButtonens förälder; klicka på cellens tomma yta
+    await user.click(dateButton.closest("div.relative")!)
+    const dialog = screen.getByRole("dialog", { name: /ny bokning 14 oktober/i })
+    expect(within(dialog).getByRole("button", { name: "Skapa bokning" })).not.toHaveFocus()
+  })
+
+  it("mus: klick på datumsiffran öppnar dialogen utan att flytta fokus in i den", async () => {
+    const user = userEvent.setup()
+    renderMonth()
+    await user.click(screen.getByRole("button", { name: "Ny bokning 14 oktober" }))
+    const dialog = screen.getByRole("dialog", { name: /ny bokning 14 oktober/i })
+    expect(within(dialog).getByRole("button", { name: "Skapa bokning" })).not.toHaveFocus()
+  })
+
+  it("en tidigare tangentbordsöppning påverkar inte nästa musklick", async () => {
+    const user = userEvent.setup()
+    renderMonth()
+    const dateButton = screen.getByRole("button", { name: "Ny bokning 14 oktober" })
+    dateButton.focus()
+    await user.keyboard("{Enter}")
+    await user.keyboard("{Escape}")
+    await user.click(dateButton)
+    const dialog = screen.getByRole("dialog", { name: /ny bokning 14 oktober/i })
+    expect(within(dialog).getByRole("button", { name: "Skapa bokning" })).not.toHaveFocus()
+  })
+
+  it("alla bokningsstatusar får en dekorativ ikon", () => {
+    renderMonth({
+      bookings: [
+        booking({ id: "1", status: "pending", startTime: "08:00", bookingDate: "2026-10-01" }),
+        booking({ id: "2", status: "confirmed", startTime: "09:00", bookingDate: "2026-10-02" }),
+        booking({ id: "3", status: "completed", startTime: "10:00", bookingDate: "2026-10-03" }),
+        booking({ id: "4", status: "cancelled", startTime: "11:00", bookingDate: "2026-10-04" }),
+        booking({ id: "5", status: "no_show", startTime: "12:00", bookingDate: "2026-10-05" }),
+        booking({
+          id: "6",
+          status: "confirmed",
+          startTime: "13:00",
+          bookingDate: "2026-10-06",
+          payment: { status: "succeeded" } as CalendarBooking["payment"],
+        }),
+      ],
+    })
+    // En bokning per dag så att alla sex chips är synliga (max 3 per dag visas)
+    const chips = screen.getAllByRole("button", { name: /^\d\d:\d\d .*, / })
+    expect(chips).toHaveLength(6)
+    for (const chip of chips) {
+      expect(chip.querySelector('svg[aria-hidden="true"]'), chip.getAttribute("aria-label") ?? "").not.toBeNull()
+    }
+  })
+
   it("använder olika ikoner för olika statusar", () => {
     renderMonth({
       bookings: [

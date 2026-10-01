@@ -1,6 +1,6 @@
 "use client"
 
-import { useId, useMemo, useState, useRef, useEffect } from "react"
+import { useMemo, useState, useRef, useEffect } from "react"
 import {
   format,
   startOfMonth,
@@ -46,10 +46,7 @@ export function MonthCalendar({
   // Kontextuell popup vid klick på dag
   const popupRef = useRef<HTMLDivElement>(null)
   const popupButtonRef = useRef<HTMLButtonElement>(null)
-  const popupTitleId = useId()
   const gridRef = useRef<HTMLDivElement>(null)
-  // True when the popup was opened with Enter/Space, so focus should move into it
-  const keyboardOpenRef = useRef(false)
   const focusPopupOnOpenRef = useRef(false)
   // Date button that opened the popup, so focus can return there when it closes
   const popupOriginRef = useRef<HTMLElement | null>(null)
@@ -215,13 +212,11 @@ export function MonthCalendar({
                     type="button"
                     data-day-button
                     aria-label={onTimeSlotClick ? `Ny bokning ${dayLabel}` : `Ändra tillgänglighet ${dayLabel}`}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") keyboardOpenRef.current = true
-                    }}
                     onClick={(e) => {
+                      // Pointer clicks (detail > 0) bubble to the cell, which opens the popup at
+                      // the click point. Clicks from keyboard or assistive tech have detail 0.
+                      if (e.detail > 0) return
                       e.stopPropagation()
-                      const viaKeyboard = keyboardOpenRef.current
-                      keyboardOpenRef.current = false
                       popupOriginRef.current = e.currentTarget
                       if (onTimeSlotClick) {
                         // Popup centred on the date button (no pointer position for keyboard)
@@ -229,7 +224,7 @@ export function MonthCalendar({
                         const gridRect = gridRef.current!.getBoundingClientRect()
                         const topPx = btnRect.top - gridRect.top + btnRect.height
                         const leftPx = btnRect.left - gridRect.left + btnRect.width / 2
-                        focusPopupOnOpenRef.current = viaKeyboard
+                        focusPopupOnOpenRef.current = true
                         setDayPopup({ date: dateKey, label: dayLabel, topPx, leftPx })
                       } else {
                         onDateClick?.(dateKey)
