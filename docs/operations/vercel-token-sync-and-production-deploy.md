@@ -4,7 +4,7 @@ description: "Driftinstruktion för scripts/sync-vercel-token.sh och scripts/dep
 category: operations
 tags: [deployment, vercel, github-actions, secrets, ci-cd]
 status: active
-last_updated: 2026-09-26
+last_updated: 2026-10-01
 related:
   - docs/operations/deployment.md
   - docs/archive/handoff-production-deploy-gate.md
@@ -21,7 +21,7 @@ sections:
 
 ## Bakgrund
 
-`deploy-production`-jobbet i `.github/workflows/quality-gates.yml` kräver en `VERCEL_TOKEN`-secret för att kunna köra `vercel pull` / `vercel build` / `vercel deploy` mot `equinet-app`. Att skapa en fristående, projekt-scopad Personal Access Token via `vercel tokens add` gav `Error: Cannot create tokens for this app. (403)` -- kontot är inloggat via SSO/OAuth, vilket den typen av inloggning inte tillåter att skapa nya fristående tokens för.
+Produktionsdeploy sker i workflowet `.github/workflows/deploy-production.yml` (manuellt `workflow_dispatch`, jobben `validate` och `deploy`). `deploy`-jobbet kräver en `VERCEL_TOKEN`-secret för att kunna köra `vercel pull` / `vercel build` / `vercel deploy` mot `equinet-app`. (Det tidigare push-triggade `deploy-production`-jobbet i `quality-gates.yml` är borttaget och ersattes 2026-09-28, se avsnittet om produktionsdeploy nedan.) Att skapa en fristående, projekt-scopad Personal Access Token via `vercel tokens add` gav `Error: Cannot create tokens for this app. (403)` -- kontot är inloggat via SSO/OAuth, vilket den typen av inloggning inte tillåter att skapa nya fristående tokens för.
 
 Lösningen: återanvänd token ur den redan inloggade Vercel CLI-sessionens `auth.json`, precis som `scripts/lib/vercel-env-lib.sh` redan gör lokalt för env-scripten. `scripts/sync-vercel-token.sh` gör samma sak fast skriver värdet till GitHub Actions-secreten `VERCEL_TOKEN` istället för att bara läsa det lokalt.
 
@@ -38,7 +38,7 @@ bash scripts/sync-vercel-token.sh
 Kontrollerar i tur och ordning: att `auth.json` finns, att `vercel whoami` fungerar, att `gh auth status` fungerar, att `gh` pekar på exakt `cola500/equinet`, och att token-fältet faktiskt innehåller ett värde -- innan något skrivs. Token skickas till `gh secret set` via stdin (aldrig som kommandoradsargument, aldrig till en temp-fil). Skriv aldrig `set -x` i detta script eller kör det med `bash -x` -- det skulle skriva ut token i klartext.
 
 Kör detta när:
-- `deploy-production`-jobbet failar på `vercel pull` med `Could not retrieve Project Settings`.
+- `deploy`-jobbet i `deploy-production.yml` (eller en `dry_run`-körning) failar på `vercel pull` med `Could not retrieve Project Settings`.
 - Du loggat ut och in igen i Vercel CLI (`vercel login`) -- din gamla session i GitHub är då ogiltig.
 
 ## Produktionsdeploy: scripts/deploy-production.sh
@@ -68,9 +68,9 @@ Scriptet rör aldrig `VERCEL_TOKEN` eller någon annan hemlighet -- själva depl
 
 `VERCEL_TOKEN` är just nu Johans personliga, inloggade Vercel-sessions token -- inte en fristående, av kontot oberoende CI-identitet. Praktiskt innebär det:
 
-- **Om Johan loggar ut** (`vercel logout`) eller Vercel av någon anledning ogiltigförklarar sessionen, slutar `deploy-production` fungera igen med samma `Could not retrieve Project Settings`-fel. Kör `scripts/sync-vercel-token.sh` igen efter en ny `vercel login`.
+- **Om Johan loggar ut** (`vercel logout`) eller Vercel av någon anledning ogiltigförklarar sessionen, slutar `deploy-production.yml` fungera igen med samma `Could not retrieve Project Settings`-fel. Kör `scripts/sync-vercel-token.sh` igen efter en ny `vercel login`.
 - Token har Johans fulla kontobehörighet, inte begränsad till `equinet-app`-projektet (till skillnad från en `--project`-scopad PAT, som kontot just nu inte tillåter skapa).
-- Det här är en medveten, dokumenterad avvägning -- inte en glömd uppgift. Se `docs/archive/handoff-production-deploy-gate.md` för den ursprungliga utredningen.
+- Det här är en medveten, dokumenterad avvägning -- inte en glömd uppgift. Se `docs/archive/handoff-production-deploy-gate.md` för den ursprungliga utredningen (arkiverad och obsolet sedan 2026-10-01; den beskriver den tidigare designen med jobb i `quality-gates.yml`).
 
 ## Migrera till en separat CI-identitet
 
