@@ -140,6 +140,8 @@ export function WeekCalendar({
 
   // Kontextuell popup vid klick i dagkolumnen
   const popupRef = useRef<HTMLDivElement>(null)
+  const popupButtonRef = useRef<HTMLButtonElement>(null)
+  const focusPopupOnOpenRef = useRef(false)
   const gridRef = useRef<HTMLDivElement>(null)
   const [slotPopup, setSlotPopup] = useState<{
     date: string
@@ -152,6 +154,14 @@ export function WeekCalendar({
   useEffect(() => {
     setSlotPopup(null)
   }, [currentDate, viewMode])
+
+  // Tangentbordsöppnad popup: flytta fokus till knappen, annars hamnar den sist i tab-ordningen
+  useEffect(() => {
+    if (slotPopup && focusPopupOnOpenRef.current) {
+      focusPopupOnOpenRef.current = false
+      popupButtonRef.current?.focus()
+    }
+  }, [slotPopup])
 
   // Stäng popup vid klick utanför (ref-check istället för stopPropagation)
   useEffect(() => {
@@ -322,6 +332,28 @@ export function WeekCalendar({
           return (
             <div
               key={day.toISOString()}
+              role={onTimeSlotClick ? "button" : undefined}
+              tabIndex={onTimeSlotClick ? 0 : undefined}
+              aria-label={
+                onTimeSlotClick
+                  ? `Ny bokning ${format(day, "EEEE d MMMM", { locale: sv })}`
+                  : undefined
+              }
+              onKeyDown={(e) => {
+                // Ignorera tangenttryck som kommer från bokningsblock inuti kolumnen
+                if (!onTimeSlotClick || e.target !== e.currentTarget) return
+                if (e.key !== "Enter" && e.key !== " ") return
+                e.preventDefault()
+                // Ingen muspekare att läsa tid från: börja vid dagens första öppettid
+                const time = positionToTime(openStart)
+                const colRect = e.currentTarget.getBoundingClientRect()
+                const gridRect = gridRef.current!.getBoundingClientRect()
+                const topPx =
+                  colRect.top - gridRect.top + (openStart / 100) * colRect.height
+                const dateLabel = format(day, "d MMM", { locale: sv })
+                focusPopupOnOpenRef.current = true
+                setSlotPopup({ date: dateKey, time, topPx, dateLabel })
+              }}
               onClick={(e) => {
                 if (!onTimeSlotClick) return
                 const rect = e.currentTarget.getBoundingClientRect()
@@ -332,7 +364,7 @@ export function WeekCalendar({
                 const dateLabel = format(day, "d MMM", { locale: sv })
                 setSlotPopup({ date: dateKey, time, topPx, dateLabel })
               }}
-              className={`min-w-0 relative border-r last:border-r-0 cursor-pointer group ${
+              className={`min-w-0 relative border-r last:border-r-0 cursor-pointer group focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-green-600 ${
                 isClosed
                   ? hasException
                     ? "bg-orange-100"
@@ -448,6 +480,7 @@ export function WeekCalendar({
                 Ny bokning {slotPopup.dateLabel} kl {slotPopup.time}?
               </p>
               <button
+                ref={popupButtonRef}
                 className="w-full bg-green-600 text-white rounded px-3 py-1.5 text-sm font-medium hover:bg-green-700 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation()
