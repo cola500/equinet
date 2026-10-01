@@ -514,7 +514,7 @@ function CalendarContent() {
             </p>
             <button
               onClick={() => setLegendOpen((open) => !open)}
-              className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 shrink-0"
+              className="touch-target min-w-[44px] sm:min-w-0 justify-center inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 shrink-0"
               aria-label="Visa färgförklaring"
               aria-expanded={legendOpen}
             >
@@ -544,7 +544,7 @@ function CalendarContent() {
           <Popover open={legendOpen} onOpenChange={setLegendOpen}>
             <PopoverTrigger asChild>
               <button
-                className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 shrink-0"
+                className="touch-target min-w-[44px] sm:min-w-0 justify-center inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 shrink-0"
                 aria-label="Visa färgförklaring"
               >
                 <Info className="h-4 w-4" />
