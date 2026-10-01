@@ -66,21 +66,3 @@ export function doBookingsOverlap(
 
   return b1Start < b2End && b2Start < b1End
 }
-
-/**
- * Format booking status to Swedish
- * @param status - Booking status
- * @returns Swedish status text
- */
-export function formatBookingStatus(
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show'
-): string {
-  const statusMap = {
-    pending: 'Väntande',
-    confirmed: 'Bekräftad',
-    completed: 'Genomförd',
-    cancelled: 'Avbokad',
-    no_show: 'Ej infunnit',
-  }
-  return statusMap[status]
-}
