@@ -14,6 +14,7 @@ import {
 } from "date-fns"
 import { sv } from "date-fns/locale"
 import { CalendarBooking, AvailabilityDay, AvailabilityException } from "@/types"
+import { getBookingStatusStyle } from "./booking-status"
 
 interface MonthCalendarProps {
   currentDate: Date
@@ -31,18 +32,6 @@ const MAX_VISIBLE_BOOKINGS = 3
 // Konvertera JS getDay() (0=Söndag) till vårt dayOfWeek (0=Måndag)
 function jsDayToOurDay(jsDay: number): number {
   return jsDay === 0 ? 6 : jsDay - 1
-}
-
-function getBookingDotColor(status: string, isPaid: boolean): string {
-  if (isPaid) return "bg-emerald-500"
-  const colors: Record<string, string> = {
-    pending: "bg-yellow-400",
-    confirmed: "bg-green-400",
-    completed: "bg-blue-400",
-    cancelled: "bg-red-400",
-    no_show: "bg-orange-400",
-  }
-  return colors[status] || "bg-gray-400"
 }
 
 export function MonthCalendar({
@@ -225,7 +214,7 @@ export function MonthCalendar({
                           e.stopPropagation()
                           onBookingClick(booking)
                         }}
-                        className={`text-xs truncate rounded px-1 py-0.5 cursor-pointer hover:opacity-80 ${getBookingDotColor(booking.status, isPaid)} ${
+                        className={`text-xs truncate rounded px-1 py-0.5 cursor-pointer hover:opacity-80 ${getBookingStatusStyle(booking.status, isPaid).dot} ${
                           isPaid ? "text-white" : ""
                         }`}
                       >

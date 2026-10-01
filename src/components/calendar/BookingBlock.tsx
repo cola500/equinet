@@ -1,7 +1,8 @@
 "use client"
 
-import { Clock, CheckCircle2, Check, XCircle, CreditCard, AlertTriangle, Repeat } from "lucide-react"
+import { Repeat } from "lucide-react"
 import { CalendarBooking } from "@/types"
+import { getBookingStatusStyle } from "./booking-status"
 
 interface BookingBlockProps {
   booking: CalendarBooking
@@ -19,42 +20,14 @@ function getTimePosition(time: string): number {
   return ((totalMinutes - startMinutes) / range) * 100
 }
 
-function getStatusStyles(status: string, isPaid: boolean): string {
-  if (isPaid) {
-    return "bg-emerald-100 border-emerald-600 text-emerald-900"
-  }
-
-  const styles: Record<string, string> = {
-    pending: "bg-yellow-50 border-yellow-500 text-yellow-900",
-    confirmed: "bg-green-50 border-green-600 text-green-900",
-    completed: "bg-blue-50 border-blue-600 text-blue-900",
-    cancelled: "bg-red-50 border-red-500 text-red-900",
-    no_show: "bg-orange-50 border-orange-500 text-orange-900",
-  }
-
-  return styles[status] || "bg-gray-100 border-gray-500 text-gray-900"
-}
-
-function getStatusIcon(status: string, isPaid: boolean) {
-  if (isPaid) return <CreditCard className="h-3 w-3 mr-0.5 flex-shrink-0" />
-
-  const icons: Record<string, React.ReactNode> = {
-    pending: <Clock className="h-3 w-3 mr-0.5 flex-shrink-0" />,
-    confirmed: <CheckCircle2 className="h-3 w-3 mr-0.5 flex-shrink-0" />,
-    completed: <Check className="h-3 w-3 mr-0.5 flex-shrink-0" />,
-    cancelled: <XCircle className="h-3 w-3 mr-0.5 flex-shrink-0" />,
-    no_show: <AlertTriangle className="h-3 w-3 mr-0.5 flex-shrink-0" />,
-  }
-
-  return icons[status] || null
-}
-
 export function BookingBlock({ booking, onClick }: BookingBlockProps) {
   const topPercent = getTimePosition(booking.startTime)
   const bottomPercent = getTimePosition(booking.endTime)
   const heightPercent = bottomPercent - topPercent
   const isPaid = booking.payment?.status === "succeeded"
   const isOfflinePending = booking._isOfflinePending
+  const status = getBookingStatusStyle(booking.status, isPaid)
+  const StatusIcon = status.icon
 
   return (
     <button
@@ -62,7 +35,7 @@ export function BookingBlock({ booking, onClick }: BookingBlockProps) {
       className={`absolute left-1 right-1 min-h-[44px] sm:min-h-[28px] rounded border-l-4 px-2 py-1 text-left text-xs overflow-hidden cursor-pointer hover:opacity-90 transition-opacity ${
         isOfflinePending
           ? "bg-amber-50 border-amber-400 border-dashed text-amber-900"
-          : getStatusStyles(booking.status, isPaid)
+          : status.block
       }`}
       style={{
         top: `${topPercent}%`,
@@ -71,7 +44,7 @@ export function BookingBlock({ booking, onClick }: BookingBlockProps) {
       title={`${booking.service.name} - ${booking.customer.firstName} ${booking.customer.lastName}`}
     >
       <div className="font-semibold truncate flex items-center">
-        {getStatusIcon(booking.status, isPaid)}
+        {StatusIcon && <StatusIcon className="h-3 w-3 mr-0.5 flex-shrink-0" />}
         {booking.bookingSeriesId && (
           <span title="Återkommande bokning"><Repeat className="h-3 w-3 mr-0.5 flex-shrink-0" /></span>
         )}
