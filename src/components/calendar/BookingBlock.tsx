@@ -59,7 +59,7 @@ export function BookingBlock({ booking, onClick }: BookingBlockProps) {
   return (
     <button
       onClick={(e) => { e.stopPropagation(); onClick() }}
-      className={`absolute left-1 right-1 rounded border-l-4 px-2 py-1 text-left text-xs overflow-hidden cursor-pointer hover:opacity-90 transition-opacity ${
+      className={`absolute left-1 right-1 min-h-[44px] sm:min-h-[28px] rounded border-l-4 px-2 py-1 text-left text-xs overflow-hidden cursor-pointer hover:opacity-90 transition-opacity ${
         isOfflinePending
           ? "bg-amber-50 border-amber-400 border-dashed text-amber-900"
           : getStatusStyles(booking.status, isPaid)
@@ -67,7 +67,6 @@ export function BookingBlock({ booking, onClick }: BookingBlockProps) {
       style={{
         top: `${topPercent}%`,
         height: `${heightPercent}%`,
-        minHeight: "28px",
       }}
       title={`${booking.service.name} - ${booking.customer.firstName} ${booking.customer.lastName}`}
     >

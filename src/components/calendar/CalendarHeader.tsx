@@ -79,7 +79,7 @@ export function CalendarHeader({
               variant="ghost"
               size="sm"
               onClick={() => onViewModeChange?.("day")}
-              className={`h-8 px-2 ${viewMode === "day" ? "bg-gray-900 text-white hover:bg-gray-900 hover:text-white" : ""}`}
+              className={`touch-target min-w-[44px] sm:min-w-0 h-8 px-2 ${viewMode === "day" ? "bg-gray-900 text-white hover:bg-gray-900 hover:text-white" : ""}`}
               title="Dagvy"
             >
               <Calendar className="h-4 w-4" />
@@ -90,7 +90,7 @@ export function CalendarHeader({
               variant="ghost"
               size="sm"
               onClick={() => onViewModeChange?.("3-day")}
-              className={`h-8 px-2 ${viewMode === "3-day" ? "bg-gray-900 text-white hover:bg-gray-900 hover:text-white" : ""}`}
+              className={`touch-target min-w-[44px] sm:min-w-0 h-8 px-2 ${viewMode === "3-day" ? "bg-gray-900 text-white hover:bg-gray-900 hover:text-white" : ""}`}
               title="3-dagarsvy"
             >
               <CalendarRange className="h-4 w-4" />
@@ -101,7 +101,7 @@ export function CalendarHeader({
               variant="ghost"
               size="sm"
               onClick={() => onViewModeChange?.("week")}
-              className={`h-8 px-2 ${viewMode === "week" ? "bg-gray-900 text-white hover:bg-gray-900 hover:text-white" : ""}`}
+              className={`touch-target min-w-[44px] sm:min-w-0 h-8 px-2 ${viewMode === "week" ? "bg-gray-900 text-white hover:bg-gray-900 hover:text-white" : ""}`}
               title="Veckovy"
             >
               <CalendarDays className="h-4 w-4" />
@@ -112,7 +112,7 @@ export function CalendarHeader({
               variant="ghost"
               size="sm"
               onClick={() => onViewModeChange?.("month")}
-              className={`h-8 px-2 ${viewMode === "month" ? "bg-gray-900 text-white hover:bg-gray-900 hover:text-white" : ""}`}
+              className={`touch-target min-w-[44px] sm:min-w-0 h-8 px-2 ${viewMode === "month" ? "bg-gray-900 text-white hover:bg-gray-900 hover:text-white" : ""}`}
               title="Månadsvy"
               aria-label="Månadsvy"
             >
@@ -129,7 +129,7 @@ export function CalendarHeader({
           variant="outline"
           size="sm"
           onClick={handlePrevious}
-          className="h-10 px-3"
+          className="touch-target min-w-[44px] sm:min-w-0 h-10 px-3"
           aria-label={
             viewMode === "month"
               ? "Föregående månad"
@@ -149,7 +149,7 @@ export function CalendarHeader({
           variant="outline"
           size="sm"
           onClick={onToday}
-          className="h-10 px-4"
+          className="touch-target h-10 px-4"
         >
           Idag
         </Button>
@@ -159,7 +159,7 @@ export function CalendarHeader({
           variant="outline"
           size="sm"
           onClick={handleNext}
-          className="h-10 px-3"
+          className="touch-target min-w-[44px] sm:min-w-0 h-10 px-3"
           aria-label={
             viewMode === "month"
               ? "Nästa månad"
