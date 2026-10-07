@@ -29,7 +29,8 @@ interface MonthCalendarProps {
 const WEEKDAY_LABELS = ["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"]
 const MAX_VISIBLE_BOOKINGS = 3
 
-// Day popup is w-48 (192px) and centred on its `left` via translateX(-50%)
+// Day popup width, centred on its `left` via translateX(-50%). Applied as an inline
+// style below so the clamp and the rendered width cannot drift apart.
 const POPUP_WIDTH_PX = 192
 
 // Keep the popup inside the grid: clamp its centre to [half width, gridWidth - half width].
@@ -319,7 +320,7 @@ export function MonthCalendar({
             style={{ top: `${dayPopup.topPx}px`, left: `${dayPopup.leftPx}px` }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-white border border-green-300 rounded-lg shadow-lg px-4 py-3 text-sm w-48">
+            <div className="bg-white border border-green-300 rounded-lg shadow-lg px-4 py-3 text-sm" style={{ width: POPUP_WIDTH_PX }}>
               <p className="text-gray-700 mb-2 font-medium">
                 {dayPopup.label}
               </p>

@@ -252,6 +252,16 @@ describe("MonthCalendar -- popupen hålls inom gridet", () => {
     return screen.getByRole("dialog", { name: /ny bokning 14 oktober/i }).style.left
   }
 
+  it("popupens bredd sätts från samma konstant som klämningen använder", async () => {
+    mockLayout({ gridWidth: 1000, buttonLeft: 490 })
+    const user = userEvent.setup()
+    renderMonth()
+    screen.getByRole("button", { name: "Ny bokning 14 oktober" }).focus()
+    await user.keyboard("{Enter}")
+    const dialog = screen.getByRole("dialog", { name: /ny bokning 14 oktober/i })
+    expect((dialog.firstElementChild as HTMLElement).style.width).toBe("192px")
+  })
+
   it("tangentbord: vänsterkolumn (knappen nära vänsterkanten) ger popup inom gridet", async () => {
     mockLayout({ gridWidth: 1000, buttonLeft: 8 })
     const user = userEvent.setup()
