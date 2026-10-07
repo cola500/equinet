@@ -3,7 +3,7 @@ title: "Beslutshistorik"
 description: "Kronologisk logg över arkitektur- och processbeslut, inklusive kurskorrigeringar"
 category: guide
 status: active
-last_updated: 2026-04-04
+last_updated: 2026-10-07
 tags: [decisions, architecture, process, history]
 sections:
   - Arkitektur och teknik
@@ -116,6 +116,14 @@ WebView-upplevelsen var "okej men inte native". Beslutade att migrera skärm fö
 Första native-konverteringen (Dashboard) missade features som fanns i webbversionen. Från och med session 99b: obligatorisk inventering av ALLA datapunkter, interaktioner och navigeringslänkar INNAN implementation.
 
 **Status:** 10/16 provider-skärmar native. Återstående offloadas till WebView (röstloggning, ruttplanering, gruppbokningar).
+
+---
+
+### iOS: kvar i monorepot, utbrytning trigger-styrd (okt 2026)
+
+Förstudie av om `ios/` bör brytas ut till eget repo. Kopplingen är hård: 29 `/api/native/*`-routes ändras tillsammans med appen (56 av 104 iOS-commits rör även annat), appen laddar ca 20 webbsidor i en WKWebView med JS-brygga, och det finns varken maskinläsbart kontrakt eller versionshandshake. Förstudien hittade dessutom ett tyst trasigt widgetkontrakt och en död endpoint.
+
+**Beslut:** iOS ligger kvar. Utbrytning omprövas vid en trigger (självständig releasecykel, separat team/ägarskap, iOS-CI-belastning, separata behörigheter, versionerat verifierbart kontrakt, monorepo-prestanda). Minsta kontraktsmodell: delade fixtures + kontraktstester + liten versionshandshake, inte OpenAPI/genererad klient. Se [ios-api-contract-study.md](architecture/ios-api-contract-study.md) och parkerad plan [ios-repo-extraction-plan.md](plans/ios-repo-extraction-plan.md).
 
 ---
 
