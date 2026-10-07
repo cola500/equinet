@@ -3,7 +3,7 @@ title: "Staging Environment Setup"
 description: "Plan + utfall för isolerad staging-miljö (egen domain, egen Supabase, egen DB). Block 2 klart 2026-05-06."
 category: operations
 status: active
-last_updated: 2026-09-28
+last_updated: 2026-10-07
 tags: [staging, preview, vercel, supabase, environment, demo]
 sections:
   - Historisk korrigering (2026-09-26)
@@ -135,15 +135,36 @@ if [ "$VERCEL_GIT_COMMIT_REF" = "main" ] || [ "$VERCEL_GIT_COMMIT_REF" = "stagin
 
 **Efter observationsveckan:** ta bort `staging` ur denna sträng (så bara `main` och `preview/candidate` återstår). Arkivering/borttagning av själva `staging`-branchen sker **först efter separat, uttryckligt godkännande** — inte automatiskt när observationsveckan tar slut.
 
-### Drift och rollback (nuläge efter genomförd migrering)
+### Drift och rollback (verifierat 2026-10-07)
+
+Registrerat efter att `6c33337f` (PR #539) deployats till både staging och produktion. Värdena är lästa direkt från Vercel (`list_deployments`, `get_deployment`, `list_deployment_aliases`) och GitHub, inte hämtade ur minnet.
 
 | Vad | Värde |
 |---|---|
-| Staging — Git-SHA | `4284202221f07216269659873cacf1f9b9f64f04` (branch `main`) |
-| Staging — Vercel deployment-ID | `dpl_A1S3vbfA2M6fDjvZFEKRup1AgUH8` |
-| Produktion — Git-SHA | `4284202221f07216269659873cacf1f9b9f64f04` (branch `main`, oförändrad genom hela migreringen) |
-| Produktion — Vercel deployment-ID | `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa` |
+| Staging -- Git-SHA | `6c33337fe308f45dde6f47f83120f290c86781e1` (PR #539, byggd från branchen `preview/candidate`) |
+| Staging -- Vercel deployment-ID | `dpl_7jgCSLRm3BzsgKjCGs8WCpc3ia6f` (`equinet-staging-app`, target=production, alias `equinet-staging.johanlindengard.com`, `READY`) |
+| Staging -- rollback-mål | `dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa` (SHA `66fa2360a77f3c23fb1d03deb0b350d972ddc5bc`), `READY` och markerad rollback-kandidat |
+| Produktion -- Git-SHA | `6c33337fe308f45dde6f47f83120f290c86781e1` (PR #539) |
+| Produktion -- Vercel deployment-ID | `dpl_HjZ8GjTEABJe6HkzoB3qJ7uekD9P` (`equinet-app`, target=production, alias `equinet.johanlindengard.com`, `READY`) |
+| Produktion -- rollback-mål | `dpl_5v8gEkuRDeg1TmWZBB6CJNuj7Shj` (SHA `4973f6e919339b022425063bd8a280fa2bbe9b41`, v0.3.0), `READY` och markerad rollback-kandidat |
+| Git-grenar | `main` = `preview/candidate` = `6c33337f`. Grenen `staging` är oförändrad på `7b7c38e3` och inte längre deploykälla |
 | Återställningstagg (gamla stagingläget) | `staging-pre-sync-2026-09-26` → commit `7b7c38e3f35d501fec509b821444689c4d7141fa` |
+
+**Deploylogg 2026-10-07 (UTC)**
+
+| Tid | Händelse |
+|---|---|
+| 09:23 | PR #539 mergad (`6c33337f`); `preview/candidate` fast-forwardad `87354fd2..6c33337f` (ingen force-push). Preview-bygge `dpl_3ERJXwE3Goc9gDgpWwqC1QroQbDJ` (target=Preview) verifierat |
+| 09:38 | Staging: `vercel promote <preview-url> --scope cola500s-projects` kört av Johan i egen Vercel-session (agentens `promote` blockeras av Vercels klassificerare). Preview-deploymenter kan inte flyttas direkt, så samma SHA byggdes om mot production-miljön: `dpl_7jgCSLRm3BzsgKjCGs8WCpc3ia6f` |
+| 09:47 | `deploy-production.yml` dry run `37603026478` (`dry_run=true`): validering grön, `Pull Vercel environment` röd (`token provided via --token is not valid`). Orsak: `VERCEL_TOKEN` (personlig sessionstoken, se `vercel-token-sync-and-production-deploy.md`) var inte längre giltig; åtgärdad av Johan genom att synka om token (secret uppdaterad 09:49:49) |
+| 09:50 | Dry run `37603312265`: allt grönt (`Pull` och `Build` lyckades, `Deploy` hoppades över). Produktionen oförändrad |
+| 09:53 | Produktion: `scripts/deploy-production.sh --staging-verified-sha 6c33337f…` kört av Johan; körning `37603745683` (`workflow_dispatch`, `dry_run=false`) klar 09:57 → `dpl_HjZ8GjTEABJe6HkzoB3qJ7uekD9P` |
+
+**Verifiering efter deployerna**
+
+- Staging: `/api/health` → `200` (`database: connected`), `/` och `/login` → `200`, demoknapparna finns, och kalenderns popuppositionering mätt på live-domänen (390 px, tangentbord, första och sista raden).
+- Produktion: `/api/health` → `200` (`database: connected`) i en riktig webbläsare, inloggningsformuläret finns, **inga** "Demo som…"-knappar (demoläget avstängt) och landningssidan saknar demo-CTA. Produktionsdomänen svarar `429` med `x-vercel-mitigated: challenge` (Vercels Security Checkpoint) på anrop utan webbläsare, så workflowets egen hälsokoll nådde inte appen och rapporterade en varning ("verifiera manuellt") trots grönt steg. Ett ärligare verifieringssteg (deploymentnivå via Vercels API plus appnivå med uttrycklig "EJ verifierad") föreslås i PR #540, som vid skrivande stund är öppen och inte mergad.
+- Känt och oberoende av denna deploy: `/_vercel/insights/script.js` ger `404` på produktion (Speed Insights).
 
 **Manuell återställning av Production Branch:** det finns **ingen publik Vercel REST-API-väg** för detta fält (verifierat — både `link.productionBranch` i `update_project`-anrop och i den officiella API-referensen saknas det). Måste göras i Vercel-dashboarden: `equinet-staging-app → Settings → Git → Production Branch → main → staging → Save`.
 
