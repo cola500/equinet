@@ -1,7 +1,12 @@
-import { describe, it, expect, vi } from "vitest"
-import { render, screen, within } from "@testing-library/react"
+import { describe, it, expect, vi, afterEach } from "vitest"
+import { render, screen, within, fireEvent } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { MonthCalendar } from "./MonthCalendar"
+import {
+  MonthCalendar,
+  clampPopupLeft,
+  resolvePopupTop,
+  POPUP_EDGE_MARGIN_PX,
+} from "./MonthCalendar"
 import { CalendarBooking } from "@/types"
 
 // Oktober 2026; 14 oktober är en onsdag i månadsgridet
@@ -205,5 +210,328 @@ describe("MonthCalendar -- tangentbord och tillgänglighet", () => {
     const confirmed = screen.getByRole("button", { name: /Bekräftad/ }).querySelector("svg")!
     const pending = screen.getByRole("button", { name: /Väntar på svar/ }).querySelector("svg")!
     expect(confirmed.getAttribute("class")).not.toBe(pending.getAttribute("class"))
+  })
+})
+
+describe("clampPopupLeft", () => {
+  // Popup is 192px wide and centred on `leftPx` (translateX(-50%)), so the valid
+  // range for its centre is [96, gridWidth - 96].
+  it("lämnar ett läge i mitten oförändrat", () => {
+    expect(clampPopupLeft(500, 1000)).toBe(500)
+  })
+
+  it("flyttar in en popup som skulle sticka ut till vänster", () => {
+    expect(clampPopupLeft(18, 1000)).toBe(96)
+    expect(clampPopupLeft(-40, 1000)).toBe(96)
+  })
+
+  it("flyttar in en popup som skulle sticka ut till höger", () => {
+    expect(clampPopupLeft(970, 1000)).toBe(904)
+    expect(clampPopupLeft(1200, 1000)).toBe(904)
+  })
+
+  it("centrerar popupen när gridet är smalare än popupen", () => {
+    expect(clampPopupLeft(10, 150)).toBe(75)
+  })
+})
+
+describe("resolvePopupTop", () => {
+  const M = POPUP_EDGE_MARGIN_PX
+  const h = 110
+
+  it("placerar popupen nedåt när den ryms", () => {
+    expect(resolvePopupTop({ belowTopPx: 100, aboveBottomPx: 100, popupHeight: h, containerHeight: 500 })).toBe(100)
+  })
+
+  it("placerar popupen precis nedåt när underkanten hamnar exakt på marginalen", () => {
+    const maxTop = 500 - h - M
+    expect(resolvePopupTop({ belowTopPx: maxTop, aboveBottomPx: maxTop, popupHeight: h, containerHeight: 500 })).toBe(maxTop)
+  })
+
+  it("vänder popupen uppåt (underkant vid ankaret) när den inte ryms nedåt", () => {
+    expect(resolvePopupTop({ belowTopPx: 460, aboveBottomPx: 440, popupHeight: h, containerHeight: 500 })).toBe(330)
+  })
+
+  it("klämmer in popupen när den varken ryms nedåt eller uppåt", () => {
+    // container 130: maxTop = 130-110-M, uppåt ger negativt läge
+    const top = resolvePopupTop({ belowTopPx: 100, aboveBottomPx: 60, popupHeight: h, containerHeight: 130 })
+    expect(top).toBe(Math.max(M, 130 - h - M))
+    expect(top).toBeGreaterThanOrEqual(M)
+  })
+
+  it("håller marginal mot övre kanten när ankaret ligger ovanför gridet", () => {
+    expect(resolvePopupTop({ belowTopPx: -30, aboveBottomPx: -30, popupHeight: h, containerHeight: 500 })).toBe(M)
+  })
+
+  it("faller tillbaka på övre marginalen när containern är mindre än popupen", () => {
+    expect(resolvePopupTop({ belowTopPx: 50, aboveBottomPx: 50, popupHeight: h, containerHeight: 100 })).toBe(M)
+  })
+})
+
+describe("MonthCalendar -- popupen hålls inom gridet", () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  function rect(left: number, top: number, width: number, height: number): DOMRect {
+    return { left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => ({}) } as DOMRect
+  }
+
+  // jsdom har ingen layout: simulera ett grid med given bredd och en datumknapp på given plats
+  function mockLayout({
+    gridWidth,
+    buttonLeft,
+    gridHeight = 600,
+    buttonTop = 40,
+    popupHeight = 110,
+  }: {
+    gridWidth: number
+    buttonLeft: number
+    gridHeight?: number
+    buttonTop?: number
+    popupHeight?: number
+  }) {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      if (this.classList.contains("relative") && this.classList.contains("grid-cols-7")) {
+        return rect(0, 0, gridWidth, gridHeight)
+      }
+      if (this.matches("button[data-day-button]")) return rect(buttonLeft, buttonTop, 20, 20)
+      if (this.getAttribute("role") === "dialog") return rect(0, 0, 192, popupHeight)
+      return rect(0, 0, 0, 0)
+    })
+  }
+
+  function popupLeft(): string {
+    return screen.getByRole("dialog", { name: /ny bokning 14 oktober/i }).style.left
+  }
+
+  it("popupens bredd sätts från samma konstant som klämningen använder", async () => {
+    mockLayout({ gridWidth: 1000, buttonLeft: 490 })
+    const user = userEvent.setup()
+    renderMonth()
+    screen.getByRole("button", { name: "Ny bokning 14 oktober" }).focus()
+    await user.keyboard("{Enter}")
+    const dialog = screen.getByRole("dialog", { name: /ny bokning 14 oktober/i })
+    expect((dialog.firstElementChild as HTMLElement).style.width).toBe("192px")
+  })
+
+  it("tangentbord: vänsterkolumn (knappen nära vänsterkanten) ger popup inom gridet", async () => {
+    mockLayout({ gridWidth: 1000, buttonLeft: 8 })
+    const user = userEvent.setup()
+    renderMonth()
+    screen.getByRole("button", { name: "Ny bokning 14 oktober" }).focus()
+    await user.keyboard("{Enter}")
+    expect(popupLeft()).toBe("96px")
+  })
+
+  it("tangentbord: högerkolumn ger popup inom gridet", async () => {
+    mockLayout({ gridWidth: 1000, buttonLeft: 960 })
+    const user = userEvent.setup()
+    renderMonth()
+    screen.getByRole("button", { name: "Ny bokning 14 oktober" }).focus()
+    await user.keyboard("{Enter}")
+    expect(popupLeft()).toBe("904px")
+  })
+
+  it("tangentbord: mittkolumn behåller knappens mittläge", async () => {
+    mockLayout({ gridWidth: 1000, buttonLeft: 490 })
+    const user = userEvent.setup()
+    renderMonth()
+    screen.getByRole("button", { name: "Ny bokning 14 oktober" }).focus()
+    await user.keyboard("{Enter}")
+    expect(popupLeft()).toBe("500px")
+  })
+
+  it("mus: klick nära vänsterkanten ger popup inom gridet", () => {
+    mockLayout({ gridWidth: 1000, buttonLeft: 8 })
+    renderMonth()
+    const cell = screen.getByRole("button", { name: "Ny bokning 14 oktober" }).closest("div.relative")!
+    fireEvent.click(cell, { clientX: 5, clientY: 80, detail: 1 })
+    expect(popupLeft()).toBe("96px")
+  })
+
+  it("mus: klick nära högerkanten ger popup inom gridet", () => {
+    mockLayout({ gridWidth: 1000, buttonLeft: 960 })
+    renderMonth()
+    const cell = screen.getByRole("button", { name: "Ny bokning 14 oktober" }).closest("div.relative")!
+    fireEvent.click(cell, { clientX: 995, clientY: 80, detail: 1 })
+    expect(popupLeft()).toBe("904px")
+  })
+
+  it("mus: klick i mitten placerar popupen vid klickpunkten", () => {
+    mockLayout({ gridWidth: 1000, buttonLeft: 490 })
+    renderMonth()
+    const cell = screen.getByRole("button", { name: "Ny bokning 14 oktober" }).closest("div.relative")!
+    fireEvent.click(cell, { clientX: 400, clientY: 80, detail: 1 })
+    expect(popupLeft()).toBe("400px")
+  })
+})
+
+describe("MonthCalendar -- popupen hålls inom gridet vertikalt", () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  const M = POPUP_EDGE_MARGIN_PX
+  const popupHeight = 110
+
+  function rect(left: number, top: number, width: number, height: number): DOMRect {
+    return { left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => ({}) } as DOMRect
+  }
+
+  function mockLayout(o: { gridWidth: number; gridHeight: number; buttonLeft: number; buttonTop: number }) {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      if (this.classList.contains("relative") && this.classList.contains("grid-cols-7")) {
+        return rect(0, 0, o.gridWidth, o.gridHeight)
+      }
+      if (this.matches("button[data-day-button]")) return rect(o.buttonLeft, o.buttonTop, 20, 20)
+      if (this.getAttribute("role") === "dialog") return rect(0, 0, 192, popupHeight)
+      return rect(0, 0, 0, 0)
+    })
+  }
+
+  function dialog() {
+    return screen.getByRole("dialog", { name: /ny bokning 14 oktober/i })
+  }
+
+  // Popupens avsedda container är gridet: hela popupen ska ligga inom [M, gridHeight - M]
+  function expectInsideGrid(gridHeight: number) {
+    const top = parseFloat(dialog().style.top)
+    expect(top).toBeGreaterThanOrEqual(M)
+    expect(top + popupHeight).toBeLessThanOrEqual(gridHeight - M)
+  }
+
+  async function openWithKeyboard() {
+    const user = userEvent.setup()
+    renderMonth()
+    screen.getByRole("button", { name: "Ny bokning 14 oktober" }).focus()
+    await user.keyboard("{Enter}")
+    return user
+  }
+
+  function openWithMouse(clientX: number, clientY: number) {
+    renderMonth()
+    const cell = screen.getByRole("button", { name: "Ny bokning 14 oktober" }).closest("div.relative")!
+    fireEvent.click(cell, { clientX, clientY, detail: 1 })
+  }
+
+  it("första veckoraden: tangentbord placerar popupen nedåt under datumknappen", async () => {
+    mockLayout({ gridWidth: 1000, gridHeight: 500, buttonLeft: 490, buttonTop: 20 })
+    await openWithKeyboard()
+    expect(dialog().style.top).toBe("40px")
+    expectInsideGrid(500)
+  })
+
+  it("sista veckoraden: tangentbord vänder popupen uppåt så att den ryms", async () => {
+    mockLayout({ gridWidth: 1000, gridHeight: 500, buttonLeft: 490, buttonTop: 440 })
+    await openWithKeyboard()
+    // underkant vid datumknappens överkant: 440 - 110
+    expect(dialog().style.top).toBe("330px")
+    expectInsideGrid(500)
+  })
+
+  it("sista veckoraden: mus vänder popupen uppåt vid klickpunkten", () => {
+    mockLayout({ gridWidth: 1000, gridHeight: 500, buttonLeft: 490, buttonTop: 440 })
+    openWithMouse(400, 480)
+    expect(dialog().style.top).toBe("370px")
+    expectInsideGrid(500)
+  })
+
+  it("mus i mitten av gridet: popupen ligger kvar nedåt vid klickpunkten", () => {
+    mockLayout({ gridWidth: 1000, gridHeight: 500, buttonLeft: 490, buttonTop: 200 })
+    openWithMouse(400, 200)
+    expect(dialog().style.top).toBe("200px")
+  })
+
+  it("sista raden + vänsterkant: både horisontell och vertikal placering hålls inom gridet", async () => {
+    mockLayout({ gridWidth: 1000, gridHeight: 500, buttonLeft: 8, buttonTop: 440 })
+    await openWithKeyboard()
+    expect(dialog().style.left).toBe("96px")
+    expect(dialog().style.top).toBe("330px")
+    expectInsideGrid(500)
+  })
+
+  it("sista raden + högerkant: både horisontell och vertikal placering hålls inom gridet", async () => {
+    mockLayout({ gridWidth: 1000, gridHeight: 500, buttonLeft: 960, buttonTop: 440 })
+    await openWithKeyboard()
+    expect(dialog().style.left).toBe("904px")
+    expect(dialog().style.top).toBe("330px")
+    expectInsideGrid(500)
+  })
+
+  it("liten mobilyta (328 x 400): högerkant på sista raden ryms horisontellt och vertikalt", async () => {
+    mockLayout({ gridWidth: 328, gridHeight: 400, buttonLeft: 300, buttonTop: 340 })
+    await openWithKeyboard()
+    expect(dialog().style.left).toBe("232px")
+    expect(dialog().style.top).toBe("230px")
+    expectInsideGrid(400)
+  })
+
+  it("liten mobilyta: första raden vid vänsterkanten behåller placeringen nedåt", async () => {
+    mockLayout({ gridWidth: 328, gridHeight: 400, buttonLeft: 6, buttonTop: 14 })
+    await openWithKeyboard()
+    expect(dialog().style.left).toBe("96px")
+    expect(dialog().style.top).toBe("34px")
+    expectInsideGrid(400)
+  })
+
+  it("åtgärdsknapparna finns kvar i den uppvända popupen och går att använda", async () => {
+    mockLayout({ gridWidth: 1000, gridHeight: 500, buttonLeft: 490, buttonTop: 440 })
+    const user = await openWithKeyboard()
+    const d = dialog()
+    expect(within(d).getByRole("button", { name: "Skapa bokning" })).toBeVisible()
+    expect(within(d).getByRole("button", { name: "Ändra tillgänglighet" })).toBeVisible()
+    await user.click(within(d).getByRole("button", { name: "Ändra tillgänglighet" }))
+    // renderMonth skickar onDateClick; popupen stängs
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+  })
+
+  it("popupen klämms in på exakt maxläge när gridet är för litet för båda riktningarna", async () => {
+    // gridHeight 130, popup 110: maxTop = 130 - 110 - M; uppåt ger negativt läge
+    mockLayout({ gridWidth: 1000, gridHeight: 130, buttonLeft: 490, buttonTop: 100 })
+    await openWithKeyboard()
+    expect(parseFloat(dialog().style.top)).toBe(Math.max(M, 130 - popupHeight - M))
+  })
+
+  it("den uppvända popupen täcker inte datumknappen som öppnade den", async () => {
+    mockLayout({ gridWidth: 1000, gridHeight: 500, buttonLeft: 490, buttonTop: 440 })
+    await openWithKeyboard()
+    const top = parseFloat(dialog().style.top)
+    expect(top + popupHeight).toBeLessThanOrEqual(440)
+  })
+
+  it("mus med ankaret ovanför gridet håller marginal mot övre kanten", () => {
+    mockLayout({ gridWidth: 1000, gridHeight: 500, buttonLeft: 490, buttonTop: 20 })
+    openWithMouse(400, -5)
+    expect(dialog().style.top).toBe(`${M}px`)
+  })
+
+  it("Escape stänger den uppvända popupen och återställer fokus till datumknappen", async () => {
+    mockLayout({ gridWidth: 1000, gridHeight: 500, buttonLeft: 490, buttonTop: 440 })
+    const user = await openWithKeyboard()
+    await user.keyboard("{Escape}")
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Ny bokning 14 oktober" })).toHaveFocus()
+  })
+
+  it("stäng och öppna igen: placeringen räknas om och ingen gammal position ligger kvar", async () => {
+    const layout = { gridWidth: 1000, gridHeight: 500, buttonLeft: 490, buttonTop: 440 }
+    mockLayout(layout)
+    const user = await openWithKeyboard()
+    expect(dialog().style.top).toBe("330px")
+    await user.keyboard("{Escape}")
+    layout.buttonTop = 20 // nu en rad högre upp
+    await user.keyboard("{Enter}")
+    expect(dialog().style.top).toBe("40px")
+  })
+
+  it("byte direkt mellan två popuper räknar om placeringen från det nya ankaret", async () => {
+    const layout = { gridWidth: 1000, gridHeight: 500, buttonLeft: 490, buttonTop: 440 }
+    mockLayout(layout)
+    const user = await openWithKeyboard()
+    expect(dialog().style.top).toBe("330px")
+    // öppna en annan dag medan den första popupen fortfarande är öppen
+    layout.buttonTop = 20
+    const other = screen.getByRole("button", { name: "Ny bokning 15 oktober" })
+    other.focus()
+    await user.keyboard("{Enter}")
+    const d = screen.getByRole("dialog", { name: /ny bokning 15 oktober/i })
+    expect(d.style.top).toBe("40px")
   })
 })
