@@ -3,7 +3,7 @@ title: "Equinet -- Dokumentationsindex"
 description: "Centralt navigeringsdokument for all projektdokumentation"
 category: root
 status: active
-last_updated: 2026-09-29
+last_updated: 2026-10-07
 sections:
   - Arkitektur
   - Operations
@@ -44,6 +44,8 @@ sections:
 | [ios-architecture-review.md](ios-architecture-review.md) | iOS-app -- arkitektur, lager, hotspots |
 | [ios-code-quality-review.md](ios-code-quality-review.md) | iOS-app -- kodkvalitet, mönster, testbarhet |
 | [ios-refactoring-opportunities.md](ios-refactoring-opportunities.md) | iOS-app -- 13 prioriterade förbättringar |
+| [architecture/ios-api-contract-study.md](architecture/ios-api-contract-study.md) | iOS-API-kontraktsförstudie: endpoints, brygga, push, widget, testgap, triggers för repo-utbrytning |
+| [plans/ios-repo-extraction-plan.md](plans/ios-repo-extraction-plan.md) | Parkerad plan: utbrytning av iOS till eget repo |
 
 ## Operations
 

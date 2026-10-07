@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Kanonisk backlog för Equinet. Alla kända stories, uppgifter och beslut. status.md pekar hit; roadmap.md är den strategiska vyn."
 category: sprint
 status: active
-last_updated: 2026-09-27
+last_updated: 2026-10-07
 tags: [backlog, roadmap, planning]
 sections:
   - Aktiva produktspår
@@ -212,6 +212,19 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Hjälpcentral | help_center | Låg | Inget |
 
 **Kundskärmar (alla WebView):** Bokningar, hästar, gruppbokningar, profil, FAQ, hjälp, export.
+
+### iOS-kontrakt och repo-utbrytning
+
+> Förstudie 2026-10-07: [ios-api-contract-study.md](../architecture/ios-api-contract-study.md). **Beslut: iOS ligger kvar i monorepot** tills minst en trigger inträffar (självständig releasecykel, separat team/ägarskap, iOS-CI belastar huvudrepot väsentligt, separata åtkomstbehörigheter, versionerat och oberoende verifierbart API-kontrakt, monorepots storlek/verktygsprestanda blir ett konkret problem). Parkerad migrationsplan: [ios-repo-extraction-plan.md](../plans/ios-repo-extraction-plan.md).
+
+| Story | Effort | Beskrivning |
+|-------|--------|-------------|
+| Repo-utbrytning av `ios/` (PARKERAD, trigger-styrd) | Se plan | Kräver Johans godkännande per steg. Checkpoint-SHA, Git-bundle, temporär klon, secret scan före push, parallellperiod med en källa, separat reversibel PR som tar bort `ios/`. |
+| Fixa widget-svarskontrakt | 1-2h | Backend skickar nästlat `customer`/`service`, iOS `WidgetBooking` kräver platta fält: avkodningen fallerar tyst (verifierat med swiftc). Fixa + fixture-test båda sidor. Studie Fynd 1. |
+| Ta bort `mobile-token`-rest | 1h | `requestMobileTokenForNative` anropar `/api/auth/mobile-token` som inte finns; iOS ignorerar `requestMobileToken`. Rensa även Keychain-servicenamn och rate-limit-prefix. Studie Fynd 2. |
+| Verifiera `APNS_BUNDLE_ID` | 30 min | Kod-default och `.env.example` säger `com.equinet.app`, appen är `com.equinet.Equinet`. Kontrollera att miljövariabeln är satt; överväg test. Studie Fynd 3. |
+| Kontraktsfixtures + kontraktstester | 1-2 dagar | `contracts/ios/` med delade JSON-fixtures, Vitest (route) + XCTest (Codable) mot samma filer; push- och widgetpayload; gruppbokningsroutes saknar tester. Studie "Testgap". |
+| Versionshandshake | 0.5 dag | iOS skickar `X-App-Version`; backend loggar och kan svara 426 på `/api/native/*` vid min-version. Börja med loggning. Billigast innan första release. |
 
 ### iOS övrigt
 
