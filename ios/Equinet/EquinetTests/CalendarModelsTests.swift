@@ -252,6 +252,49 @@ final class CalendarModelsTests: XCTestCase {
         XCTAssertEqual(decoded.serviceName, "Ridlektion")
     }
 
+    // MARK: - Widget API contract (shared fixture)
+
+    /// Decodes the same fixture the backend route test asserts against
+    /// (contracts/ios/widget-next-booking.json), so the two cannot drift apart.
+    private func widgetFixtureData(_ key: String) throws -> Data {
+        let fixtureURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()  // EquinetTests
+            .deletingLastPathComponent()  // Equinet
+            .deletingLastPathComponent()  // ios
+            .deletingLastPathComponent()  // repo root
+            .appendingPathComponent("contracts/ios/widget-next-booking.json")
+        let fixture = try JSONSerialization.jsonObject(with: Data(contentsOf: fixtureURL)) as? [String: Any]
+        let caseObject = try XCTUnwrap(fixture?[key], "Missing fixture case \(key)")
+        return try JSONSerialization.data(withJSONObject: caseObject)
+    }
+
+    func testWidgetBookingResponseDecodesUpcomingFixture() throws {
+        let response = try JSONDecoder().decode(
+            WidgetBookingResponse.self, from: widgetFixtureData("upcoming")
+        )
+
+        let booking = try XCTUnwrap(response.booking)
+        XCTAssertEqual(booking.id, "booking-1")
+        XCTAssertEqual(booking.bookingDate, "2026-10-08T00:00:00.000Z")
+        XCTAssertEqual(booking.startTime, "10:00")
+        XCTAssertEqual(booking.endTime, "11:00")
+        XCTAssertEqual(booking.status, "confirmed")
+        XCTAssertEqual(booking.horseName, "Blansen")
+        XCTAssertEqual(booking.customerFirstName, "Anna")
+        XCTAssertEqual(booking.customerLastName, "Andersson")
+        XCTAssertEqual(booking.serviceName, "Hovslagare")
+        XCTAssertEqual(response.updatedAt, "2026-10-07T08:00:00.000Z")
+    }
+
+    func testWidgetBookingResponseDecodesEmptyFixture() throws {
+        let response = try JSONDecoder().decode(
+            WidgetBookingResponse.self, from: widgetFixtureData("empty")
+        )
+
+        XCTAssertNil(response.booking)
+        XCTAssertEqual(response.updatedAt, "2026-10-07T08:00:00.000Z")
+    }
+
     // MARK: - WidgetData
 
     func testWidgetDataEncodesAndDecodesWithNilBooking() throws {
