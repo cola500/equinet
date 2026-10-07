@@ -33,7 +33,7 @@ sections:
 - **46 operationer (metod + sökväg), ca 25 distinkta sökvägar** anropas av iOS (45 med auth, 1 mot publika `/api/feature-flags`), plus Supabase Auth direkt via Swift SDK. 29 `route.ts` ligger under `src/app/api/native/`; 2 av dem (`help`, `help/[slug]`) anropas inte av iOS.
 - **Det finns inget maskinläsbart kontrakt.** Ingen OpenAPI/schemafil, handskrivna Codable-modeller, ingen delad fixture, ingen versionshandshake (ingen app-version skickas, ingen min-version kontrolleras).
 - **Starkaste kopplingen är inte REST-API:et utan WebView:** appen laddar ca 20 webbsidor (`/provider/*`, `/login`, `/dashboard`), injicerar CSS/viewport-script och pratar med webben via en JS-brygga. Webbändringar kan bryta appen utan att något API ändras.
-- **Två verkliga kontraktsbrott hittades** (se [Fynd](#fynd)): widgetens svarsformat matchar inte iOS-modellen (verifierat), och webben anropar en endpoint som inte finns (`/api/auth/mobile-token`).
+- **Två verkliga kontraktsbrott hittades** (se [Fynd](#fynd)): widgetens svarsformat matchade inte iOS-modellen (verifierat; åtgärdat i en separat PR) och webben anropar en endpoint som inte finns (`/api/auth/mobile-token`).
 - **Rekommenderad modell:** manuellt dokumenterat kontrakt + delade JSON-fixtures som testas från båda hållen (Vitest + XCTest) + en liten versionshandshake. Ingen OpenAPI-generering eller Swift-klientgenerering nu.
 
 ## Metod och begränsningar
@@ -129,7 +129,7 @@ Alla rader: auth Bearer, felhantering enligt tabellen ovan, om inget annat står
 |---|----------------|------|----------|---------------|-------|
 | 42 | POST `/api/device-tokens` | token registrerad | **404 om `push_notifications` av**; 409 om token tillhör annan användare; 429 vid tokengräns | Ja / nej | V |
 | 43 | DELETE `/api/device-tokens` | tom/ok | samma flagga | Ja / nej | V |
-| 44 | GET `/api/widget/next-booking` | `{ booking, updatedAt }` | **Bryter mot iOS-modellen, se Fynd 1** | Ja (verifierar nästat format) / nej | B |
+| 44 | GET `/api/widget/next-booking` | `{ booking, updatedAt }`, `booking` platt (se [Widgetdata](#widgetdata)) | Åtgärdat, se Fynd 1 | Ja (fixture) / ja (fixture) | K |
 | 45 | GET `/api/feature-flags` | `{ flags: { [namn]: bool } }` | Publik, ingen auth, `no-store` | Ja / ja (APIClientTests) | S |
 | 46 | POST `/api/auth/native-session-exchange` | `{ success: true }` + `Set-Cookie` | Se [Övriga kontrakt](#övriga-kontrakt) | Ja / ja (AuthManagerTests) | B |
 
@@ -166,7 +166,28 @@ Kontraktspunkter som ingen testar mot varandra: nycklarna `url`/`bookingId`/`aps
 
 ### Widgetdata
 
-Appen hämtar `GET /api/widget/next-booking` (bakgrundsuppdatering i `AppDelegate`, och via `BridgeHandler`) och lagrar `WidgetData` i App Group `group.com.equinet.shared` (`SharedDataManager`). Widgeten läser bara lokalt. Kontraktet är alltså: svarsformatet (se Fynd 1) plus App Group-ID och `WidgetData`-formatet (internt för appen, versionskänsligt vid app-uppdatering eftersom widget och app delar lagring).
+Appen hämtar `GET /api/widget/next-booking` (bakgrundsuppdatering i `AppDelegate`, och via `BridgeHandler`) och lagrar `WidgetData` i App Group `group.com.equinet.shared` (`SharedDataManager`). Widgeten läser bara lokalt. Kontraktet är alltså: svarsformatet plus App Group-ID och `WidgetData`-formatet (internt för appen, versionskänsligt vid app-uppdatering eftersom widget och app delar lagring).
+
+Fastställt svarsformat (fixture: `contracts/ios/widget-next-booking.json`, fallen `upcoming` och `empty`):
+
+```json
+{
+  "booking": {
+    "id": "booking-1",
+    "bookingDate": "2026-10-08T00:00:00.000Z",
+    "startTime": "10:00",
+    "endTime": "11:00",
+    "status": "confirmed",
+    "horseName": "Blansen",
+    "customerFirstName": "Anna",
+    "customerLastName": "Andersson",
+    "serviceName": "Hovslagare"
+  },
+  "updatedAt": "2026-10-07T08:00:00.000Z"
+}
+```
+
+`booking` är `null` när ingen kommande bokning (status `confirmed`/`pending`) finns; `horseName` är `null` om bokningen saknar häst. Fel: 401 `{error}` utan giltig auth, 429 vid rate limit, 500 `{error}`. Skyddas av `src/app/api/widget/next-booking/route.test.ts` och `CalendarModelsTests.testWidgetBookingResponseDecodes{Upcoming,Empty}Fixture`.
 
 ### Deep links och callbacks
 
@@ -187,7 +208,7 @@ Finns inte. iOS skickar ingen `X-App-Version`/User-Agent-header, backend har ing
 
 ## Fynd
 
-1. **Widget-kontraktet är trasigt (verifierat).** Backend returnerar `booking.customer.{firstName,lastName}` och `booking.service.name` (nästlat, även i backendens test), men iOS `WidgetBooking` kräver platta fält `customerFirstName`, `customerLastName`, `serviceName` utan `CodingKeys`. Avkodning av ett svar i backendens format ger `keyNotFound: customerFirstName` (kört med `swiftc` mot isolerade structar). Båda anropsplatserna fångar felet och loggar (`Widget background refresh failed` / generisk catch), så widgeten får sannolikt aldrig bokningsdata och felet syns inte för användaren. Varken backend- eller iOS-tester fångar det eftersom ingen testar mot den andras format. Detta är ett produktionsrelevant fel, inte bara ett dokumentationsgap.
+1. **Widget-kontraktet var trasigt (verifierat). STATUS: åtgärdat i PR `fix/widget-next-booking-contract`.** Backend skickar nu det platta formatet nedan; se [Widgetdata](#widgetdata). Ursprungsbeskrivning: Backend returnerar `booking.customer.{firstName,lastName}` och `booking.service.name` (nästlat, även i backendens test), men iOS `WidgetBooking` kräver platta fält `customerFirstName`, `customerLastName`, `serviceName` utan `CodingKeys`. Avkodning av ett svar i backendens format ger `keyNotFound: customerFirstName` (kört med `swiftc` mot isolerade structar). Felet uppstod bara när en kommande bokning fanns (`booking: null` avkodades korrekt) och gällde sedan första versionen (#70). Båda anropsplatserna fångar felet och loggar (`Widget background refresh failed` / generisk catch), så widgeten fick aldrig bokningsdata och felet syntes inte för användaren. Varken backend- eller iOS-tester fångar det eftersom ingen testar mot den andras format. Detta är ett produktionsrelevant fel, inte bara ett dokumentationsgap.
 2. **Död endpoint i webben.** `src/lib/native-bridge.ts` (`requestMobileTokenForNative`, anropas från `login/page.tsx`) gör `POST /api/auth/mobile-token`, men routen finns inte. iOS hanterar inte meddelandet `requestMobileToken` (går till "Unknown message type"). Felet sväljs (`.catch(() => {})`). Rester: rate limiter-prefixet `ratelimit:mobile-token`, Keychain-servicenamnet `com.equinet.mobile-token`.
 3. **APNs-topic-risk.** `PushDeliveryService` faller tillbaka på `APNS_BUNDLE_ID || "com.equinet.app"`, `.env.example` säger `com.equinet.app`, men appens bundle-ID är `com.equinet.Equinet` (och `docs/operations/apns-setup.md` anger det senare). Är variabeln inte satt i miljön skickas push till fel topic. Inte kontrollerat mot Vercel-miljöerna i denna förstudie.
 4. **`Retry-After` läses men skickas inte.** iOS läser headern vid 429; i granskade routes och `rate-limit.ts` sätts den inte, så `retryAfter` är alltid `nil`.
@@ -206,7 +227,7 @@ Klassning: **S** stabil/bakåtkompatibel, **K** intern men bör formaliseras, **
 | K | Merparten av CRUD-routes (rader 2, 3, 5-24, 27-31, 33-35, 37-41): enkla `{wrapper}`-former, Zod-validerade, backend-testade men utan iOS-avkodningstest |
 | T | Dashboard, insights (aggregat formade efter vyn), `provider/profile` (returnerar provider-objektet utan stabil projektion): nya fält är oskadliga, men omformning slår direkt mot appen |
 | V | `PUT /api/bookings/{id}` (delas med webben, statusmaskin), device-tokens och annons-cancel (flaggstyrda, 404-semantik), push-payloadens nycklar/kategorier |
-| B | WebView-bryggan + de ~20 inlästa webbvägarna, session exchange (header/cookie/domän), widget-svaret (trasigt idag), push-topic/bundle-ID, hårdkodad miljökonfiguration (URL:er, Supabase, anon-nycklar), avsaknad av versionshandshake |
+| B | WebView-bryggan + de ~20 inlästa webbvägarna, session exchange (header/cookie/domän), push-topic/bundle-ID, hårdkodad miljökonfiguration (URL:er, Supabase, anon-nycklar), avsaknad av versionshandshake |
 
 **Kan släppas oberoende av iOS-release** (gäller så länge appen är ny nog att ignorera okända fält, vilket standard-`JSONDecoder` gör): nya fält i svar, nya endpoints, interna refaktoreringar bakom samma svar, ändrade felmeddelandetexter, snävare rate limits inom rimliga värden, nya push-kategorier som iOS ignorerar.
 
@@ -236,11 +257,11 @@ Detta ger oberoende verifiering av kontraktet från båda hållen, men utan gene
 
 ## Testgap
 
-Prioriterad ordning (värde per insats). Inget av detta är implementerat.
+Prioriterad ordning (värde per insats). Rad 1 är implementerad (se Fynd 1); resten är inte implementerat.
 
 | Prio | Gap | Förslag | Skydd mot |
 |------|-----|---------|-----------|
-| 1 | Widget: backend och iOS testar olika format; felet i produktion är tyst | Fixture `widget-next-booking.json` + Vitest på routen + XCTest som avkodar `WidgetBookingResponse`. Fixa först felet (egen slice). | Request/response-format |
+| 1 | Widget: backend och iOS testar olika format; felet i produktion är tyst | Fixture `widget-next-booking.json` + Vitest på routen + XCTest som avkodar `WidgetBookingResponse`. **Klart:** gemensam fixture `contracts/ios/widget-next-booking.json` verifieras av `route.test.ts` (Vitest) och `CalendarModelsTests` (XCTest). | Request/response-format |
 | 2 | De flesta iOS-modeller saknar avkodningstest mot ett riktigt svar (bara Bookings, Calendar, Dashboard och FeatureFlags har det enligt grep av `decode(` i testfilerna; ViewModel-tester bedöms inte avkoda riktiga svar, ej verifierat i detalj) | Fixtures för dashboard, calendar, bookings, customers/horses/notes, services, profile, reviews, insights, due-for-service, announcements, group-bookings; en XCTest per modell | Request/response, bakåtkompatibilitet |
 | 3 | Push-payload testas bara på backendsidan (`PushDeliveryService.test.ts`) och iOS-hanteringen mot egna mockar | Fixture för `BOOKING_REQUEST`- och `MESSAGE`-payload; backendtest bygger payloaden och jämför mot fixturen; iOS-test matar `userInfo` ur samma fixture till action-hanteringen. Lägg till test som verifierar att `APNS_BUNDLE_ID` aldrig faller tillbaka på ett värde som inte är appens bundle-ID. | Push-payload |
 | 4 | Session exchange: 200 utan cookies maskerar fel | Backendtest för saknad `X-Refresh-Token` och `setSession`-fel (beslut först: ska det bli 4xx?), iOS-test för "200 utan cookies" | WebView-session exchange |

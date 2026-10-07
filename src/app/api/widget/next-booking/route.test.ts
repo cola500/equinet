@@ -5,6 +5,8 @@
  */
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { NextRequest } from "next/server"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 
 vi.mock("@/lib/auth-dual", () => ({
   getAuthUser: vi.fn(),
@@ -32,15 +34,25 @@ function createRequest() {
   })
 }
 
+// Shared contract fixture, also decoded by the iOS test (CalendarModelsTests).
+const fixture = JSON.parse(
+  readFileSync(join(process.cwd(), "contracts/ios/widget-next-booking.json"), "utf-8")
+) as {
+  upcoming: { booking: Record<string, string | null>; updatedAt: string }
+  empty: { booking: null; updatedAt: string }
+}
+
+// Database row shape (nested relations) that matches the fixture's booking.
+const fb = fixture.upcoming.booking
 const mockBooking = {
-  id: "booking-1",
-  bookingDate: new Date("2026-03-10"),
-  startTime: "10:00",
-  endTime: "11:00",
-  status: "confirmed",
-  horseName: "Blansen",
-  customer: { firstName: "Anna", lastName: "Andersson" },
-  service: { name: "Hovslagare" },
+  id: fb.id,
+  bookingDate: new Date(fb.bookingDate as string),
+  startTime: fb.startTime,
+  endTime: fb.endTime,
+  status: fb.status,
+  horseName: fb.horseName,
+  customer: { firstName: fb.customerFirstName, lastName: fb.customerLastName },
+  service: { name: fb.serviceName },
 }
 
 describe("GET /api/widget/next-booking", () => {
@@ -66,9 +78,28 @@ describe("GET /api/widget/next-booking", () => {
     expect(body.booking).toBeDefined()
     expect(body.booking.id).toBe("booking-1")
     expect(body.booking.startTime).toBe("10:00")
-    expect(body.booking.customer.firstName).toBe("Anna")
-    expect(body.booking.service.name).toBe("Hovslagare")
     expect(body.updatedAt).toBeDefined()
+  })
+
+  it("matches the shared contract fixture for an upcoming booking (flat format)", async () => {
+    const res = await GET(createRequest())
+    const body = await res.json()
+    expect(new Date(body.updatedAt).toISOString()).toBe(body.updatedAt)
+    expect({ ...body, updatedAt: fixture.upcoming.updatedAt }).toEqual(fixture.upcoming)
+  })
+
+  it("matches the shared contract fixture when there is no upcoming booking", async () => {
+    mockFindFirst.mockResolvedValue(null)
+    const res = await GET(createRequest())
+    const body = await res.json()
+    expect({ ...body, updatedAt: fixture.empty.updatedAt }).toEqual(fixture.empty)
+  })
+
+  it("returns horseName as null when the booking has no horse", async () => {
+    mockFindFirst.mockResolvedValue({ ...mockBooking, horseName: null } as never)
+    const res = await GET(createRequest())
+    const body = await res.json()
+    expect(body.booking.horseName).toBeNull()
   })
 
   it("returns null booking when no upcoming bookings", async () => {

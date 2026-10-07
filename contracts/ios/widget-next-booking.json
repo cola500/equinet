@@ -1,0 +1,20 @@
+{
+  "upcoming": {
+    "booking": {
+      "id": "booking-1",
+      "bookingDate": "2026-10-08T00:00:00.000Z",
+      "startTime": "10:00",
+      "endTime": "11:00",
+      "status": "confirmed",
+      "horseName": "Blansen",
+      "customerFirstName": "Anna",
+      "customerLastName": "Andersson",
+      "serviceName": "Hovslagare"
+    },
+    "updatedAt": "2026-10-07T08:00:00.000Z"
+  },
+  "empty": {
+    "booking": null,
+    "updatedAt": "2026-10-07T08:00:00.000Z"
+  }
+}

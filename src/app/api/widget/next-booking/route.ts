@@ -69,8 +69,21 @@ export async function GET(request: NextRequest) {
       bookingId: booking?.id ?? null,
     })
 
+    // Flat shape expected by iOS WidgetBooking (contracts/ios/widget-next-booking.json)
     return NextResponse.json({
-      booking: booking ?? null,
+      booking: booking
+        ? {
+            id: booking.id,
+            bookingDate: booking.bookingDate,
+            startTime: booking.startTime,
+            endTime: booking.endTime,
+            status: booking.status,
+            horseName: booking.horseName,
+            customerFirstName: booking.customer.firstName,
+            customerLastName: booking.customer.lastName,
+            serviceName: booking.service.name,
+          }
+        : null,
       updatedAt: new Date().toISOString(),
     })
   } catch (error) {
