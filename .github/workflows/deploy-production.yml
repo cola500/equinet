@@ -33,7 +33,7 @@ name: Deploy to Production (manual)
 #   dry_run -- ingen av dem muterar något i Vercel, och det gör dry_run till
 #   det enda sättet att bevisa att VERCEL_TOKEN faktiskt fungerar, t.ex.
 #   efter en tokenrotation, utan att någonsin röra produktionsmiljön). Bara
-#   det faktiska `vercel deploy`-steget och health-checken hoppas över.
+#   det faktiska `vercel deploy`-steget och verifieringen efter deploy hoppas över.
 # - `concurrency` (workflow-brett) förhindrar att två produktionsdeployer
 #   körs samtidigt -- en andra dispatch köar istället för att avbryta eller
 #   krocka med en pågående.
@@ -173,7 +173,7 @@ jobs:
           echo "Quality Gate:   run ${{ needs.validate.outputs.quality_gate_run_id }}"
           echo "dry_run:        ${{ inputs.dry_run }}"
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            echo "::notice::dry_run=true -- Pull och Build körs på riktigt (verifierar att VERCEL_TOKEN fungerar, mutar inget), men Deploy och health check hoppas över. Ingen produktionseffekt."
+            echo "::notice::dry_run=true -- Pull och Build körs på riktigt (verifierar att VERCEL_TOKEN fungerar, mutar inget), men Deploy och verifieringen efter deploy hoppas över. Ingen produktionseffekt."
           fi
 
       - name: Checkout exact SHA
@@ -197,19 +197,126 @@ jobs:
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       # Enda muterande steget -- körs ENDAST vid dry_run=false.
+      # Sparar deployment-URL:en så att verifieringen kan fråga exakt den
+      # deploymenten via Vercels API (inte bara det publika aliaset).
       - name: Deploy
-        if: inputs.dry_run == false
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Health check
+        id: deploy
         if: inputs.dry_run == false
         run: |
-          sleep 10
-          if curl -fsS --max-time 15 "$PROD_HEALTH_URL"; then
-            echo "✓ Health check OK"
+          rc=0
+          vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} >deploy.out 2>deploy.err || rc=$?
+          cat deploy.err >&2
+          cat deploy.out
+          if [ "$rc" -ne 0 ]; then exit "$rc"; fi
+          # The deployment URL is what the CLI prints on stdout; stderr is only a fallback
+          url=$(grep -Eo 'https://[A-Za-z0-9.-]+\.vercel\.app' deploy.out | tail -1 || true)
+          if [ -z "$url" ]; then url=$(grep -Eo 'https://[A-Za-z0-9.-]+\.vercel\.app' deploy.err | tail -1 || true); fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # Verifierar i två nivåer och säger uttryckligen vad som INTE kunde verifieras:
+      #  1. Deploymentnivå via Vercels API (fungerar trots bot-skyddet): READY,
+      #     target=production, produktionsaliaset pekar på den nya deploymenten,
+      #     och commit-SHA:n matchar den begärda om API:t anger den.
+      #  2. Appnivå via HTTP mot PROD_HEALTH_URL. Vercels Security Checkpoint
+      #     (HTTP 429 + x-vercel-mitigated: challenge) blockerar automatiska anrop;
+      #     då rapporteras appen som "EJ verifierad" i stället för som OK. En app
+      #     som svarar men är ohälsosam, eller inte går att nå alls, felar steget.
+      - name: Verify deployment and health
+        if: inputs.dry_run == false
+        env:
+          DEPLOY_URL: ${{ steps.deploy.outputs.url }}
+          EXPECTED_SHA: ${{ inputs.sha }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -u
+          summary="${GITHUB_STEP_SUMMARY:-/dev/null}"
+          rollback="Se docs/operations/vercel-token-sync-and-production-deploy.md för rollback."
+          fail=0
+          rows=""
+          # Values from the Vercel API are untrusted text: strip anything that could
+          # inject workflow annotations or break the markdown table.
+          clean() { printf '%s' "$1" | tr -d '\r\n' | tr -c '[:alnum:]._:/@=-' '?' | cut -c1-120; }
+          add_row() { rows="${rows}| $1 | $2 |"$'\n'; }
+
+          host=$(clean "${DEPLOY_URL#https://}"); host="${host%%/*}"
+          prod_host="${PROD_HEALTH_URL#https://}"; prod_host="${prod_host%%/*}"
+
+          if [ -z "$host" ]; then
+            echo "::error::Ingen deployment-URL fångades från Deploy-steget -- kan inte verifiera deploymenten. $rollback"
+            add_row "Deployment" "✗ ingen URL fångades"
+            fail=1
           else
-            echo "::warning::Kunde inte nå $PROD_HEALTH_URL -- verifiera manuellt. Se docs/operations/vercel-token-sync-and-production-deploy.md för rollback."
+            # 1. Deployment level (Vercel API; independent of the bot protection)
+            state="UNKNOWN"; target=""; sha=""; alias_ok=0; resp=""
+            for attempt in 1 2 3 4 5 6; do
+              resp=$(curl -sS --max-time 20 -H "Authorization: Bearer ${VERCEL_TOKEN}" "https://api.vercel.com/v13/deployments/${host}?teamId=${VERCEL_ORG_ID}") || resp=""
+              state=$(clean "$(printf '%s' "$resp" | jq -r '.readyState // "UNKNOWN"' 2>/dev/null || echo UNKNOWN)")
+              target=$(clean "$(printf '%s' "$resp" | jq -r '.target // ""' 2>/dev/null || true)")
+              sha=$(clean "$(printf '%s' "$resp" | jq -r '.meta.githubCommitSha // ""' 2>/dev/null || true)")
+              if printf '%s' "$resp" | jq -e --arg h "$prod_host" '(.alias // []) | index($h)' >/dev/null 2>&1; then alias_ok=1; else alias_ok=0; fi
+              if [ "$state" = "READY" ] && [ "$alias_ok" = "1" ]; then break; fi
+              # A terminal state will not change, so do not keep polling
+              case "$state" in ERROR|CANCELED|DELETED) break ;; esac
+              if [ "$attempt" -lt 6 ]; then sleep 10; fi
+            done
+
+            if [ "$state" = "READY" ]; then add_row "Deployment ($host)" "✓ READY"; else
+              echo "::error::Deploymenten $host är inte READY (readyState=$state). $rollback"
+              add_row "Deployment ($host)" "✗ readyState=$state, förväntade READY"; fail=1
+            fi
+            if [ "$target" = "production" ]; then add_row "Target" "✓ production"; else
+              echo "::error::Deploymenten har target '$target', förväntade 'production'. $rollback"
+              add_row "Target" "✗ '$target', förväntade production"; fail=1
+            fi
+            if [ "$alias_ok" = "1" ]; then add_row "Alias $prod_host" "✓ pekar på den nya deploymenten"; else
+              echo "::error::Aliaset $prod_host pekar inte på den nya deploymenten. $rollback"
+              add_row "Alias $prod_host" "✗ inte tilldelat den nya deploymenten"; fail=1
+            fi
+            if [ -z "$sha" ]; then
+              echo "::warning::API-svaret anger ingen commit-SHA för deploymenten -- kunde inte bekräfta att $EXPECTED_SHA deployades."
+              add_row "Commit-SHA" "⚠ anges inte av API:t (förväntad $EXPECTED_SHA)"
+            elif [ "$sha" = "$EXPECTED_SHA" ]; then add_row "Commit-SHA" "✓ $sha"; else
+              echo "::error::Deployad commit ($sha) skiljer sig från begärd SHA ($EXPECTED_SHA). $rollback"
+              add_row "Commit-SHA" "✗ $sha, begärd $EXPECTED_SHA"; fail=1
+            fi
           fi
+
+          # 2. App level (HTTP). Retried for transient failures, but a bot challenge is final.
+          app_status="unreachable"; code="000"
+          hdr=$(mktemp); body=$(mktemp)
+          for attempt in 1 2 3; do
+            code=$(curl -sS -o "$body" -D "$hdr" -w '%{http_code}' --max-time 15 "$PROD_HEALTH_URL" 2>/dev/null) || code="000"
+            if [ "$code" = "200" ] && jq -e '.status == "ok"' "$body" >/dev/null 2>&1; then app_status="ok"; break; fi
+            # Only Vercel's bot challenge counts as "blocked"; other mitigations (deny, rate limit) are failures
+            if grep -qiE '^x-vercel-mitigated:[[:space:]]*challenge' "$hdr"; then app_status="blocked"; break; fi
+            if [ "$code" = "000" ]; then app_status="unreachable"; else app_status="unhealthy"; fi
+            if [ "$attempt" -lt 3 ]; then sleep 10; fi
+          done
+          code=$(clean "$code")
+
+          case "$app_status" in
+            ok) add_row "Appens hälsa ($PROD_HEALTH_URL)" "✓ HTTP 200, status ok" ;;
+            blocked)
+              echo "::warning::Appens hälsa EJ verifierad: Vercel Security Checkpoint (HTTP $code, x-vercel-mitigated: challenge) blockerar automatiska anrop mot $PROD_HEALTH_URL. Deploymenten är verifierad via Vercels API, men verifiera appen manuellt i en webbläsare."
+              add_row "Appens hälsa ($PROD_HEALTH_URL)" "⚠ **EJ verifierad** -- blockerad av Vercel Security Checkpoint (HTTP $code). Verifiera manuellt i en webbläsare." ;;
+            unhealthy)
+              echo "::error::Appen svarade men är ohälsosam (HTTP $code) på $PROD_HEALTH_URL. $rollback"
+              add_row "Appens hälsa ($PROD_HEALTH_URL)" "✗ HTTP $code, förväntade 200 med status ok"; fail=1 ;;
+            *)
+              echo "::error::Kunde inte nå $PROD_HEALTH_URL alls efter 3 försök. $rollback"
+              add_row "Appens hälsa ($PROD_HEALTH_URL)" "✗ kunde inte nås"; fail=1 ;;
+          esac
+
+          {
+            echo "## Produktionsverifiering"
+            echo ""
+            echo "| Kontroll | Resultat |"
+            echo "|---|---|"
+            printf '%s' "$rows"
+          } >> "$summary"
+
+          if [ "$fail" -ne 0 ]; then exit 1; fi
+          echo "✓ Verifieringen klar"
 
       - name: Dry-run complete
         if: inputs.dry_run == true

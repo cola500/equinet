@@ -4,7 +4,7 @@ description: "Driftinstruktion för scripts/sync-vercel-token.sh och scripts/dep
 category: operations
 tags: [deployment, vercel, github-actions, secrets, ci-cd]
 status: active
-last_updated: 2026-10-01
+last_updated: 2026-10-07
 related:
   - docs/operations/deployment.md
   - docs/archive/handoff-production-deploy-gate.md
@@ -63,6 +63,13 @@ Kontrollerar lokalt: ren arbetskatalog, att du står på `main`, att lokal `main
 Scriptet rör aldrig `VERCEL_TOKEN` eller någon annan hemlighet -- själva deployen körs av GitHub Actions med sin egen lagrade secret. Detta script dispatchar och bevakar bara den körningen.
 
 **Testa workflowets valideringslogik OCH att VERCEL_TOKEN fungerar, utan att deploya på riktigt:** workflowet har en egen `dry_run`-input (default `true`) som kör hela valideringen samt `vercel pull` och `vercel build` på riktigt (ingen av dem muterar något i Vercel) -- bara själva `vercel deploy`-steget och health-checken hoppas över. Det gör `dry_run` till rätt sätt att verifiera en tokenrotation: om `vercel pull` misslyckas ser du exakt samma felmeddelande som i produktionsjobbet, utan att något deployats. Trigga direkt via `gh workflow run deploy-production.yml -f sha=<sha> -f staging_verified_sha=<sha>` (utan `-f dry_run=false`). `deploy-production.sh` skickar alltid `dry_run=false` när den dispatchar, eftersom en riktig körning via scriptet redan passerat den interaktiva bekräftelsefrasen.
+
+**Verifiering efter deploy (steget "Verify deployment and health"):** efter en riktig deploy (`dry_run=false`) verifierar workflowet i två nivåer och säger uttryckligen vad som inte kunde verifieras. Resultatet står i körningens sammanfattning ("Produktionsverifiering").
+
+1. **Deploymentnivå via Vercels API** (fungerar trots bot-skyddet): deploymenten är `READY`, har `target: production`, produktionsaliaset (`equinet.johanlindengard.com`) pekar på den, och commit-SHA:n matchar den begärda (en saknad SHA i API-svaret ger bara en varning). Något av detta fel gör steget rött.
+2. **Appnivå via HTTP mot `/api/health`:** `200` med `status: ok` är grönt. En app som svarar men är ohälsosam, eller inte går att nå alls (efter tre försök), gör steget rött. **Blockerar Vercels Security Checkpoint anropet** (HTTP 429 med `x-vercel-mitigated: challenge`, vilket den gör mot automatiska anrop) rapporteras appen som **"EJ verifierad"** med en varning och inte som OK, medan deploymentnivån ändå räknas som verifierad.
+
+"EJ verifierad" innebär att deployen inte är bekräftad frisk på appnivå: öppna `https://equinet.johanlindengard.com/api/health` i en vanlig webbläsare och kontrollera `{"status":"ok","checks":{"database":"connected"}}` samt att inloggningssidan laddar. Rött steg efter lyckad deploy: följ "Rollback" nedan. För att få appnivån automatiskt grön krävs en Firewall-regel i Vercel som släpper igenom hälsokollen. Det är konfiguration utanför repot och inte gjort.
 
 ## Personligt konto -- vad det betyder
 
