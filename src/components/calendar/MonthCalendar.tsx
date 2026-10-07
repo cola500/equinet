@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useRef, useEffect } from "react"
+import { useMemo, useState, useRef, useEffect, useLayoutEffect } from "react"
 import {
   format,
   startOfMonth,
@@ -41,6 +41,33 @@ export function clampPopupLeft(leftPx: number, gridWidth: number): number {
   return Math.min(Math.max(leftPx, half), gridWidth - half)
 }
 
+// Minimum gap between the popup and the top/bottom edge of the grid it is positioned in
+export const POPUP_EDGE_MARGIN_PX = 8
+
+// Vertical placement, relative to the grid (the popup's positioned ancestor, whose
+// bottom edge is also the clip edge). Prefer below the anchor; flip above it when the
+// popup does not fit below; as a last resort clamp it inside the grid.
+export function resolvePopupTop({
+  belowTopPx,
+  aboveBottomPx,
+  popupHeight,
+  containerHeight,
+}: {
+  /** Top edge of the popup when placed below the anchor */
+  belowTopPx: number
+  /** Where the popup's bottom edge should end when placed above the anchor */
+  aboveBottomPx: number
+  popupHeight: number
+  containerHeight: number
+}): number {
+  const margin = POPUP_EDGE_MARGIN_PX
+  const maxTop = containerHeight - popupHeight - margin
+  if (belowTopPx <= maxTop) return Math.max(belowTopPx, margin)
+  const aboveTop = aboveBottomPx - popupHeight
+  if (aboveTop >= margin) return aboveTop
+  return Math.max(margin, Math.min(belowTopPx, maxTop))
+}
+
 // Konvertera JS getDay() (0=Söndag) till vårt dayOfWeek (0=Måndag)
 function jsDayToOurDay(jsDay: number): number {
   return jsDay === 0 ? 6 : jsDay - 1
@@ -65,14 +92,36 @@ export function MonthCalendar({
   const [dayPopup, setDayPopup] = useState<{
     date: string
     label: string
-    topPx: number
+    belowTopPx: number
+    aboveBottomPx: number
     leftPx: number
   } | null>(null)
+  // Final top once the popup's real height is known (measured before paint)
+  const [popupTop, setPopupTop] = useState<number | null>(null)
 
   // Stäng popup vid navigation
   useEffect(() => {
     setDayPopup(null)
   }, [currentDate])
+
+  // Measure the popup and the grid it is positioned in, then place it below the anchor,
+  // above it, or clamped inside the grid. Runs before paint so there is no visible jump.
+  useLayoutEffect(() => {
+    const grid = gridRef.current
+    const popup = popupRef.current
+    if (!dayPopup || !grid || !popup) {
+      setPopupTop(null)
+      return
+    }
+    setPopupTop(
+      resolvePopupTop({
+        belowTopPx: dayPopup.belowTopPx,
+        aboveBottomPx: dayPopup.aboveBottomPx,
+        popupHeight: popup.getBoundingClientRect().height,
+        containerHeight: grid.getBoundingClientRect().height,
+      })
+    )
+  }, [dayPopup])
 
   // Tangentbordsöppnad popup: flytta fokus till första knappen
   useEffect(() => {
@@ -204,9 +253,9 @@ export function MonthCalendar({
                       if (onTimeSlotClick) {
                         const label = format(day, "d MMMM", { locale: sv })
                         const gridRect = gridRef.current!.getBoundingClientRect()
-                        const topPx = e.clientY - gridRect.top
+                        const anchorY = e.clientY - gridRect.top
                         const leftPx = clampPopupLeft(e.clientX - gridRect.left, gridRect.width)
-                        setDayPopup({ date: dateKey, label, topPx, leftPx })
+                        setDayPopup({ date: dateKey, label, belowTopPx: anchorY, aboveBottomPx: anchorY, leftPx })
                       } else {
                         onDateClick?.(dateKey)
                       }
@@ -234,13 +283,14 @@ export function MonthCalendar({
                         // Popup centred on the date button (no pointer position for keyboard)
                         const btnRect = e.currentTarget.getBoundingClientRect()
                         const gridRect = gridRef.current!.getBoundingClientRect()
-                        const topPx = btnRect.top - gridRect.top + btnRect.height
+                        const belowTopPx = btnRect.bottom - gridRect.top
+                        const aboveBottomPx = btnRect.top - gridRect.top
                         const leftPx = clampPopupLeft(
                           btnRect.left - gridRect.left + btnRect.width / 2,
                           gridRect.width
                         )
                         focusPopupOnOpenRef.current = true
-                        setDayPopup({ date: dateKey, label: dayLabel, topPx, leftPx })
+                        setDayPopup({ date: dateKey, label: dayLabel, belowTopPx, aboveBottomPx, leftPx })
                       } else {
                         onDateClick?.(dateKey)
                       }
@@ -317,7 +367,7 @@ export function MonthCalendar({
             role="dialog"
             aria-label={`Ny bokning ${dayPopup.label}`}
             className="absolute z-30 -translate-x-1/2"
-            style={{ top: `${dayPopup.topPx}px`, left: `${dayPopup.leftPx}px` }}
+            style={{ top: `${popupTop ?? dayPopup.belowTopPx}px`, left: `${dayPopup.leftPx}px` }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="bg-white border border-green-300 rounded-lg shadow-lg px-4 py-3 text-sm" style={{ width: POPUP_WIDTH_PX }}>
