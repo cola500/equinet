@@ -3,7 +3,7 @@ title: "Release-Ready Sprint -- Checkpoint"
 description: "Löpande status, paus-/återupptagningsprotokoll och rollbackplan för sprinten som tar main från stabil baseline till en verifierad releasekandidat"
 category: operations
 status: active
-last_updated: 2026-09-29
+last_updated: 2026-10-07
 tags: [release, deployment, vercel, staging, checkpoint, rollback]
 related:
   - docs/operations/vercel-token-sync-and-production-deploy.md
@@ -44,7 +44,7 @@ Detta dokument är den enda källan till sanning för var release-ready-sprinten
 - **Deployad SHA**: `4973f6e919339b022425063bd8a280fa2bbe9b41` (produktkandidaten, oförändrad sedan Slice 3.1--3.3).
 - **Ny produktionsdeployment**: `dpl_5v8gEkuRDeg1TmWZBB6CJNuj7Shj` (`equinet-app`, target=production), `state: READY`.
 - **Workflow-körning**: `deploy-production.yml`, `dry_run=false`, run-ID `36584375136` -- `Validate deploy candidate` och `Deploy to Production` båda `success`.
-- **Nytt rollback-mål**: `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa`, SHA `4284202221f07216269659873cacf1f9b9f64f04` (PR #503) -- föregående produktionsdeployment, live genom hela release-sprinten fram till denna deploy. Finns kvar, inspekterbar, orörd.
+- **Nytt rollback-mål (historiskt, 2026-09-29)**: `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa`, SHA `4284202221f07216269659873cacf1f9b9f64f04` (PR #503) -- föregående produktionsdeployment, live genom hela release-sprinten fram till denna deploy. Finns kvar, inspekterbar, orörd. **Gäller inte längre som rollback-mål:** sedan 2026-10-07 kör produktionen `dpl_HjZ8GjTEABJe6HkzoB3qJ7uekD9P` (`6c33337f`) och rollback-målet är `dpl_5v8gEkuRDeg1TmWZBB6CJNuj7Shj` (se "Rollbackplan för produktion" nedan).
 
 ### Blockerare hittad och löst under preflighten (2026-09-29, samma dag)
 
@@ -122,14 +122,16 @@ Dessförinnan, samma dag, i samma sprint-kontext (dependabot-auto-merge-säkring
 
 Senast verifierat 2026-09-29 (efter rättelse -- se "Regel: vad flyttar den frysta produktkandidaten" nedan).
 
+> **Uppdatering 2026-10-07:** tabellen nedan är läget 2026-09-29 och är en historisk ögonblicksbild. Både staging och produktion kör sedan 2026-10-07 `6c33337f` (PR #539); de aktuella SHA:erna, deployment-ID:na och rollback-målen finns i [staging-environment-setup.md](./staging-environment-setup.md) under "Drift och rollback".
+
 | Vad | SHA | Deployment-ID | Källa |
 |-----|-----|----------------|-------|
 | **Verifierad produktkandidat (enda giltiga, oförändrad sedan Slice 3.1--3.3)** | **`4973f6e919339b022425063bd8a280fa2bbe9b41`** | -- | `main`-HEAD direkt efter checkpoint-PR #513. Grön `Quality Gate Passed` (körning `36435973623`). Manuellt rök-verifierad (Slice 3.2) och stagad (Slice 3.3). Detta är SHA:n release-utkastet och en framtida produktionsdeploy avser peka på |
 | **Senare doc-/metadata-commits på `main`** (rör INTE produktkandidaten) | `66fa2360...` (PR #521: `PRODUCT.md`/`DESIGN.md`/sidecar) och `e499b84fc8ec99a9b962fa75dc474707cea770e9` (PR #522: checkpoint-korrigering) | -- | Enbart `docs/`, `PRODUCT.md`, `DESIGN.md`, `.impeccable/design.json` -- verifierat innehåller noll ändringar i `src/`, `prisma/`, `ios/`, `package.json`, `next.config.*`, `vercel.json`, `.github/workflows/`, `tsconfig`. Se "Regel" nedan för varför detta inte flyttar produktkandidaten |
-| **Staging -- NUVARANDE LIVE deployment** (`equinet-staging-app`, target=production, `equinet-staging.johanlindengard.com`) | `66fa2360a77f3c23fb1d03deb0b350d972ddc5bc` (en doc-commit, men **källkoden är byte-för-byte identisk med produktkandidaten** `4973f6e9...` -- PR #521 ändrade inget i `src/` eller övrig körbar kod) | `dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa` | Vercel `list_deployment_aliases` + `get_deployment`. Ingen ny stagingdeploy krävs för att "rätta till" detta -- den körande koden motsvarar redan produktkandidaten fullt ut, se "Regel" nedan |
-| **Staging -- ROLLBACK-MÅL** (samma projekt, INTE live just nu) | `4973f6e919339b022425063bd8a280fa2bbe9b41` (produktkandidaten själv, byggd separat i Slice 3.3) | `dpl_HSFgtuY6d5kTfjoTVgC2GotHCZkL` | Finns kvar, inspekterbar, orörd. Se "Rollbackplan för stagingsteget" |
-| **Produktion -- NUVARANDE LIVE deployment** (`equinet-app`, target=production) | `4284202221f07216269659873cacf1f9b9f64f04` (PR #503) | `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa` | Vercel `list_deployments` -- **bekräftat oförändrad, verifierad flera gånger genom hela sprinten** |
-| **Produktion -- ROLLBACK-MÅL vid en framtida deploy** | Samma som ovan (produktionen har ännu inte deployats om) | Samma som ovan, `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa` | Produktionen är just nu sitt eget rollback-mål -- blir relevant först när/om en framtida produktionsdeploy sker. Se "Rollbackplan för produktion" |
+| **Staging -- LIVE 2026-09-29 (historiskt)** (`equinet-staging-app`, target=production, `equinet-staging.johanlindengard.com`) | `66fa2360a77f3c23fb1d03deb0b350d972ddc5bc` (en doc-commit, men **källkoden är byte-för-byte identisk med produktkandidaten** `4973f6e9...` -- PR #521 ändrade inget i `src/` eller övrig körbar kod) | `dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa` | Vercel `list_deployment_aliases` + `get_deployment`. Ingen ny stagingdeploy krävs för att "rätta till" detta -- den körande koden motsvarar redan produktkandidaten fullt ut, se "Regel" nedan |
+| **Staging -- ROLLBACK-MÅL 2026-09-29 (historiskt)** (samma projekt) | `4973f6e919339b022425063bd8a280fa2bbe9b41` (produktkandidaten själv, byggd separat i Slice 3.3) | `dpl_HSFgtuY6d5kTfjoTVgC2GotHCZkL` | Finns kvar, inspekterbar, orörd. Se "Rollbackplan för stagingsteget" |
+| **Produktion -- LIVE före 2026-09-29-deployen (historiskt)** (`equinet-app`, target=production) | `4284202221f07216269659873cacf1f9b9f64f04` (PR #503) | `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa` | Vercel `list_deployments` -- **bekräftat oförändrad, verifierad flera gånger genom hela sprinten** |
+| **Produktion -- ROLLBACK-MÅL 2026-09-29 (historiskt)** | Samma som ovan (produktionen har ännu inte deployats om) | Samma som ovan, `dpl_FTGX2HKHWLK5J3U6XdWiU1etfhqa` | Produktionen är just nu sitt eget rollback-mål -- blir relevant först när/om en framtida produktionsdeploy sker. Se "Rollbackplan för produktion" |
 
 **Viktigt att inte blanda ihop:** "produktkandidat" (den Git-SHA release-utkastet/taggen/en framtida produktionsdeploy avser) och "senaste `main`-HEAD" (som kan ligga steg före pga rena doc-commits) är INTE samma sak från och med denna rättelse. Stagingaliaset råkar just nu köra en deployment byggd från en doc-commit-SHA (`66fa2360...`) snarare än produktkandidat-SHA:n direkt -- det är ofarligt eftersom källkoden är identisk, men dokumentationen ska ALDRIG beskriva detta som att produktkandidaten "flyttat sig".
 
@@ -305,6 +307,8 @@ Att CI är grönt, att en PR är mergad, eller att en tidigare slice/release god
 
 ## Rollbackplan för stagingsteget
 
+> **Uppdatering 2026-10-07 -- gäller i stället för kedjan och målen nedan:** staging kör nu `dpl_7jgCSLRm3BzsgKjCGs8WCpc3ia6f` (SHA `6c33337fe308f45dde6f47f83120f290c86781e1`). **Rollback-målet är `dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa`** (SHA `66fa2360...`): `vercel promote dpl_Fz5Gu3rD3e2UGBs3cm317rQcEBVa --scope cola500s-projects` mot `equinet-staging-app` (Johans Vercel-session). Texten nedan beskriver läget 2026-09-29; dess deployment-ID:n (`dpl_A1S3...`, `dpl_HSFg...`) och kontrollen "produktionen ska fortfarande vara `42842022...`" är historiska och ska inte följas. Nuvarande produktions-SHA och aktuella rollback-mål finns i [staging-environment-setup.md](./staging-environment-setup.md) under "Drift och rollback".
+
 Gäller Workstream 3 (staging av produktkandidaten). **Status (2026-09-29, efter rättelse i "Regel: vad flyttar den frysta produktkandidaten"): stagingaliaset kör just nu en deployment byggd från en doc-commit (`66fa2360...`), lämnad medvetet orörd eftersom källkoden är identisk med produktkandidaten -- se "Nuläge (SHA:er)". Kedjan av deploymenter, äldst till nyast:**
 
 1. `dpl_A1S3vbfA2M6fDjvZFEKRup1AgUH8`, SHA `42842022...` (PR #503) -- live innan hela release-sprinten.
@@ -338,6 +342,8 @@ Stagingmiljön har sin egen, separata Supabase-databas (`zzdamokfeenencuggjjp`, 
 Efter varje stagingrelaterad åtgärd: `list_deployments` (target=production) mot `equinet-app` -- SHA:n ska fortfarande vara `42842022...` tills en separat, explicit godkänd produktionsdeploy sker. Detta ska köras och dokumenteras vid varje checkpoint-uppdatering i detta dokument tills produktionen faktiskt uppdateras med Johans godkännande.
 
 ## Rollbackplan för produktion
+
+> **Uppdatering 2026-10-07 -- gäller i stället för målen nedan:** produktionen kör nu `dpl_HjZ8GjTEABJe6HkzoB3qJ7uekD9P` (SHA `6c33337fe308f45dde6f47f83120f290c86781e1`, deployad via `deploy-production.yml`, körning `37603745683`). **Rollback-målet är `dpl_5v8gEkuRDeg1TmWZBB6CJNuj7Shj`** (SHA `4973f6e9...`, v0.3.0): `vercel promote dpl_5v8gEkuRDeg1TmWZBB6CJNuj7Shj --scope cola500s-projects` mot `equinet-app` (Johans Vercel-session). Texten nedan beskriver läget 2026-09-29; `dpl_FTGX...` är inte längre rätt rollback-mål.
 
 **Status (2026-09-29): AKTIV, inte längre hypotetisk.** Workstream 4 (produktionsdeploy) är genomförd -- `deploy-production.yml` kördes med `dry_run=false` för SHA `4973f6e919339b022425063bd8a280fa2bbe9b41` (körning `36584375136`, success). Se "v0.3.0 ÄR SLÄPPT" högst upp i dokumentet för fullständiga detaljer.
 
