@@ -158,7 +158,7 @@ sections:
 - [ ] Tillganglighetsundantag
 - [ ] Manuell bokning via "+"
 - [ ] Tangentbord, veckovy: Tab till en dagkolumn, Enter/mellanslag öppnar "Ny bokning"-dialogen med fokus på "Skapa bokning"; Escape stänger och fokus återgår till kolumnen
-- [ ] Tangentbord, månadsvy: Tab når varje dags datumknapp ("Ny bokning 14 oktober") och varje bokningschip; Enter på datumknappen öppnar dialogen (fokus i den), Escape stänger och återställer fokus; Enter på ett chip öppnar bokningen
+- [ ] Tangentbord, månadsvy: Tab når varje dags datumknapp ("Ny bokning 14 oktober") och varje bokningschip; Enter på datumknappen öppnar dialogen (fokus i den), Escape stänger och återställer fokus; Enter på ett chip öppnar bokningen; popupen hamnar helt inom skärmen även för måndags- och söndagskolumnen (tangentbord och mus/tryck, desktop och 360 px)
 - [ ] Månadsvy på mobil (360-412 px): varje bokningschip visar statusikon + klockslag utan att texten spiller utanför chipet; väntande (klocka) och bekräftad (bock) går att skilja utan färg
 
 ### Manuell bokning

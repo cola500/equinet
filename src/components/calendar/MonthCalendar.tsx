@@ -29,6 +29,17 @@ interface MonthCalendarProps {
 const WEEKDAY_LABELS = ["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"]
 const MAX_VISIBLE_BOOKINGS = 3
 
+// Day popup is w-48 (192px) and centred on its `left` via translateX(-50%)
+const POPUP_WIDTH_PX = 192
+
+// Keep the popup inside the grid: clamp its centre to [half width, gridWidth - half width].
+// Without this, popups opened from the first/last column stick out of the screen.
+export function clampPopupLeft(leftPx: number, gridWidth: number): number {
+  const half = POPUP_WIDTH_PX / 2
+  if (gridWidth <= POPUP_WIDTH_PX) return gridWidth / 2
+  return Math.min(Math.max(leftPx, half), gridWidth - half)
+}
+
 // Konvertera JS getDay() (0=Söndag) till vårt dayOfWeek (0=Måndag)
 function jsDayToOurDay(jsDay: number): number {
   return jsDay === 0 ? 6 : jsDay - 1
@@ -193,7 +204,7 @@ export function MonthCalendar({
                         const label = format(day, "d MMMM", { locale: sv })
                         const gridRect = gridRef.current!.getBoundingClientRect()
                         const topPx = e.clientY - gridRect.top
-                        const leftPx = e.clientX - gridRect.left
+                        const leftPx = clampPopupLeft(e.clientX - gridRect.left, gridRect.width)
                         setDayPopup({ date: dateKey, label, topPx, leftPx })
                       } else {
                         onDateClick?.(dateKey)
@@ -223,7 +234,10 @@ export function MonthCalendar({
                         const btnRect = e.currentTarget.getBoundingClientRect()
                         const gridRect = gridRef.current!.getBoundingClientRect()
                         const topPx = btnRect.top - gridRect.top + btnRect.height
-                        const leftPx = btnRect.left - gridRect.left + btnRect.width / 2
+                        const leftPx = clampPopupLeft(
+                          btnRect.left - gridRect.left + btnRect.width / 2,
+                          gridRect.width
+                        )
                         focusPopupOnOpenRef.current = true
                         setDayPopup({ date: dateKey, label: dayLabel, topPx, leftPx })
                       } else {
