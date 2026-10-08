@@ -3,7 +3,7 @@ title: "Equinet -- Dokumentationsindex"
 description: "Centralt navigeringsdokument for all projektdokumentation"
 category: root
 status: active
-last_updated: 2026-10-07
+last_updated: 2026-10-08
 sections:
   - Arkitektur
   - Operations
@@ -154,6 +154,11 @@ Se [retrospectives/README.md](retrospectives/README.md) for konsoliderade samman
 | [2026-06-06-payment-hardening-wrapup.md](retrospectives/2026-06-06-payment-hardening-wrapup.md) | Betalnings-hardening: Stripe test-mode verifierad, webhook-decouple, production readiness-backlog |
 | [2026-ios-dashboard-pilot-retro.md](retrospectives/2026-ios-dashboard-pilot-retro.md) | DashboardViewModel-pilot: lärdomar och stopping point |
 | [2026-03-29-ios-review-ci-optimization.md](retrospectives/2026-03-29-ios-review-ci-optimization.md) | iOS-review, teststrategi och CI-optimering |
+| [2026-10-08-ios-hig-audit.md](retrospectives/2026-10-08-ios-hig-audit.md) | iOS HIG-genomlysning: 36 fynd-ID, beslutade avgränsningar (iPhone-only, ljust läge, WebView för hästägare), evidens och skärmbilder |
+| [2026-10-08-ios-hig-audit-sammanfattning.md](retrospectives/2026-10-08-ios-hig-audit-sammanfattning.md) | HIG-audit: reviderad topp-10 och prioritering per kategori |
+| [2026-10-08-ios-hig-audit-matris.md](retrospectives/2026-10-08-ios-hig-audit-matris.md) | HIG-audit: skärm- och prioriteringsmatriser |
+| [2026-10-08-ios-hig-audit-pr-slices.md](retrospectives/2026-10-08-ios-hig-audit-pr-slices.md) | HIG-audit: föreslagna PR-slices S0-S30 i prioriterad ordning |
+| [2026-10-08-ios-hig-audit-ej-verifierat.md](retrospectives/2026-10-08-ios-hig-audit-ej-verifierat.md) | HIG-audit: vad som inte kunde verifieras |
 
 ## Ideer & Backlog
 
