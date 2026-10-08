@@ -3,7 +3,7 @@ title: "iOS Key Learnings"
 description: "Samlade iOS/Swift/Xcode-lärdomar från native-utvecklingen"
 category: rule
 status: active
-last_updated: 2026-04-20
+last_updated: 2026-10-08
 tags: [ios, swift, xcode, native, mobile-mcp, offline]
 paths:
   - "ios/**"
@@ -90,6 +90,10 @@ xcodebuild test -project Equinet.xcodeproj -scheme Equinet \
 ```bash
 xcodebuild test ... -only-testing:EquinetTests
 ```
+
+**CI-gate (iOS Build & Tests):** jobbet avgörs av `.xcresult`-paketet via `scripts/ios-verify-xcresult.sh <exit-kod> TestResults.xcresult`, inte av en grep i loggen. Det går rött om inga tester kördes, om något test fallerade eller om resultatet inte är `Passed`; en icke-noll exit-kod från xcodebuild tolereras bara (med varning) när paketet visar att alla tester passerade. Tidigare grep:ade jobbet efter valfri rad "Executed … with 0 failures" och blev grönt trots felande sviter (och `EXIT_CODE=$?` efter `| tee` fångade tee:s exit-kod). Testa skriptet lokalt mot ett paket under `ios/Equinet/build/derived/Logs/Test/`. **Känd skip-lista:** workflowen hoppar över tester som kraschar testvärden på CI-runtimen (iOS 26.2) p.g.a. en `deinit`-krasch; se `SKIP_FLAGS` i `ios-tests.yml` och backlogpunkten "iOS: deinit-krasch på iOS 26.2-runtime". Lokalt körs de alltid. Vid fel laddas `TestResults.xcresult` och loggen upp som artefakt.
+
+**Pensionerade feature-flaggor:** när en flagga tas bort i backend (`feature-flag-definitions.ts`) måste iOS grep:as efter flaggnyckeln (`grep -rn '"<flagga>"' ios/`). `/api/feature-flags` returnerar den inte längre, så `featureFlags["<flagga>"] == true` blir alltid falskt och UI:t döljs tyst. Exempel: `messaging` pensionerades 2026-06-12 men gatade "Meddelanden" i Mer-menyn och bokningsdetaljen i iOS tills 2026-10-08.
 
 **Mappning ändrad fil -> testsvit:**
 
