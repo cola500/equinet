@@ -5,11 +5,13 @@ on:
     branches: [main, staging]
     paths:
       - 'ios/**'
+      - 'scripts/ios-verify-xcresult.sh'
       - '.github/workflows/ios-tests.yml'
   push:
     branches: [main, staging]
     paths:
       - 'ios/**'
+      - 'scripts/ios-verify-xcresult.sh'
       - '.github/workflows/ios-tests.yml'
   workflow_dispatch:
 
@@ -58,10 +60,6 @@ jobs:
 
       - name: Run tests
         run: |
-          # xcodebuild may exit 65 due to SpeechRecognizer aurioc warning
-          # in simulator even when all tests pass. Capture output and verify
-          # actual test results instead of relying on exit code.
-          #
           # CalendarSyncManagerTests are skipped in pull_request runs.
           # These EventKit-related tests are significantly slower than the rest of the suite.
           # Full suite still runs on push to main.
@@ -78,20 +76,11 @@ jobs:
             -only-testing:EquinetTests \
             $SKIP_FLAG \
             -resultBundlePath TestResults.xcresult 2>&1 | tee xcodebuild-output.log
-          EXIT_CODE=$?
+          EXIT_CODE=${PIPESTATUS[0]}
           set -e
 
-          # Check actual test results from output
-          if grep -q "Executed.*with 0 failures" xcodebuild-output.log; then
-            echo "All tests passed (0 failures)"
-            TOTAL=$(grep "Executed.*with 0 failures" xcodebuild-output.log | tail -1)
-            echo "$TOTAL"
-            exit 0
-          else
-            echo "Tests had actual failures:"
-            grep -E "(Executed|FAIL|error:)" xcodebuild-output.log || true
-            exit $EXIT_CODE
-          fi
+          # The result bundle decides pass/fail (not a grep of the log). See script header.
+          bash scripts/ios-verify-xcresult.sh "$EXIT_CODE" TestResults.xcresult
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

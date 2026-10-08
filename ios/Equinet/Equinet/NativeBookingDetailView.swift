@@ -644,7 +644,7 @@ struct NativeBookingDetailView: View {
 
     @ViewBuilder
     private func messagingButton(bookingId: String) -> some View {
-        if featureFlags["messaging"] == true, onNavigateToWeb != nil {
+        if onNavigateToWeb != nil {
             Button {
                 onNavigateToWeb?("/provider/messages/\(bookingId)")
             } label: {

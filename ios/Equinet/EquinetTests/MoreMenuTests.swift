@@ -20,20 +20,25 @@ final class MoreMenuTests: XCTestCase {
         XCTAssertEqual(allMenuSections[2].name, "Mitt företag")
     }
 
-    func testAllMenuSectionsHasElevenItems() {
+    func testAllMenuSectionsHasTwelveItems() {
         let totalItems = allMenuSections.flatMap(\.items).count
-        XCTAssertEqual(totalItems, 11)
+        XCTAssertEqual(totalItems, 12)
     }
 
     func testDagligtArbeteSectionItems() {
         let items = allMenuSections[0].items
-        XCTAssertEqual(items.count, 3)
+        XCTAssertEqual(items.count, 4)
         XCTAssertEqual(items[0].label, "Mina tjänster")
         XCTAssertNil(items[0].featureFlag)
-        XCTAssertEqual(items[1].label, "Logga arbete")
-        XCTAssertEqual(items[1].featureFlag, "voice_logging")
-        XCTAssertEqual(items[2].label, "Kunder")
-        XCTAssertNil(items[2].featureFlag)
+        // Messaging is GA (flag retired in backend 2026-06-12): must not be flag-gated,
+        // otherwise the item is hidden because /api/feature-flags no longer returns it.
+        XCTAssertEqual(items[1].label, "Meddelanden")
+        XCTAssertEqual(items[1].path, "/provider/messages")
+        XCTAssertNil(items[1].featureFlag)
+        XCTAssertEqual(items[2].label, "Logga arbete")
+        XCTAssertEqual(items[2].featureFlag, "voice_logging")
+        XCTAssertEqual(items[3].label, "Kunder")
+        XCTAssertNil(items[3].featureFlag)
     }
 
     func testPlaneringsSectionItems() {
@@ -79,7 +84,7 @@ final class MoreMenuTests: XCTestCase {
 
         XCTAssertEqual(visible.count, 3, "All 3 sections should be visible")
         let totalItems = visible.flatMap(\.items).count
-        XCTAssertEqual(totalItems, 11, "All 11 items should be visible")
+        XCTAssertEqual(totalItems, 12, "All 12 items should be visible")
     }
 
     func testFilterWithAllFlagsFalse() {
@@ -100,9 +105,15 @@ final class MoreMenuTests: XCTestCase {
         XCTAssertEqual(visible[0].name, "Dagligt arbete")
         XCTAssertEqual(visible[1].name, "Mitt företag")
 
-        // Only non-flagged items remain: Mina tjänster, Kunder, Recensioner, Min profil
+        // Only non-flagged items remain: Mina tjänster, Meddelanden, Kunder, Recensioner, Min profil
         let totalItems = visible.flatMap(\.items).count
-        XCTAssertEqual(totalItems, 4, "4 non-flagged items")
+        XCTAssertEqual(totalItems, 5, "5 non-flagged items")
+    }
+
+    func testMessagesItemVisibleWithoutAnyFlag() {
+        let visible = filteredSections(flags: [:])
+        let labels = visible.flatMap(\.items).map(\.label)
+        XCTAssertTrue(labels.contains("Meddelanden"), "Meddelanden must be visible without a feature flag")
     }
 
     func testFilterWithEmptyFlagsDictHidesAllFlagged() {
@@ -113,7 +124,7 @@ final class MoreMenuTests: XCTestCase {
         // Same as all-false: empty dict means flag not found -> hidden
         XCTAssertEqual(visible.count, 2)
         let totalItems = visible.flatMap(\.items).count
-        XCTAssertEqual(totalItems, 4)
+        XCTAssertEqual(totalItems, 5)
     }
 
     func testFilterWithPartialFlags() {
@@ -127,9 +138,10 @@ final class MoreMenuTests: XCTestCase {
         // Planering still hidden (all its items need flags that are missing)
         XCTAssertEqual(visible.count, 2)
 
-        // Dagligt arbete: 3 items (Mina tjänster + Logga arbete + Kunder)
-        XCTAssertEqual(visible[0].items.count, 3)
-        XCTAssertEqual(visible[0].items[1].label, "Logga arbete")
+        // Dagligt arbete: 4 items (Mina tjänster + Meddelanden + Logga arbete + Kunder)
+        XCTAssertEqual(visible[0].items.count, 4)
+        XCTAssertEqual(visible[0].items[1].label, "Meddelanden")
+        XCTAssertEqual(visible[0].items[2].label, "Logga arbete")
 
         // Mitt företag: 3 items (Insikter + Recensioner + Min profil, not Hjälp)
         XCTAssertEqual(visible[1].items.count, 3)
