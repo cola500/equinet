@@ -60,33 +60,12 @@ jobs:
 
       - name: Run tests
         run: |
-          # KNOWN CRASHES (tracked in docs/sprints/backlog.md, "iOS: deinit-krasch på iOS 26.2-runtime"):
-          # on the CI runtime (iOS 26.2 simulator, Xcode 26.3) the test host aborts with
-          # "malloc: pointer being freed was not allocated" in swift_task_deinitOnExecutor
-          # (TaskLocal::StopLookupScope) when these @MainActor classes are deallocated.
-          # The tests pass locally (iOS 26.5 / Xcode 27). Exactly these tests are skipped so
-          # that everything else is gated strictly; do NOT add tests here without a backlog note.
-          SKIP_FLAGS=(
-            -skip-testing:EquinetTests/CalendarSyncManagerTests
-            -skip-testing:EquinetTests/BridgeHandlerTests/testDefaultInitUsesRealSpeechRecognizer
-            -skip-testing:EquinetTests/DashboardViewModelTests/testPermanentDismissSurvivesNewInstance
-            -skip-testing:EquinetTests/NetworkMonitorTests/testDebugOverrideDisconnects
-            -skip-testing:EquinetTests/NetworkMonitorTests/testDebugOverrideReconnects
-            -skip-testing:EquinetTests/NetworkMonitorTests/testDebugOverrideTriggersCallback
-            -skip-testing:EquinetTests/NetworkMonitorTests/testDebugOverrideTrueKeepsConnected
-            -skip-testing:EquinetTests/OfflineVerificationUITests/testOfflineChainWithDebugOverride
-            -skip-testing:EquinetTests/SpeechRecognizerTests/testCustomAudioSessionIsInjected
-            -skip-testing:EquinetTests/SpeechRecognizerTests/testDefaultInitCreatesValidInstance
-          )
-          echo "::warning::Skipping ${#SKIP_FLAGS[@]} tests/classes with a known deinit crash on the iOS 26.2 runtime (see workflow comment)"
-
           set +e
           xcodebuild test \
             -project ios/Equinet/Equinet.xcodeproj \
             -scheme Equinet \
             -destination 'platform=iOS Simulator,name=${{ steps.simulator.outputs.name }}' \
             -only-testing:EquinetTests \
-            "${SKIP_FLAGS[@]}" \
             -resultBundlePath TestResults.xcresult 2>&1 | tee xcodebuild-output.log
           EXIT_CODE=${PIPESTATUS[0]}
           set -e

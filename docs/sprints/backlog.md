@@ -225,15 +225,16 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Kontraktsfixtures + kontraktstester | 1-2 dagar | `contracts/ios/` med delade JSON-fixtures, Vitest (route) + XCTest (Codable) mot samma filer; push- och widgetpayload; gruppbokningsroutes saknar tester. Studie "Testgap". |
 | Versionshandshake | 0.5 dag | iOS skickar `X-App-Version`; backend loggar och kan svara 426 på `/api/native/*` vid min-version. Börja med loggning. Billigast innan första release. |
 
-### iOS: deinit-krasch på iOS 26.2-runtime (hög prio, möjlig produktionsrisk)
+### iOS: deinit-krasch på iOS 26.2-runtime (workaround på 5 klasser)
 
-> Upptäckt 2026-10-08 när iOS-CI-grinden gjordes strikt (`scripts/ios-verify-xcresult.sh`). Tidigare dolde en grep-baserad kontroll felen.
+> Upptäckt 2026-10-08. Rotorsak: `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` gör `deinit` implicit isolerad (`swift_task_deinitOnExecutor`), vilket aborterar i Swift-concurrency-runtimen på iOS 26.2 ("pointer being freed was not allocated"). Syns inte på iOS 26.5. Åtgärd (PR #545): `nonisolated deinit { }` på de fem klasser där kraschen reproducerats (`NetworkMonitor`, `DashboardViewModel`, `SpeechRecognizer`, `BridgeHandler`, `CalendarSyncManager`) + regressionstester (`DeinitSafetyTests`). CI-skip-listan är borttagen.
 
-| Story | Effort | Beskrivning |
-|-------|--------|-------------|
-| Utred och fixa `deinit`-kraschen på iOS 26.2 | 0.5-1 dag | CI (Xcode 26.3, iPhone SE-simulator, iOS 26.2) aborterar med `malloc: pointer being freed was not allocated` i `swift_task_deinitOnExecutor` -> `TaskLocal::StopLookupScope::~StopLookupScope` när `@MainActor`-klasser avallokeras (`NetworkMonitor`, `SpeechRecognizer`, `DashboardViewModel`, `BridgeHandler`; 11 krascher i PR-körning, 22 i full körning inkl. `CalendarSyncManager`). Lokalt (iOS 26.5, Xcode 27) syns inget. Projektet har `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, deployment target 26.2. **Verifiera om riktiga enheter på iOS 26.2-26.4 kraschar när dessa objekt avallokeras.** Åtgärd: reproducera (iOS 26.2-runtime), testa explicit `nonisolated`-deinit/annan avallokeringsväg, eller höj deployment target om det är en känd runtime-bugg. Ta sedan bort skip-listan i `.github/workflows/ios-tests.yml`. |
+| Observation | Beskrivning |
+|-------------|-------------|
+| 17 övriga klasser med isolerad deinit (ej ändrade) | Alla andra projektklasser (view models, `AuthManager`, `APIClient`, `PushManager`, `AppCoordinator`, `AppDelegate`, `WeakScriptMessageHandler` m.fl.) genererar också `swift_task_deinitOnExecutor` men har inte reproducerat någon krasch. Ändra först om ett verkligt test eller användarflöde kraschar. Osäkert om riktiga enheter på iOS 26.2 påverkas; ej testat på enhet. |
+| Ingen deinit-städning i de fem klasserna | `Timer` i `NetworkMonitor`/`SpeechRecognizer` invalideras bara i `stop()`, inte vid deallokering (closures har `weak self`). Befintligt beteende, ej ändrat. |
 
-Tills dess hoppar iOS-CI över exakt de 10 poster som listas i workflowens `SKIP_FLAGS` (9 enskilda tester + hela `CalendarSyncManagerTests`). De körs fortfarande lokalt. Lägg inte till fler utan en notering här.
+Ta bort workarounden när lägsta stödda iOS inte längre inkluderar den påverkade runtimen.
 
 ### iOS övrigt
 
