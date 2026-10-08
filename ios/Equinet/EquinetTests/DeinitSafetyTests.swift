@@ -7,9 +7,9 @@
 //  With SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor the app's classes get an implicitly
 //  isolated deinit (swift_task_deinitOnExecutor). On the iOS 26.2 runtime that path aborts
 //  with "malloc: pointer being freed was not allocated" (TaskLocal::StopLookupScope) when
-//  the last reference is released. Every project class therefore declares
-//  `nonisolated deinit { }`. These tests deallocate the objects synchronously, which crashes
-//  the test host on an affected runtime (the CI simulator runs iOS 26.2).
+//  the last reference is released. The five classes where the crash was reproduced declare
+//  `nonisolated deinit { }`. These tests deallocate the real classes synchronously, which
+//  crashes the test host on an affected runtime (the CI simulator runs iOS 26.2).
 //  See docs/sprints/backlog.md ("iOS: deinit-krasch på iOS 26.2-runtime").
 //
 
@@ -55,24 +55,15 @@ final class DeinitSafetyTests: XCTestCase {
         XCTAssertNil(weakRef)
     }
 
-    func testViewModelsCanBeDeallocated() {
-        weak var bookings: BookingsViewModel?
-        weak var customers: CustomersViewModel?
-        weak var services: ServicesViewModel?
-        weak var profile: ProfileViewModel?
+    func testCalendarSyncManagerCanBeDeallocated() {
+        weak var weakRef: CalendarSyncManager?
         autoreleasepool {
-            let b = BookingsViewModel()
-            let c = CustomersViewModel()
-            let s = ServicesViewModel()
-            let p = ProfileViewModel()
-            bookings = b
-            customers = c
-            services = s
-            profile = p
+            let object = CalendarSyncManager(
+                eventStore: MockCalendarEventStore(),
+                storage: MockCalendarSyncStorage()
+            )
+            weakRef = object
         }
-        XCTAssertNil(bookings)
-        XCTAssertNil(customers)
-        XCTAssertNil(services)
-        XCTAssertNil(profile)
+        XCTAssertNil(weakRef)
     }
 }
