@@ -13,6 +13,12 @@ import Observation
 @MainActor
 @Observable
 final class NetworkMonitor: NetworkStatusProviding {
+    // Workaround: avoids a Swift-concurrency runtime crash on iOS 26.2. With the project's default
+    // MainActor isolation the synthesized deinit is isolated (swift_task_deinitOnExecutor), which aborts
+    // there ("pointer being freed was not allocated"). A nonisolated deinit skips that path; this class
+    // does no deinit cleanup. Revisit when the minimum supported iOS no longer includes the affected runtime.
+    nonisolated deinit { }
+
 
     private let monitor = NWPathMonitor()
     private let queue = DispatchQueue(label: "com.equinet.networkmonitor")
