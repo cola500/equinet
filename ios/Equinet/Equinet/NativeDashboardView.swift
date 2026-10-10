@@ -16,6 +16,10 @@ struct NativeDashboardView: View {
     var onNavigateToWebPath: ((String) -> Void)?
 
     @State private var hapticRefreshed = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .largeTitle) private var emptyStateIconSize: CGFloat = 40
+    @ScaledMetric(relativeTo: .largeTitle) private var errorIconSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .subheadline) private var timeColumnMinWidth: CGFloat = 44
 
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -27,20 +31,63 @@ struct NativeDashboardView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if viewModel.isLoading && viewModel.dashboard == nil {
+                switch phase {
+                case .loading:
                     loadingView
-                } else if let error = viewModel.error {
-                    errorView(error)
-                } else if let dashboard = viewModel.dashboard {
+                case .error(let message):
+                    errorView(message)
+                case .content(let dashboard):
                     dashboardContent(dashboard)
+                case .empty:
+                    EmptyView()
                 }
             }
-            .navigationTitle(Self.dateFormatter.string(from: .now).localizedCapitalized)
-            .navigationBarTitleDisplayMode(.large)
+            .navigationTitle(navigationTitleText)
+            .navigationBarTitleDisplayMode(showsDateInContent ? .inline : .large)
         }
         .task {
             await viewModel.loadDashboard()
         }
+    }
+
+    // MARK: - Title
+
+    private var dateTitle: String {
+        Self.dateFormatter.string(from: .now).localizedCapitalized
+    }
+
+    private var usesAccessibilityLayout: Bool {
+        DashboardLayoutRules.usesAccessibilityLayout(for: dynamicTypeSize)
+    }
+
+    /// At accessibility sizes the date moves into the content (see `dashboardContent`),
+    /// but stays in the bar while loading or on error where no heading is shown.
+    private var showsDateInContent: Bool {
+        DashboardLayoutRules.showsDateInContent(for: dynamicTypeSize, hasContent: isShowingContent)
+    }
+
+    private var isShowingContent: Bool {
+        if case .content = phase { return true }
+        return false
+    }
+
+    private var navigationTitleText: String {
+        showsDateInContent ? "" : dateTitle
+    }
+
+    private enum Phase {
+        case loading
+        case error(String)
+        case content(DashboardResponse)
+        case empty
+    }
+
+    /// Single source of truth for which state is shown (body and title both read it).
+    private var phase: Phase {
+        if viewModel.isLoading && viewModel.dashboard == nil { return .loading }
+        if let error = viewModel.error { return .error(error) }
+        if let dashboard = viewModel.dashboard { return .content(dashboard) }
+        return .empty
     }
 
     // MARK: - Dashboard Content
@@ -49,6 +96,14 @@ struct NativeDashboardView: View {
     private func dashboardContent(_ data: DashboardResponse) -> some View {
         ScrollView {
             VStack(spacing: 16) {
+                if showsDateInContent {
+                    Text(dateTitle)
+                        .font(.largeTitle)
+                        .bold()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityAddTraits(.isHeader)
+                }
+
                 // Priority action card
                 if data.priorityAction.type != .none {
                     priorityActionCard(data.priorityAction)
@@ -97,23 +152,7 @@ struct NativeDashboardView: View {
                 break
             }
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: action.type == .pendingBookings ? "bell.badge" : "checklist")
-                    .font(.title3)
-                    .foregroundStyle(action.type == .pendingBookings ? .orange : Color.equinetGreen)
-                    .frame(width: 32)
-
-                Text(action.label)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.primary)
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
+            priorityCardLayout(action)
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: 12)
@@ -127,6 +166,38 @@ struct NativeDashboardView: View {
         .accessibilityLabel(action.label)
         .accessibilityHint("Dubbeltryck för att öppna")
         .accessibilityAddTraits(.isButton)
+    }
+
+    @ViewBuilder
+    private func priorityCardLayout(_ action: DashboardPriorityAction) -> some View {
+        let icon = Image(systemName: action.type == .pendingBookings ? "bell.badge" : "checklist")
+            .font(.title3)
+            .foregroundStyle(action.type == .pendingBookings ? .orange : Color.equinetGreen)
+        let label = Text(action.label)
+            .font(.subheadline)
+            .fontWeight(.medium)
+            .foregroundStyle(.primary)
+        let chevron = Image(systemName: "chevron.right")
+            .font(.caption)
+            .foregroundStyle(.tertiary)
+
+        if usesAccessibilityLayout {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    icon
+                    Spacer()
+                    chevron
+                }
+                label
+            }
+        } else {
+            HStack(spacing: 12) {
+                icon.frame(minWidth: 32)
+                label
+                Spacer()
+                chevron
+            }
+        }
     }
 
     // MARK: - Onboarding Checklist
@@ -237,13 +308,21 @@ struct NativeDashboardView: View {
     }
 
     private func todayBookingRow(_ booking: DashboardTodayBooking) -> some View {
-        HStack(spacing: 12) {
-            // Time
+        let isPending = booking.status == "pending"
+        let stacks = usesAccessibilityLayout
+        let layout = stacks
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+            : AnyLayout(HStackLayout(spacing: 12))
+
+        return layout {
+            // Time: never wraps, grows with the text instead of a fixed column
             Text(booking.startTime)
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .monospacedDigit()
-                .frame(width: 44, alignment: .leading)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .frame(minWidth: timeColumnMinWidth, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(booking.customerFirstName) \(booking.customerLastName)")
@@ -254,9 +333,11 @@ struct NativeDashboardView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Spacer()
+            if !stacks {
+                Spacer()
+            }
 
-            if booking.status == "pending" {
+            if isPending {
                 Text("Väntar")
                     .font(.caption2)
                     .fontWeight(.medium)
@@ -269,18 +350,22 @@ struct NativeDashboardView: View {
                     )
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 6)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(booking.startTime), \(booking.customerFirstName) \(booking.customerLastName), \(booking.serviceName)\(booking.status == "pending" ? ", väntar på bekräftelse" : "")")
+        .accessibilityLabel("\(booking.startTime), \(booking.customerFirstName) \(booking.customerLastName), \(booking.serviceName)\(isPending ? ", väntar på bekräftelse" : "")")
     }
 
     // MARK: - KPI Grid
 
     private func kpiGrid(_ data: DashboardResponse) -> some View {
-        LazyVGrid(columns: [
-            GridItem(.flexible(), spacing: 12),
-            GridItem(.flexible(), spacing: 12),
-        ], spacing: 12) {
+        LazyVGrid(
+            columns: Array(
+                repeating: GridItem(.flexible(), spacing: 12),
+                count: DashboardLayoutRules.kpiColumnCount(for: dynamicTypeSize)
+            ),
+            spacing: 12
+        ) {
             kpiCard(
                 title: "Idag",
                 value: "\(data.todayBookingCount)",
@@ -382,7 +467,7 @@ struct NativeDashboardView: View {
     private var emptyStateNoServices: some View {
         VStack(spacing: 12) {
             Image(systemName: "stethoscope")
-                .font(.system(size: 40))
+                .font(.system(size: emptyStateIconSize))
                 .foregroundStyle(.secondary)
 
             Text("Lägg till din första tjänst")
@@ -438,11 +523,9 @@ struct NativeDashboardView: View {
     }
 
     private func errorView(_ message: String) -> some View {
-        VStack(spacing: 16) {
-            Spacer()
-
+        let content = VStack(spacing: 16) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 48))
+                .font(.system(size: errorIconSize))
                 .foregroundStyle(.secondary)
 
             Text("Kunde inte ladda översikten")
@@ -465,8 +548,14 @@ struct NativeDashboardView: View {
                     .frame(minHeight: 44)
             }
             .buttonStyle(.borderedProminent)
+        }
 
-            Spacer()
+        // Centered when it fits; scrolls instead of truncating at large text sizes.
+        return ViewThatFits(in: .vertical) {
+            content.frame(maxHeight: .infinity)
+            ScrollView {
+                content.padding(.vertical, 24)
+            }
         }
     }
 }

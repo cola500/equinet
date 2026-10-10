@@ -3,7 +3,7 @@ title: "iOS HIG-genomlysning 2026-10-08 -- föreslagna PR-slices"
 description: "Små, fristående PR-slices i prioriterad ordning efter produktbesluten (iPhone-only, ljust läge, WebView för hästägare), med problem, evidens, tester, acceptans, docs, beroenden och HIG-källor"
 category: plan
 status: draft
-last_updated: 2026-10-08
+last_updated: 2026-10-10
 sections:
   - Utgångspunkter
   - Gemensamma regler för alla slices
@@ -115,6 +115,7 @@ Evidensetiketter i varje slice: **V-app** (verifierat i körande app), **V-kod**
   - Implementation: `.frame(minWidth:)` med `.fixedSize` eller `ViewThatFits`; `@Environment(\.dynamicTypeSize)` med `isAccessibilitySize` för kolumnantal; `@ScaledMetric` för ikonstorlekar.
 - **Docs:** `.claude/rules/ios-learnings.md` (mönster för adaptiv layout), `docs/testing/testing-guide.md` (scenario "Stor text" för iOS).
 - **Beroenden och risker:** Ingen blockerande. Rör bara `NativeDashboardView.swift`. Låg risk; kan krocka med S9 (samma fil), så ta S1 före S9.
+- **Status (2026-10-10):** Implementerad på `feature/ios-hig-s1-dynamic-type-oversikt` (PR öppnad, ej mergad). Datumet blir radbruten rubrik i innehållet vid tillgänglighetsstorlekar (beslut: produktägaren). Nya fynd under verifieringen, utanför S1: N-1 onboardingchecklistans rader är 18 pt höga vid normal text (till S8); N-2 "Visa alla i kalendern" är 18 pt hög (till S8); N-3 offlinebannern täcker innehållets överkant och bryts över tre rader vid AX5 (före och efter; till S6/S24); N-4 felvyns text innehåller det långa ordet "internetanslutning" som avstavas vid AX5 (textval; till S24). Laddvyn (`ProgressView`) var för kortvarig att fånga i simulatorn och är därför bara kodgranskad.
 - **HIG-källor:** `accessibility.md › Vision` ("enlarge text by at least 200 percent"); `typography.md › Supporting Dynamic Type` ("Make sure your app’s layout adapts to all font sizes"; "Consider adjusting your layout at large font sizes"); `layout.md › Adaptability` ("Be prepared for text-size changes").
 
 ### S2 Dynamic Type: bokningskort och filterchips

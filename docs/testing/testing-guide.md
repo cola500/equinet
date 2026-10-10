@@ -3,7 +3,7 @@ title: "Manuell testningsguide"
 description: "Komplett checklista for manuell testning av Equinet -- alla floden, feature flags, mobil"
 category: testing
 status: active
-last_updated: 2026-10-01
+last_updated: 2026-10-10
 tags: [testing, manual, checklist, qa]
 sections:
   - Startsida och offentliga sidor
@@ -381,6 +381,7 @@ sections:
 - [ ] Profil: 2-fliktaborell (Profil / Installningar) fungerar
 - [ ] Native offline-detektion: amber banner visas utan nat, gron banner vid ateranslutning
 - [ ] HTTP 5xx-fel visar native felvy med "Forsok igen"
+- [ ] Stor text, Oversikt: i Installningar > Tillganglighet > Visning och textstorlek > Storre text, sla pa "Storre tillganglighetsstorlekar" och dra till max. Klockslaget (t.ex. 14:00) star pa en rad, datumet ar en radbruten rubrik overst (inline navigeringstitel), KPI-korten ar i en kolumn, prioritetskortet staplar ikon over text, felvyn gar att scrolla till "Forsok igen". Vid normal storlek ar layouten oforandrad
 - [ ] Push-notiser: notis vid ny bokning (kraver godkand push-behorighet)
 - [ ] iOS Kalender-synk: bekraftad bokning dyker upp i Equinet-kalender i iOS Kalender
 - [ ] Widget pa hemskarm visar nasta bokning
