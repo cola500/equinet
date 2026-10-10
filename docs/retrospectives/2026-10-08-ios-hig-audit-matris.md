@@ -3,7 +3,7 @@ title: "iOS HIG-genomlysning 2026-10-08 -- matriser: skärmar och prioritering"
 description: "Skärm- och kontrollområdesmatris samt prioriteringsmatris per fynd efter produktbesluten (iPhone-only, ljust läge, WebView för hästägare)"
 category: research
 status: draft
-last_updated: 2026-10-08
+last_updated: 2026-10-10
 sections:
   - Teckenförklaring
   - Matris
@@ -42,7 +42,7 @@ Kontrollområden: **DT** = Dynamic Type/stor text; **VO** = VoiceOver (etiketter
 | Översikt (`NativeDashboardView`) | **F-01 (V,K)** | F-30 (V), F-29 (K) | F-02, F-23 (V) | OK, KPI 100 pt (V) | OK | F-31 (K) | F-15 (V) | D-1, D-2 | F-21 (K), F-24 (V) | F-20 (V) |
 | Bokningslistan (`NativeBookingsView`) | **F-01 (V)** | **F-03 (V,K)** | **F-02 (V)** | **F-05 (V)** | **F-03 (V)** | F-31 (K) | **F-06 (V)** | D-2 | **F-07 (K)**, F-21 (K) | F-11, F-23 (V) |
 | Bokningsdetalj (`NativeBookingDetailView`) | ej AX-test (K) | OK, förebild (V) | F-02 (statuschip) (V) | OK 44-50 pt (V) | OK (text finns) | - | F-17 (V) | F-16 (V) | F-07 (K) | F-20 (V) |
-| Kalender (`NativeCalendarView`) | ej AX-test (K) | **F-04 (V,K)**, OK för block (V) | F-02 (chips) (V) | F-22 (chips 30 pt) (V) | OK | F-31 (K) | OK | D-2 | OK | F-22 (V,K) |
+| Kalender (`NativeCalendarView`) | **F-01 (V, S6-körpass)** | **F-04 (V,K)**, OK för block (V) | F-02 (chips) (V) | F-22 (chips 30 pt) (V) | OK | F-31 (K) | OK | D-2 | OK | F-22 (V,K) |
 | Mer-menyn (`NativeMoreView`) | ej AX-test (K) | OK (V) | OK | OK | OK | - | OK (system `List`) | D-2 | F-32 (K) | F-11 (V) |
 | Meddelanden (WebView) | - | - | - | - | - | - | F-14 (V) | F-14 (V) | F-14 (V) | F-14 (V) |
 | Hästhistorik (WebView) | - | - | - | - | - | - | F-14, F-17 (V) | F-14 (V) | F-14 (V) | F-14 (V) |
