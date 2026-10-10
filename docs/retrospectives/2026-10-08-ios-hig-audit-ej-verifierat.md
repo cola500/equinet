@@ -3,8 +3,9 @@ title: "iOS HIG-genomlysning 2026-10-08 -- vad som inte kunde verifieras"
 description: "Lista över ytor, tillstånd och påståenden i HIG-genomlysningen som inte kunde verifieras, och vad som krävs för att göra det"
 category: research
 status: draft
-last_updated: 2026-10-08
+last_updated: 2026-10-10
 sections:
+  - S6-körpass: stor text i leverantörsappen (2026-10-10)
   - Inte körda i appen
   - Inte möjliga i simulatorn
   - Begränsningar i mätningen
@@ -17,6 +18,29 @@ related:
 ---
 
 # iOS HIG-genomlysning 2026-10-08 -- vad som inte kunde verifieras
+
+## S6-körpass: stor text i leverantörsappen (2026-10-10)
+
+Körpass vid AX5 (`accessibility-extra-extra-extra-large`) på iPhone 17e (iOS 26.5, den minsta enheten) mot `main` efter PR #547, lokal testdata, ljust systemläge. Inga produktändringar. Syftet var att avgöra vad som faktiskt återstår efter S1 inför sprintens nästa slices. Bilder finns lokalt (`~/Desktop/equinet-s6-evidence`), inte i repot.
+
+| Skärm | Resultat vid AX5 | Detaljer | Slice |
+|-------|------------------|----------|-------|
+| Översikt | Klar | Åtgärdad i S1 (PR #547) | S1 |
+| Bokningar (lista) | **Fel** | Tjänstens namn bryts per bokstav (`Hel/sko/nin/g`), priset på tre rader, kortet fyller skärmen; filterchipsen är horisontellt scrollbara (fungerar). Handlingsknapparna ligger under skärmbrytet och granskades i auditen (F-01) | S2 |
+| Bokningsdetalj | OK | Scrollar, etiketter radbryts; lång e-postadress avstavas (oundvikligt) | - |
+| Kalender | **Fel (flera delar)** | Dagshuvudet bryts mitt i ordet (`LÖR/DAG`) och datumet trunkeras (`10…`); veckoremsans bokstäver radbryts och överlappar; timetiketter blir `1…`; händelseblock klipps (`Lisa Anders…`); filterchipsen klipps. Bedömd M, risk för L | S6a |
+| Mer-menyn | OK | Systemlistan radbryter korrekt (`Medde-/landen`) | - |
+| Inloggning | OK | Fält, etiketter och knapp läsbara; "Glömt lösenord?" ligger nära hemindikatorn. Tangentbordsläge ej testat (SecureField går inte att skriva i via mobile-mcp) | - |
+| Mina tjänster | Delvis | Titeln bryts mitt i ord (`garbesö/k`) eftersom "Aktiv"-pillen ligger bredvid | senare |
+| Kunder | Delvis | Metaraden bryts mitt i ord (`boknin/gar`); stor tom yta under rubriken | senare |
+| Pushbehörighetsdialogen | OK | Läsbar, knappar växer med texten | - |
+| Formulär-sheets (Anteckning, Avboka m.fl.) | **Ej körda** | Kräver svep i detaljvyn (WebDriver-svepet är instabilt) | S6c |
+| Recensioner, Profil, Insikter, Hjälp | **Ej körda** | Utanför körpassets avgränsning (inte huvudflöden) | S6c |
+| Meddelanden, hästhistorik (WebView) | Ej bedömda | WebView, beslutad avgränsning D-3 | - |
+
+**Begränsningar:** bara iPhone 17e, bara AX5, bara ljust läge. Bokningslistans knapprad och Kalenderns lägre del granskades inte ned till sista pixeln.
+
+**Rekommendation för sprintens sista objekt:** Kalender (huvudflöde, tydligast trasig). Mina tjänster och Kunder är små, separata fel i sekundära vyer.
 
 ## Inte körda i appen
 
