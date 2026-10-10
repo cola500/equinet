@@ -380,6 +380,7 @@ sections:
 - [ ] Mer-flik: alla menyalternativ laddas korrekt (baserat pa feature flags)
 - [ ] Profil: 2-fliktaborell (Profil / Installningar) fungerar
 - [ ] Native offline-detektion: amber banner visas utan nat, gron banner vid ateranslutning
+- [ ] Stor text, Kalender: med "Storre tillganglighetsstorlekar" pa och maxstorlek: dagshuvudet staplas (rubrik over kontrollrad) och datumet radbryts utan "...", veckoremsan ar lasbar, tidsetiketterna (08:00) bryts inte, handelseblocken visar tjanst, hast och kund utan avkortning, offlinebanner och stangd-dag-rad radbryts, felvyn gar att lasa. Vid normal storlek ar layouten oforandrad
 - [ ] HTTP 5xx-fel visar native felvy med "Forsok igen"
 - [ ] Stor text, Oversikt: i Installningar > Tillganglighet > Visning och textstorlek > Storre text, sla pa "Storre tillganglighetsstorlekar" och dra till max. Klockslaget (t.ex. 14:00) star pa en rad, datumet ar en radbruten rubrik overst (inline navigeringstitel), KPI-korten ar i en kolumn, prioritetskortet staplar ikon over text, felvyn gar att scrolla till "Forsok igen". Vid normal storlek ar layouten oforandrad
 - [ ] Push-notiser: notis vid ny bokning (kraver godkand push-behorighet)
