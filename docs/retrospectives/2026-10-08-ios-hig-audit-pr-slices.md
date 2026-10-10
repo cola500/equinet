@@ -179,6 +179,8 @@ Evidensetiketter i varje slice: **V-app** (verifierat i körande app), **V-kod**
 
 ## Prio 2: VoiceOver, fokusordning, etiketter och tryckytor
 
+**Status S6a (2026-10-10): Kalender.** Implementerad på `feature/ios-hig-s6a-dynamic-type-kalender` (PR öppnad). Tidsraster, dagshuvud, veckoremsa (begränsad till xxxLarge, beslut redovisat i PR), händelseblock, stängd-dag-rad, offlinebanner och felvy anpassade; `large` är pixelidentiskt. Kvarstår: header + veckoremsa + chips tar cirka hälften av en liten telefons höjd vid AX5 (en krympande header är en uppföljning). Inte körda: sheets (Anteckning, Avboka).
+
 ### S7 Etiketter: kalenderns ikonknappar, inloggning, hints
 
 - **Problem och skärmar:** Kalenderns datumhuvud har ikonknappar utan etikett som läses som "Back", "Forward" och "Snooze" (månknappen styr om dagen är stängd). Inloggningsfältets `accessibilityLabel("Email")` skiljer sig från den synliga etiketten "E-post" (Voice Control-mismatch). `accessibilityHint("Dubbeltryck för att öppna")` på KPI-kort och prioritetskort upprepar gesten i stället för att beskriva resultatet.
