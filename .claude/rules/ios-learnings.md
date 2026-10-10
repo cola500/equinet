@@ -3,7 +3,7 @@ title: "iOS Key Learnings"
 description: "Samlade iOS/Swift/Xcode-lärdomar från native-utvecklingen"
 category: rule
 status: active
-last_updated: 2026-10-08
+last_updated: 2026-10-10
 tags: [ios, swift, xcode, native, mobile-mcp, offline]
 paths:
   - "ios/**"
@@ -74,6 +74,7 @@ För att verifiera att native login → WebView-sidor fungerar på en ny enhet:
 - **iOS URL(string:relativeTo:) inte appendingPathComponent**: `appendingPathComponent()` URL-encodar `/`.
 - **iOS haptic rollfördelning (ViewModel vs View)**: ViewModel äger action-haptics (`UINotificationFeedbackGenerator` vid CRUD-success/error). View äger refresh-haptics (pull-to-refresh). Dubbelhaptic uppstår om view lägger `.sensoryFeedback` ovanpå ViewModel-haptic för samma action. **Kolla ALLTID ViewModel för befintliga `UINotificationFeedbackGenerator`-anrop innan view-layer haptics läggs till.**
 - **iOS haptic trigger-pattern**: Använd `@State private var hapticX = false` + `.sensoryFeedback(.success, trigger: hapticX)` + `hapticX.toggle()` vid rätt event. **Fel timing:** `.sensoryFeedback(trigger: items.count)` triggar vid initial load OCH varje count-ändring, inte vid explicit user action.
+- **iOS Dynamic Type (stor text)**: Fast `.frame(width:)` på text bryter tider (`14:00` blev `1/4:/0/0` vid AX5). Använd `.lineLimit(1).fixedSize(horizontal: true, vertical: false).frame(minWidth: <@ScaledMetric>)` så layouten är oförändrad vid normal storlek. Layoutval som beror på storlek läggs i en ren funktion (`DashboardLayoutRules`, tar `DynamicTypeSize`, enhetstestas) och vyn byter med `AnyLayout(VStackLayout/HStackLayout)` eller `@Environment(\.dynamicTypeSize)`. Dekorativa ikoner med `.font(.system(size:))` ska använda `@ScaledMetric`. Fast `.frame(width:)` på en ikon som skalar tar plats från texten och ger ordbrytning mitt i ord: stapla istället. Vyer med `Spacer()` + fast innehåll (t.ex. felvy) trunkerar vid stor text: `ViewThatFits(in: .vertical) { centrerad; ScrollView { ... } }`. Layout kan inte enhetstestas (inga snapshot-tester): verifiera med `xcrun simctl ui <UDID> content_size accessibility-extra-extra-extra-large` före/efter. `mobile-mcp` kräver `mobilecli agent install --device <UDID>` per simulator.
 
 ## iOS-testflöde
 
