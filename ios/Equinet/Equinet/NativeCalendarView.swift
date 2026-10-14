@@ -39,8 +39,18 @@ struct NativeCalendarView: View {
     // Time grid constants (matches web: 08:00-18:00)
     private let startHour = 8
     private let endHour = 18
-    private let hourHeight: CGFloat = 64  // h-16 equivalent
     private let hours: [Int] = Array(8...18)
+
+    // Scale with Dynamic Type (equal to the previous fixed values at the default size)
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .caption2) private var hourHeight: CGFloat = 64  // h-16 equivalent
+    @ScaledMetric(relativeTo: .caption2) private var scaledTimeLabelWidth: CGFloat = 44
+    @ScaledMetric(relativeTo: .caption2) private var minBlockHeight: CGFloat = 28
+    @ScaledMetric(relativeTo: .caption2) private var manualMarkerSize: CGFloat = 9
+    @ScaledMetric(relativeTo: .largeTitle) private var errorIconSize: CGFloat = 36
+
+    private var timeLabelWidth: CGFloat { CalendarLayoutRules.timeLabelWidth(scaled: scaledTimeLabelWidth) }
+    private var labelColumn: CGFloat { CalendarLayoutRules.timeLabelColumn(labelWidth: timeLabelWidth) }
 
     private let calendar = Calendar.current
 
@@ -67,6 +77,7 @@ struct NativeCalendarView: View {
                 },
                 exceptionForDate: { viewModel.exceptionForDate($0) }
             )
+            .dynamicTypeSize(...CalendarLayoutRules.weekStripMaxTypeSize)
 
             Divider()
 
@@ -202,65 +213,29 @@ struct NativeCalendarView: View {
 
     /// Uses @State displayedDate for visual rendering (not @Observable viewModel)
     private var dateHeader: some View {
-        HStack {
-            // Previous day
-            Button {
-                navigateDay(by: -1)
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.title3)
-                    .frame(minWidth: 44, minHeight: 44)
-            }
-
-            Spacer()
-
-            VStack(spacing: 2) {
-                Text(dayName(for: displayedDate))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-                Text(formattedDate(displayedDate))
-                    .font(.title3)
-                    .fontWeight(.semibold)
-            }
-
-            Spacer()
-
-            // Exception button -- opens form to add/edit availability exception
-            Button {
-                exceptionSheetDate = displayedDate
-            } label: {
-                Image(systemName: viewModel.exceptionForDate(displayedDate) != nil
-                    ? "moon.zzz.fill" : "moon.zzz")
-                    .font(.title3)
-                    .foregroundStyle(viewModel.exceptionForDate(displayedDate) != nil
-                        ? Color.orange : .secondary)
-                    .frame(minWidth: 44, minHeight: 44)
-            }
-
-            // Today button -- always present to prevent layout shift, hidden when already today
-            Button {
-                let today = calendar.startOfDay(for: .now)
-                withAnimation { displayedDate = today }
-                viewModel.goToToday()
-            } label: {
-                Text("Idag")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.equinetGreen.opacity(0.1))
-                    .clipShape(Capsule())
-            }
-            .opacity(calendar.isDateInToday(displayedDate) ? 0 : 1)
-            .disabled(calendar.isDateInToday(displayedDate))
-
-            Button {
-                navigateDay(by: 1)
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(.title3)
-                    .frame(minWidth: 44, minHeight: 44)
+        Group {
+            if CalendarLayoutRules.usesAccessibilityLayout(for: dynamicTypeSize) {
+                VStack(spacing: 4) {
+                    dateTitle
+                    HStack {
+                        previousDayButton
+                        Spacer()
+                        exceptionButton
+                        todayButton
+                        Spacer()
+                        nextDayButton
+                    }
+                }
+            } else {
+                HStack {
+                    previousDayButton
+                    Spacer()
+                    dateTitle
+                    Spacer()
+                    exceptionButton
+                    todayButton
+                    nextDayButton
+                }
             }
         }
         .padding(.horizontal)
@@ -280,6 +255,72 @@ struct NativeCalendarView: View {
         }
     }
 
+    private var dateTitle: some View {
+        VStack(spacing: 2) {
+            Text(dayName(for: displayedDate))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+            Text(formattedDate(displayedDate))
+                .font(.title3)
+                .fontWeight(.semibold)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var previousDayButton: some View {
+        Button {
+            navigateDay(by: -1)
+        } label: {
+            Image(systemName: "chevron.left")
+                .font(.title3)
+                .frame(minWidth: 44, minHeight: 44)
+        }
+    }
+
+    private var nextDayButton: some View {
+        Button {
+            navigateDay(by: 1)
+        } label: {
+            Image(systemName: "chevron.right")
+                .font(.title3)
+                .frame(minWidth: 44, minHeight: 44)
+        }
+    }
+
+    /// Exception button -- opens form to add/edit availability exception
+    private var exceptionButton: some View {
+        Button {
+            exceptionSheetDate = displayedDate
+        } label: {
+            Image(systemName: viewModel.exceptionForDate(displayedDate) != nil
+                ? "moon.zzz.fill" : "moon.zzz")
+                .font(.title3)
+                .foregroundStyle(viewModel.exceptionForDate(displayedDate) != nil
+                    ? Color.orange : .secondary)
+                .frame(minWidth: 44, minHeight: 44)
+        }
+    }
+
+    /// Today button -- always present to prevent layout shift, hidden when already today
+    private var todayButton: some View {
+        Button {
+            let today = calendar.startOfDay(for: .now)
+            withAnimation { displayedDate = today }
+            viewModel.goToToday()
+        } label: {
+            Text("Idag")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.equinetGreen.opacity(0.1))
+                .clipShape(Capsule())
+        }
+        .opacity(calendar.isDateInToday(displayedDate) ? 0 : 1)
+        .disabled(calendar.isDateInToday(displayedDate))
+    }
+
     // MARK: - Time Grid
 
     private var timeGrid: some View {
@@ -290,7 +331,9 @@ struct NativeCalendarView: View {
                     Text(String(format: "%02d:00", hour))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                        .frame(width: 44, alignment: .trailing)
+                        .lineLimit(1)
+                        .dynamicTypeSize(...CalendarLayoutRules.timeLabelMaxTypeSize)
+                        .frame(width: timeLabelWidth, alignment: .trailing)
                         .padding(.trailing, 8)
                         .offset(y: -6)
 
@@ -312,7 +355,7 @@ struct NativeCalendarView: View {
         return ForEach(dayBookings) { booking in
             let top = timePosition(booking.startTime)
             let bottom = timePosition(booking.endTime)
-            let height = max(bottom - top, 28)
+            let height = max(bottom - top, minBlockHeight)
 
             Button {
                 selectedBooking = booking
@@ -359,18 +402,21 @@ struct NativeCalendarView: View {
                     .font(.caption)
                     .fontWeight(.semibold)
                     .lineLimit(1)
+                    .minimumScaleFactor(CalendarLayoutRules.blockTextMinScale(for: dynamicTypeSize))
 
                 if let horse = booking.horseName {
                     Text(horse)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
+                        .minimumScaleFactor(CalendarLayoutRules.blockTextMinScale(for: dynamicTypeSize))
                 }
 
                 Text(booking.customerFullName)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                    .minimumScaleFactor(CalendarLayoutRules.blockTextMinScale(for: dynamicTypeSize))
             }
 
             Spacer()
@@ -389,7 +435,7 @@ struct NativeCalendarView: View {
                 }
                 if booking.isManualBooking {
                     Text("M")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: manualMarkerSize, weight: .bold))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -402,7 +448,7 @@ struct NativeCalendarView: View {
             RoundedRectangle(cornerRadius: 6)
                 .stroke(statusColor(booking), lineWidth: 1)
         )
-        .padding(.leading, 56) // After time labels
+        .padding(.leading, CalendarLayoutRules.bookingBlockLeading(labelWidth: timeLabelWidth)) // After time labels
         .padding(.trailing, 8)
         .frame(height: height)
         .accessibilityElement(children: .combine)
@@ -418,7 +464,7 @@ struct NativeCalendarView: View {
         let position = timePositionFromComponents(hour: hour, minute: minute)
 
         return HStack(spacing: 0) {
-            Spacer().frame(width: 44)
+            Spacer().frame(width: timeLabelWidth)
 
             Circle()
                 .fill(.red)
@@ -490,16 +536,15 @@ struct NativeCalendarView: View {
                 }
             }
         }
-        .padding(.leading, 52) // After time labels
+        .padding(.leading, labelColumn) // After time labels
     }
 
     // MARK: - Error View
 
     private func errorView(_ message: String) -> some View {
-        VStack(spacing: 12) {
-            Spacer()
+        let content = VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 36))
+                .font(.system(size: errorIconSize))
                 .foregroundStyle(.secondary)
             Text(message)
                 .font(.body)
@@ -509,9 +554,16 @@ struct NativeCalendarView: View {
             }
             .buttonStyle(.borderedProminent)
             .frame(minHeight: 44)
-            Spacer()
         }
         .frame(maxWidth: .infinity)
+
+        // Centered when it fits; scrolls instead of truncating at large text sizes.
+        return ViewThatFits(in: .vertical) {
+            content.frame(maxHeight: .infinity)
+            ScrollView {
+                content.padding(.vertical, 24)
+            }
+        }
     }
 
     // MARK: - Service Filter Bar
@@ -563,6 +615,7 @@ struct NativeCalendarView: View {
             Text("Offline -- visar cachad data")
                 .font(.caption)
                 .fontWeight(.medium)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(.white)
         .frame(maxWidth: .infinity)
@@ -573,11 +626,15 @@ struct NativeCalendarView: View {
     // MARK: - Exception Badge
 
     private func exceptionBadge(_ exc: NativeException) -> some View {
-        HStack(spacing: 6) {
+        let layout = CalendarLayoutRules.usesAccessibilityLayout(for: dynamicTypeSize)
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+            : AnyLayout(HStackLayout(spacing: 6))
+        return layout {
             if exc.isClosed, let reason = exc.reason, !reason.isEmpty {
                 Label(reason, systemImage: "moon.zzz")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             } else if exc.isClosed {
                 Label("Stängd", systemImage: "moon.zzz")
                     .font(.caption)
@@ -587,6 +644,7 @@ struct NativeCalendarView: View {
                 Label(location, systemImage: "mappin.circle")
                     .font(.caption)
                     .foregroundStyle(.blue)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.horizontal)
@@ -630,12 +688,12 @@ struct NativeCalendarView: View {
         let dayBookings = viewModel.bookingsForDate(date)
         let exclusions = dayBookings.map { booking -> (CGFloat, CGFloat) in
             let top = timePosition(booking.startTime)
-            let bottom = max(timePosition(booking.endTime), top + 28)
+            let bottom = max(timePosition(booking.endTime), top + minBlockHeight)
             return (top, bottom)
         }
         return Color.clear
             .frame(height: totalHeight)
-            .padding(.leading, 52)
+            .padding(.leading, labelColumn)
             .contentShape(TimeSlotHitShape(totalHeight: totalHeight, exclusions: exclusions), eoFill: true)
             .onTapGesture { location in
                 let time = timeFromTapPosition(location.y)
