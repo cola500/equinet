@@ -3,7 +3,7 @@ title: "iOS HIG-genomlysning 2026-10-08 -- föreslagna PR-slices"
 description: "Små, fristående PR-slices i prioriterad ordning efter produktbesluten (iPhone-only, ljust läge, WebView för hästägare), med problem, evidens, tester, acceptans, docs, beroenden och HIG-källor"
 category: plan
 status: draft
-last_updated: 2026-10-14
+last_updated: 2026-10-15
 sections:
   - Utgångspunkter
   - Gemensamma regler för alla slices
@@ -15,6 +15,7 @@ sections:
   - "Prio 5: Navigation, formulär, sheets samt fel- och offlinelägen"
   - "Prio 6: Visuell finslipning"
   - Beroendekarta och risker
+  - Sprintavslut Dynamic Type (2026-10-15)
 tags: [ios, hig, accessibility, plan]
 depends_on:
   - docs/retrospectives/2026-10-08-ios-hig-audit.md
@@ -128,7 +129,7 @@ Evidensetiketter i varje slice: **V-app** (verifierat i körande app), **V-kod**
 - **Beroenden och risker:** Rör `NativeBookingsView.swift` (`BookingCard`), samma struktur som S5 och S8. **Ordning: S2, sedan S5, sedan S8** för att undvika mergekonflikter. Risk: knapprader som växer påverkar kortets höjd och rullning; kontrollera att `highlightedBookingId`-scroll fortfarande fungerar.
 - **HIG-källor:** `typography.md › Supporting Dynamic Type` ("Keep text truncation to a minimum as font size increases"); `layout.md › Adaptability`; `accessibility.md › Vision`.
 
-**Status S2 (2026-10-14):** Implementerad på `feature/ios-hig-s2-dynamic-type-bokningskort` (PR öppnad). Nya fynd, utanför S2: N-5 listkortets telefon- och hästlänkar är fortfarande 14 pt höga (S8); N-6 filterchipsen är fortfarande horisontellt scrollbara med avklippt sista chip vid stor text (acceptabelt); N-7 felvyn på Bokningar är handbyggd med `Spacer`, inte körd visuellt vid AX5 (S24); N-8 kortet använder blått statusprick/grönt/orange blandat (S3). **Uppföljning, ej i sprinten:** en kalenderheader som krymper vid scroll (stängd-dag-raden tar 200-300 pt vid AX5, se Kalender-PR).
+**Status S2 (2026-10-15):** Mergad (PR #555, `2ec8c1ae`). Nya fynd, utanför S2: N-5 listkortets telefon- och hästlänkar är fortfarande 14 pt höga (S8); N-6 filterchipsen är fortfarande horisontellt scrollbara med avklippt sista chip vid stor text (acceptabelt); N-7 felvyn på Bokningar är handbyggd med `Spacer`, inte körd visuellt vid AX5 (S24); N-8 kortet använder blått statusprick/grönt/orange blandat (S3). **Uppföljning, ej i sprinten:** en kalenderheader som krymper vid scroll (stängd-dag-raden tar 200-300 pt vid AX5, se Kalender-PR).
 
 ### S3 Semantisk färgpalett och `AccentColor`
 
@@ -462,3 +463,17 @@ Ordningar som minskar mergekonflikter och dubbelarbete (samma filer):
 - **Webbkoppling:** S19 och delar av S20 berör webbkod; följ webbens egna regler och E2E-krav.
 - **Distribution:** S12 (iPhone-only) kan påverka redan installerade iPad-användare; kontrollera distributionsläget före merge.
 - **Produktbeslut som krävs under vägen:** ny nyans på grönt (S3), mönster för Avvisa/Uteblev (S17), tidpunkt för pushbehörighet (S21), ikon (S28).
+
+## Sprintavslut Dynamic Type (2026-10-15)
+
+Sprintmålet (leverantörens viktigaste iPhone-flöden fungerar med stor text utan att normalläget försämras) är uppnått enligt stoppregeln. Ingen ny implementation startas.
+
+**Levererat:** S1 Översikt (#547, `2a73cec7`), S6-kartläggning (#548, `29c88c19`), Kalender (#549, `f02a155d`), S2 Bokningar (#555, `2ec8c1ae`). Verifierade vid AX5: Översikt, Kalender och Bokningar (lista, tomt läge, offline med cache, scroll till markerad bokning). Slutlig CI: alla kontroller gröna på #555. iOS-sviten 362 tester utan fel, webb 4 867.
+
+**Normalläget:** oförändrat med ett godkänt undantag: "Genomförd" får egen rad på kort smalare än 350 pt (iPhone 17e och 17), vilket tar bort `Genom…`.
+
+**Kvar, flyttas till backloggen:** fysisk VoiceOver (aldrig körd); felvy utan cache på Bokningar ej visuellt verifierad; första bildrutan på smal telefon kan visa en rad innan måttet läses (watch: eget `Layout`); N-1..N-8 (se S1, S2 och S6a ovan); kalenderheader som krymper vid scroll (separat uppföljning, ingen slice startad).
+
+**Lärdomar:** (1) Rena regelfiler med enhetstester plus manuell bildkontroll gav bra täckning till låg kostnad; regeltesterna skrevs dock samtidigt som reglerna, inte före. (2) Visuell verifiering är den dyra delen. Vid slutkontrollen visade sig att de "efter"-bilder på 17e och 17 som valts ut för S2 visade notisdialogen över Översikt, inte Bokningar. Slutversionen verifierades därför om på den mergade main-builden (17e och 17, large/XXXL/AX5, samma testdata före och efter). Skärmbilder måste granskas en och en innan de redovisas som evidens. (3) Notisdialogen och en felträff mot statusfältets "Messages"-länk var de vanligaste orsakerna till ogiltiga bilder.
+
+**Snapshot-tester:** erfarenheten motiverar inte ett snapshot-spår nu. Tre slices gick bra med regeltester och manuell kontroll; trasiga bilder är ett processproblem (granska varje bild), inte ett verktygsproblem. Omvärdera om fler vyer ska göras responsiva (S3-S5, S8).
