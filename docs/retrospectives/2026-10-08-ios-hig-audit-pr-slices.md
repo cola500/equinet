@@ -3,7 +3,7 @@ title: "iOS HIG-genomlysning 2026-10-08 -- föreslagna PR-slices"
 description: "Små, fristående PR-slices i prioriterad ordning efter produktbesluten (iPhone-only, ljust läge, WebView för hästägare), med problem, evidens, tester, acceptans, docs, beroenden och HIG-källor"
 category: plan
 status: draft
-last_updated: 2026-10-10
+last_updated: 2026-10-14
 sections:
   - Utgångspunkter
   - Gemensamma regler för alla slices
@@ -127,6 +127,8 @@ Evidensetiketter i varje slice: **V-app** (verifierat i körande app), **V-kod**
 - **Docs:** `.claude/rules/ios-learnings.md`; `docs/testing/testing-guide.md`.
 - **Beroenden och risker:** Rör `NativeBookingsView.swift` (`BookingCard`), samma struktur som S5 och S8. **Ordning: S2, sedan S5, sedan S8** för att undvika mergekonflikter. Risk: knapprader som växer påverkar kortets höjd och rullning; kontrollera att `highlightedBookingId`-scroll fortfarande fungerar.
 - **HIG-källor:** `typography.md › Supporting Dynamic Type` ("Keep text truncation to a minimum as font size increases"); `layout.md › Adaptability`; `accessibility.md › Vision`.
+
+**Status S2 (2026-10-14):** Implementerad på `feature/ios-hig-s2-dynamic-type-bokningskort` (PR öppnad). Nya fynd, utanför S2: N-5 listkortets telefon- och hästlänkar är fortfarande 14 pt höga (S8); N-6 filterchipsen är fortfarande horisontellt scrollbara med avklippt sista chip vid stor text (acceptabelt); N-7 felvyn på Bokningar är handbyggd med `Spacer`, inte körd visuellt vid AX5 (S24); N-8 kortet använder blått statusprick/grönt/orange blandat (S3). **Uppföljning, ej i sprinten:** en kalenderheader som krymper vid scroll (stängd-dag-raden tar 200-300 pt vid AX5, se Kalender-PR).
 
 ### S3 Semantisk färgpalett och `AccentColor`
 

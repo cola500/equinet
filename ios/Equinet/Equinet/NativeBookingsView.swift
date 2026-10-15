@@ -122,6 +122,8 @@ struct NativeBookingsView: View {
                             Text(filter.label)
                                 .font(.subheadline)
                                 .fontWeight(isSelected ? .semibold : .regular)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
                             if count > 0 {
                                 Text("\(count)")
                                     .font(.caption2)
@@ -332,66 +334,100 @@ private struct BookingCard: View {
     let onQuickNote: () -> Void
     var onNavigateToWeb: ((_ path: String) -> Void)?
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// Whether the measured card content is too narrow for one row of confirmed-actions buttons.
+    /// Only changes when the decision flips, not on every width change.
+    @State private var isNarrow = false
+
+    /// Indent of stacked detail lines: aligns them under the text after a caption-size icon.
+    @ScaledMetric(relativeTo: .caption) private var detailIndent: CGFloat = 20
+
+    private var stacksDetails: Bool { BookingCardLayoutRules.stacksDetails(for: dynamicTypeSize) }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Header row: status + service + price + detail link
-            HStack {
-                statusIndicator
-                Text(booking.serviceName)
-                    .font(.headline)
-                Spacer()
-                Text("\(Int(booking.servicePrice)) kr")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                NavigationLink(value: booking.id) {
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+            // Header row: status + service + price + detail link (stacked from xxLarge)
+            if BookingCardLayoutRules.stacksHeader(for: dynamicTypeSize) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .center) {
+                        statusIndicator
+                        Text(booking.serviceName)
+                            .font(.headline)
+                    }
+                    HStack {
+                        priceText
+                        Spacer()
+                        detailLink
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Visa detaljer för \(booking.serviceName)")
+            } else {
+                HStack {
+                    statusIndicator
+                    Text(booking.serviceName)
+                        .font(.headline)
+                    Spacer()
+                    priceText
+                    detailLink
+                }
             }
 
             // Customer name
             Text(booking.customerFullName)
                 .font(.subheadline)
 
-            // Date & time
-            HStack(spacing: 4) {
-                Image(systemName: "calendar")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(formattedDate)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text("\(booking.startTime)–\(booking.endTime)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            // Horse info
-            if let horseName = booking.horseName {
-                HStack(spacing: 4) {
-                    Image(systemName: "pawprint")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    if let horseId = booking.horseId, onNavigateToWeb != nil {
-                        Button {
-                            onNavigateToWeb?("/provider/horse-timeline/\(horseId)")
-                        } label: {
-                            Text(horseName)
-                                .font(.caption)
-                                .foregroundStyle(.blue)
-                        }
-                    } else {
-                        Text(horseName)
+            // Date & time (stacked at accessibility sizes)
+            if stacksDetails {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(formattedDate)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    if let breed = booking.horseBreed {
-                        Text("(\(breed))")
+                    Text("\(booking.startTime)–\(booking.endTime)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, detailIndent)
+                }
+            } else {
+                HStack(spacing: 4) {
+                    Image(systemName: "calendar")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(formattedDate)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("\(booking.startTime)–\(booking.endTime)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            // Horse info (name and breed stack at accessibility sizes)
+            if booking.horseName != nil {
+                if stacksDetails {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "pawprint")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            horseNameView
+                        }
+                        breedView
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .padding(.leading, detailIndent)
+                    }
+                } else {
+                    HStack(spacing: 4) {
+                        Image(systemName: "pawprint")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                        horseNameView
+                        breedView
                     }
                 }
             }
@@ -457,6 +493,7 @@ private struct BookingCard: View {
                 }
             }
         }
+        .onGeometryChange(for: Bool.self) { BookingCardLayoutRules.isNarrowCard(contentWidth: $0.size.width) } action: { isNarrow = $0 }
         .padding(12)
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -471,6 +508,52 @@ private struct BookingCard: View {
         Circle()
             .fill(statusColor)
             .frame(width: 8, height: 8)
+    }
+
+    private var priceText: some View {
+        Text("\(Int(booking.servicePrice)) kr")
+            .font(.subheadline)
+            .fontWeight(.semibold)
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private var detailLink: some View {
+        NavigationLink(value: booking.id) {
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Visa detaljer för \(booking.serviceName)")
+    }
+
+    @ViewBuilder
+    private var horseNameView: some View {
+        if let horseName = booking.horseName {
+            if let horseId = booking.horseId, onNavigateToWeb != nil {
+                Button {
+                    onNavigateToWeb?("/provider/horse-timeline/\(horseId)")
+                } label: {
+                    Text(horseName)
+                        .font(.caption)
+                        .foregroundStyle(.blue)
+                }
+            } else {
+                Text(horseName)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var breedView: some View {
+        if let breed = booking.horseBreed {
+            Text("(\(breed))")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private var statusColor: Color {
@@ -490,17 +573,24 @@ private struct BookingCard: View {
     private var badgeRow: some View {
         let badges = buildBadges()
         if !badges.isEmpty {
-            HStack(spacing: 6) {
-                ForEach(badges, id: \.self) { badge in
-                    Text(badge)
-                        .font(.caption2)
-                        .fontWeight(.medium)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color(.systemGray5))
-                        .clipShape(Capsule())
-                }
+            if stacksDetails {
+                VStack(alignment: .leading, spacing: 4) { badgeViews(badges) }
+            } else {
+                HStack(spacing: 6) { badgeViews(badges) }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func badgeViews(_ badges: [String]) -> some View {
+        ForEach(badges, id: \.self) { badge in
+            Text(badge)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color(.systemGray5))
+                .clipShape(Capsule())
         }
     }
 
@@ -524,86 +614,111 @@ private struct BookingCard: View {
     private var actionButtons: some View {
         switch booking.status {
         case "pending":
-            HStack(spacing: 8) {
-                Button(action: onConfirm) {
-                    Label("Bekräfta", systemImage: "checkmark")
-                        .font(.caption)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Color.equinetGreen)
-                .disabled(isActionInProgress)
-
-                Button(action: onDecline) {
-                    Label("Avvisa", systemImage: "xmark")
-                        .font(.caption)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .tint(.red)
-                .disabled(isActionInProgress)
+            if stacksDetails {
+                VStack(spacing: 8) { confirmButton; declineButton }
+            } else {
+                HStack(spacing: 8) { confirmButton; declineButton }
             }
         case "confirmed":
-            VStack(spacing: 8) {
-                HStack(spacing: 8) {
-                    Button(action: onComplete) {
-                        Label("Genomförd", systemImage: "checkmark.circle")
-                            .font(.caption)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.equinetGreen)
-                    .disabled(isActionInProgress)
-
-                    Button(action: onNoShow) {
-                        Label("Uteblev", systemImage: "person.slash")
-                            .font(.caption)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(.orange)
-                    .disabled(isActionInProgress)
-
-                    Button(action: onCancel) {
-                        Label("Avboka", systemImage: "xmark.circle")
-                            .font(.caption)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(.red)
-                    .disabled(isActionInProgress)
-                }
-                HStack(spacing: 8) {
-                    Button(action: onQuickNote) {
-                        Label("Anteckning", systemImage: "note.text")
-                            .font(.caption)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(Color.equinetGreen)
-                    .disabled(isActionInProgress)
-                }
-            }
+            confirmedButtons
         case "completed":
-            HStack(spacing: 8) {
-                if booking.customerReview == nil {
-                    Button(action: onReview) {
-                        Label("Recensera kund", systemImage: "star")
-                            .font(.caption)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(.orange)
-                    .disabled(isActionInProgress)
-                }
-                Button(action: onQuickNote) {
-                    Label("Anteckning", systemImage: "note.text")
-                        .font(.caption)
-                }
-                .buttonStyle(.bordered)
-                .tint(Color.equinetGreen)
-                .disabled(isActionInProgress)
+            if stacksDetails {
+                VStack(spacing: 8) { completedButtons(fill: true) }
+            } else {
+                HStack(spacing: 8) { completedButtons(fill: false) }
             }
         default:
             EmptyView()
         }
+    }
+
+    /// Full button labels at every size: the row steps from one row to two rows (when the card is too
+    /// narrow or the text too large), then to one button per row, instead of truncating ("Geno…").
+    @ViewBuilder
+    private var confirmedButtons: some View {
+        switch BookingCardLayoutRules.confirmedActions(for: dynamicTypeSize, isNarrow: isNarrow) {
+        case .sideBySide:
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    completeButton(fill: true)
+                    noShowButton(fill: false)
+                    cancelButton(fill: false)
+                }
+                noteButton(fill: true)
+            }
+        case .twoRows:
+            VStack(spacing: 8) {
+                completeButton(fill: true)
+                HStack(spacing: 8) {
+                    noShowButton(fill: true)
+                    cancelButton(fill: true)
+                }
+                noteButton(fill: true)
+            }
+        case .stacked:
+            VStack(spacing: 8) {
+                completeButton(fill: true)
+                noShowButton(fill: true)
+                cancelButton(fill: true)
+                noteButton(fill: true)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func completedButtons(fill: Bool) -> some View {
+        if booking.customerReview == nil { reviewButton(fill: fill) }
+        noteButton(fill: fill)
+    }
+
+    /// `fill`: the label stretches to the available width (as in the original layout).
+    private func actionLabel(_ title: String, _ symbol: String, fill: Bool) -> some View {
+        // At accessibility sizes icon + word do not fit a button without breaking the word,
+        // so the text (which carries the meaning) is shown on its own.
+        Group {
+            if stacksDetails {
+                Text(title)
+            } else {
+                Label(title, systemImage: symbol)
+            }
+        }
+        .font(.caption)
+        .frame(maxWidth: fill ? .infinity : nil)
+    }
+
+    private var confirmButton: some View {
+        Button(action: onConfirm) { actionLabel("Bekräfta", "checkmark", fill: true) }
+            .buttonStyle(.borderedProminent).tint(Color.equinetGreen).disabled(isActionInProgress)
+    }
+
+    private var declineButton: some View {
+        Button(action: onDecline) { actionLabel("Avvisa", "xmark", fill: true) }
+            .buttonStyle(.bordered).tint(.red).disabled(isActionInProgress)
+    }
+
+    private func completeButton(fill: Bool) -> some View {
+        Button(action: onComplete) { actionLabel("Genomförd", "checkmark.circle", fill: fill) }
+            .buttonStyle(.borderedProminent).tint(Color.equinetGreen).disabled(isActionInProgress)
+    }
+
+    private func noShowButton(fill: Bool) -> some View {
+        Button(action: onNoShow) { actionLabel("Uteblev", "person.slash", fill: fill) }
+            .buttonStyle(.bordered).tint(.orange).disabled(isActionInProgress)
+    }
+
+    private func cancelButton(fill: Bool) -> some View {
+        Button(action: onCancel) { actionLabel("Avboka", "xmark.circle", fill: fill) }
+            .buttonStyle(.bordered).tint(.red).disabled(isActionInProgress)
+    }
+
+    private func noteButton(fill: Bool) -> some View {
+        Button(action: onQuickNote) { actionLabel("Anteckning", "note.text", fill: fill) }
+            .buttonStyle(.bordered).tint(Color.equinetGreen).disabled(isActionInProgress)
+    }
+
+    private func reviewButton(fill: Bool) -> some View {
+        Button(action: onReview) { actionLabel("Recensera kund", "star", fill: fill) }
+            .buttonStyle(.bordered).tint(.orange).disabled(isActionInProgress)
     }
 
     // MARK: - Static DateFormatters

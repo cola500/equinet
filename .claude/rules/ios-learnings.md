@@ -3,7 +3,7 @@ title: "iOS Key Learnings"
 description: "Samlade iOS/Swift/Xcode-lärdomar från native-utvecklingen"
 category: rule
 status: active
-last_updated: 2026-10-10
+last_updated: 2026-10-14
 tags: [ios, swift, xcode, native, mobile-mcp, offline]
 paths:
   - "ios/**"
@@ -76,6 +76,8 @@ För att verifiera att native login → WebView-sidor fungerar på en ny enhet:
 - **iOS haptic trigger-pattern**: Använd `@State private var hapticX = false` + `.sensoryFeedback(.success, trigger: hapticX)` + `hapticX.toggle()` vid rätt event. **Fel timing:** `.sensoryFeedback(trigger: items.count)` triggar vid initial load OCH varje count-ändring, inte vid explicit user action.
 - **iOS Dynamic Type (stor text)**: Fast `.frame(width:)` på text bryter tider (`14:00` blev `1/4:/0/0` vid AX5). Använd `.lineLimit(1).fixedSize(horizontal: true, vertical: false).frame(minWidth: <@ScaledMetric>)` så layouten är oförändrad vid normal storlek. Layoutval som beror på storlek läggs i en ren funktion (`DashboardLayoutRules`, tar `DynamicTypeSize`, enhetstestas) och vyn byter med `AnyLayout(VStackLayout/HStackLayout)` eller `@Environment(\.dynamicTypeSize)`. Dekorativa ikoner med `.font(.system(size:))` ska använda `@ScaledMetric`. Fast `.frame(width:)` på en ikon som skalar tar plats från texten och ger ordbrytning mitt i ord: stapla istället. Vyer med `Spacer()` + fast innehåll (t.ex. felvy) trunkerar vid stor text: `ViewThatFits(in: .vertical) { centrerad; ScrollView { ... } }`. Layout kan inte enhetstestas (inga snapshot-tester): verifiera med `xcrun simctl ui <UDID> content_size accessibility-extra-extra-extra-large` före/efter. `mobile-mcp` kräver `mobilecli agent install --device <UDID>` per simulator.
 - **iOS Dynamic Type i tidsraster/kalender**: Fasta mått (`hourHeight`, etikettbredd, minsta blockhöjd) blir `@ScaledMetric` med samma värde vid normal storlek, och kolumnoffset härleds från etikettbredden (`CalendarLayoutRules.timeLabelColumn`). Kompakta 7-kolumnsremsor (veckoremsa) kan inte hålla accessibility-storlekar på en iPhone-bredd: begränsa med `.dynamicTypeSize(...xxxLarge)` och visa det valda datumet i full storlek i huvudet. Tidsetiketter begränsas till `accessibility1` och bredden klämmer (max 80 pt) så händelseblocken behåller bredd. `minimumScaleFactor` i trånga block krymper även vid normal storlek (under 1 pt, syns i pixeldiff): gör faktorn storleksberoende (1.0 vid normal storlek). `Text` i `VStackLayout`/`AnyLayout` får annars ett enradsförslag och trunkeras: lägg `.fixedSize(horizontal: false, vertical: true)`. Kalendern har ingen scrollande header: vid AX5 tar header + veckoremsa + filterchips cirka hälften av en liten telefons höjd (mer med stängd-dag-rad); en header som krymper vid scroll är en uppföljning.
+
+- **iOS Dynamic Type i kort med knapprader (BookingCard)**: Stapla rubrik (tjänst/pris) från `.xxLarge` och detaljrader vid `isAccessibilitySize`; pris med `.fixedSize` + `lineLimit(1)` så det aldrig bryts. En tre-knappsrad som trunkerade redan vid normal storlek (`Geno…`) fixas inte med `ViewThatFits` (kandidaternas mätning ger fel eller tomma etiketter med `Label`) utan med en mätt bredd (`onGeometryChange`) som väljer layout i en ren regel (`BookingCardLayoutRules.confirmedActions(for:contentWidth:)`). `fixedSize` direkt på en `Label` i en knapp gör att etiketten försvinner: använd `Label` oförändrad. Vid accessibility-storlek: visa bara text (utan ikon) i knapparna. Normalläget kan bevisas pixelidentiskt med skärmbildsdiff; den avsedda rättningen syns då bara i de kort den berör.
 
 ## iOS-testflöde
 
