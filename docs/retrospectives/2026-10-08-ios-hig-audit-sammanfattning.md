@@ -3,7 +3,7 @@ title: "iOS HIG-genomlysning 2026-10-08 -- prioriterad sammanfattning (reviderad
 description: "Reviderad topp-10, beslutade avgränsningar (iPhone-only, ljust läge, WebView för hästägare), prioritering per kategori och väg vidare"
 category: research
 status: draft
-last_updated: 2026-10-08
+last_updated: 2026-10-15
 sections:
   - Läge efter produktbesluten
   - Beslutade avgränsningar
@@ -24,9 +24,11 @@ related:
 
 ## Läge efter produktbesluten
 
-Helhetsbetyg: **Critical issues**. Efter produktbesluten återstår **34 öppna fynd**: 5 Critical (alla tillgänglighet), 9 High, 12 Medium och 8 Low. Två fynd (F-10, F-26) och en del av ett tredje (kundflödets WebView i F-14) är omklassificerade till beslutade avgränsningar och räknas inte längre som HIG-fel. Fullständig evidens finns i `2026-10-08-ios-hig-audit.md`; fynd-ID (F-xx) hänvisar dit och slices (Sxx) till `2026-10-08-ios-hig-audit-pr-slices.md`.
+**Genomförandestatus (2026-10-15):** Dynamic Type-sprinten är avslutad (S1 Översikt #547, S6-kartläggning #548, S6a Kalender #549, S2 Bokningar #555). F-01 är därmed åtgärdad för Översikt, Kalender och Bokningar; övriga nativa vyer är inte åtgärdade. Siffrorna och topp-10 nedan är den ursprungliga bedömningen efter produktbesluten (2026-10-08) och är inte omräknade. Se `2026-10-08-ios-hig-audit-pr-slices.md` ("Sprintavslut Dynamic Type").
 
-Granskningen ändrade ingen produktkod. Dokumenten och 17 skärmbilder (`docs/metrics/ios-audit-2026-10-08/`) versionshanteras i en ren dokumentations-PR.
+**Ursprunglig bedömning (2026-10-08):** Helhetsbetyg: **Critical issues**. Efter produktbesluten återstår **34 öppna fynd**: 5 Critical (alla tillgänglighet), 9 High, 12 Medium och 8 Low. Två fynd (F-10, F-26) och en del av ett tredje (kundflödets WebView i F-14) är omklassificerade till beslutade avgränsningar och räknas inte längre som HIG-fel. Fullständig evidens finns i `2026-10-08-ios-hig-audit.md`; fynd-ID (F-xx) hänvisar dit och slices (Sxx) till `2026-10-08-ios-hig-audit-pr-slices.md`.
+
+Granskningen själv ändrade ingen produktkod (sprinten efteråt gjorde det, se ovan). Dokumenten och 17 skärmbilder (`docs/metrics/ios-audit-2026-10-08/`) versionshanteras i en ren dokumentations-PR.
 
 ## Beslutade avgränsningar
 
@@ -44,7 +46,7 @@ Ordnad enligt produktens prioritering (kategori 1-6). Avgränsningsåtgärderna 
 
 | # | Fynd | Allvar | Evidens | Kategori | Slice |
 |---|------|--------|---------|----------|-------|
-| 1 | **Stor text bryter Översikt och Bokningar** (F-01). Klockslaget `14:00` blir `1/4:/0/0` vid AX5 (fast bredd 44 pt); noll `dynamicTypeSize`/`ViewThatFits` i appen | Critical | V-app + V-kod | 1 | S1, S2, S6 |
+| 1 | **Stor text bryter Översikt och Bokningar** (F-01; åtgärdat för Översikt, Kalender och Bokningar 2026-10-15, övriga vyer kvar). Klockslaget `14:00` blir `1/4:/0/0` vid AX5 (fast bredd 44 pt); noll `dynamicTypeSize`/`ViewThatFits` i appen | Critical | V-app + V-kod | 1 | S1, S2, S6 |
 | 2 | **Kontrast och färgsystem** (F-02, F-11). Brandgrönt `#29A678` = 3,08:1 mot vitt; tonade knappar 1,81-2,54:1; offline-banner 1,66:1; statuschip 2,09:1; `AccentColor` tom, grönt/blått/orange blandas | Critical + High | V-app (pixelmätt) | 1 | S3, S4 |
 | 3 | **Bokningsstatus är bara en 8 pt färgprick** i listan; saknas i VoiceOver-etiketten (F-03) | Critical | V-app + V-kod | 1 | S5 |
 | 4 | **Tryckytor 12-14 pt** på hästlänk, telefon och "Visa detaljer"; knappar 28 pt med 8 pt mellanrum (F-05) | Critical | V-app (mätt) | 2 | S8 |
@@ -73,7 +75,7 @@ Den fullständiga prioriteringsmatrisen per fynd finns i `2026-10-08-ios-hig-aud
 
 ## Väg vidare
 
-Föreslagna små, fristående PR-slices (30 st, S0 valfri) med problem, evidensklass, nytta, tester och acceptans, docs, beroenden och risker samt HIG-källor finns i `2026-10-08-ios-hig-audit-pr-slices.md`. Inget av det är påbörjat. Viktiga beroenden: bokningskortet tas i ordningen S2, S5, S8, S17; paletten (S3) före kontrastslicen (S4); push-payloaden (S16) före notisåtgärderna (S22); besluten (S11) före avgränsningsåtgärderna (S12, S13).
+Föreslagna små, fristående PR-slices (30 st, S0 valfri) med problem, evidensklass, nytta, tester och acceptans, docs, beroenden och risker samt HIG-källor finns i `2026-10-08-ios-hig-audit-pr-slices.md`. S1, S6-kartläggningen, S6a (Kalender) och S2 är genomförda och mergade; resten är inte påbörjat. Viktiga beroenden: bokningskortet tas i ordningen S2, S5, S8, S17; paletten (S3) före kontrastslicen (S4); push-payloaden (S16) före notisåtgärderna (S22); besluten (S11) före avgränsningsåtgärderna (S12, S13).
 
 Det som kräver beslut av dig innan respektive slice: ny nyans på varumärkesgrönt (S3), mönster för Avvisa/Uteblev (S17), tidpunkt för pushbehörighet (S21), appikonens design (S28).
 
