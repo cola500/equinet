@@ -2,7 +2,7 @@
 title: "iOS HIG-genomlysning 2026-10-08 -- föreslagna PR-slices"
 description: "Små, fristående PR-slices i prioriterad ordning efter produktbesluten (iPhone-only, ljust läge, WebView för hästägare), med problem, evidens, tester, acceptans, docs, beroenden och HIG-källor"
 category: plan
-status: draft
+status: active
 last_updated: 2026-10-15
 sections:
   - Utgångspunkter
@@ -27,7 +27,7 @@ related:
 
 # iOS HIG-genomlysning 2026-10-08 -- föreslagna PR-slices
 
-Detta är ett förslag, inte ett beslut. Ingen slice är påbörjad. Ordningen följer produktens prioritering: (1) blockerande Dynamic Type och tillgänglighet, (2) VoiceOver, fokusordning, etiketter och tryckytor, (3) avgränsningsåtgärder, (4) widgetens verifierade problem, (5) navigation, formulär, sheets samt fel- och offlinelägen, (6) visuell finslipning.
+**Ursprunglig plan (2026-10-08):** detta var ett förslag, inte ett beslut, och ingen slice var påbörjad. **Genomförandestatus (2026-10-15):** Dynamic Type-sprinten är avslutad. S1, S6-kartläggningen, S6a (Kalender) och S2 är mergade (se kolumnen Status i översikten och "Sprintavslut Dynamic Type" sist). Övriga slices är oförändrat föreslagna och ostartade. Ordningen följer produktens prioritering: (1) blockerande Dynamic Type och tillgänglighet, (2) VoiceOver, fokusordning, etiketter och tryckytor, (3) avgränsningsåtgärder, (4) widgetens verifierade problem, (5) navigation, formulär, sheets samt fel- och offlinelägen, (6) visuell finslipning.
 
 ## Utgångspunkter
 
@@ -57,45 +57,47 @@ Evidensetiketter i varje slice: **V-app** (verifierat i körande app), **V-kod**
 
 ## Översikt i prioriterad ordning
 
-| Slice | Titel | Fynd | Prio | Evidens | Storlek |
-|-------|-------|------|------|---------|---------|
-| S0 | (Valfri) Layout-/snapshot-spår för stor text | stöd för S1, S2, S6 | - | - | 0,5-1 dag |
-| S1 | Dynamic Type: Översikt | F-01 | 1 | V-app | liten |
-| S2 | Dynamic Type: bokningskort och filterchips | F-01 | 1 | V-app | liten-medel |
-| S3 | Semantisk färgpalett och `AccentColor` | F-11, F-02 | 1 | V-app | liten-medel |
-| S4 | Kontrast i bokningar, kalender, inloggning och banner | F-02 | 1 | V-app | liten |
-| S5 | Bokningsstatus som text och symbol | F-03 | 1 | V-app | liten |
-| S6 | Dynamic Type: övriga nativa vyer | F-01 | 1 | Ej verifierat | medel (kan delas) |
-| S7 | Etiketter: kalenderns ikonknappar, inloggning, hints | F-04, F-27, F-29 | 2 | V-app | liten |
-| S8 | Tryckytor och korttryck på bokningskort | F-05, F-06 | 2 | V-app | liten-medel |
-| S9 | Översikt: tillgänglighetselement och tryckbara dagens-rader | F-15, F-30 | 2 | V-app (F-15), Ej verifierat (F-30) | liten |
-| S10 | Tillgänglighetsinställningar och fokusordning | F-31 | 2 | Ej verifierat | liten (verifiering) |
-| S11 | Dokumentera de tre besluten | D-1, D-2, D-3 | 3 | - | docs |
-| S12 | iPhone-only | D-1 (F-26) | 3 | V-kod | liten |
-| S13 | Ljust läge uttryckligt | D-2 (F-10) | 3 | V-app | liten |
-| S14 | Widget: familjeval, datum, etiketter | F-09 | 4 | V-kod | liten-medel |
-| S15 | Widget: djuplänk till bokning | F-09 | 4 | V-kod | liten-medel |
-| S16 | Push-payload: `category` skriver över `aps` | F-08 | 5 | V-kod | liten |
-| S17 | Avvisa och Uteblev: bekräftelse eller ångra | F-07 | 5 | V-kod | liten-medel |
-| S18 | Kundskalet: splash täcker felvyn | F-35 | 5 | V-app | liten |
-| S19 | Leverantörens WebView-skal: dubbla kontroller och flytande knappar | F-14 | 5 | V-app | medel |
-| S20 | Bokningsflödet: hästvy i samma stack och synlig primärknapp | F-16, F-17 | 5 | V-app | liten |
-| S21 | Pushbehörighet i sammanhang och notisinställning | F-13 | 5 | V-app | medel |
-| S22 | Notisåtgärder och förgrundsvisning | F-19 | 5 | V-kod | liten-medel |
-| S23 | Sheets och formulär | F-18, F-27 | 5 | V-kod | liten |
-| S24 | Fel-, tom- och offlinelägen | F-21 | 5 | V-kod/V-app | medel (kan delas) |
-| S25 | Svenska datumformat | F-20 | 6 | V-app | mycket liten |
-| S26 | Kalender- och översiktsfinish | F-22, F-23, F-24 | 6 | V-app | liten |
-| S27 | Start och launch | F-25 | 6 | V-app/V-kod | liten-medel |
-| S28 | Appikon | F-12 | 6 | V-kod + skärmbild | medel (design) |
-| S29 | Städning | F-28, F-32, F-33, F-34 | 6 | V-kod | liten |
-| S30 | Okänd `userType` ska inte ge leverantörsappen | F-36 | utanför | V-app + V-kod | liten (triage) |
+| Slice | Titel | Fynd | Prio | Evidens | Storlek | Status |
+|-------|-------|------|------|---------|---------|--------|
+| S0 | (Valfri) Layout-/snapshot-spår för stor text | stöd för S1, S2, S6 | - | - | 0,5-1 dag | Uppskjuten, ej genomförd |
+| S1 | Dynamic Type: Översikt | F-01 | 1 | V-app | liten | Mergad (#547, `2a73cec7`) |
+| S2 | Dynamic Type: bokningskort och filterchips | F-01 | 1 | V-app | liten-medel | Mergad (#555, `2ec8c1ae`) |
+| S3 | Semantisk färgpalett och `AccentColor` | F-11, F-02 | 1 | V-app | liten-medel | Ostartad |
+| S4 | Kontrast i bokningar, kalender, inloggning och banner | F-02 | 1 | V-app | liten | Ostartad |
+| S5 | Bokningsstatus som text och symbol | F-03 | 1 | V-app | liten | Ostartad |
+| S6 | Dynamic Type: övriga nativa vyer | F-01 | 1 | Ej verifierat | medel (kan delas) | Kartläggning mergad (#548, `29c88c19`); Kalender (S6a) mergad (#549, `f02a155d`); övriga vyer ostartade |
+| S7 | Etiketter: kalenderns ikonknappar, inloggning, hints | F-04, F-27, F-29 | 2 | V-app | liten | Ostartad |
+| S8 | Tryckytor och korttryck på bokningskort | F-05, F-06 | 2 | V-app | liten-medel | Ostartad |
+| S9 | Översikt: tillgänglighetselement och tryckbara dagens-rader | F-15, F-30 | 2 | V-app (F-15), Ej verifierat (F-30) | liten | Ostartad |
+| S10 | Tillgänglighetsinställningar och fokusordning | F-31 | 2 | Ej verifierat | liten (verifiering) | Ostartad |
+| S11 | Dokumentera de tre besluten | D-1, D-2, D-3 | 3 | - | docs | Ostartad |
+| S12 | iPhone-only | D-1 (F-26) | 3 | V-kod | liten | Ostartad |
+| S13 | Ljust läge uttryckligt | D-2 (F-10) | 3 | V-app | liten | Ostartad |
+| S14 | Widget: familjeval, datum, etiketter | F-09 | 4 | V-kod | liten-medel | Ostartad |
+| S15 | Widget: djuplänk till bokning | F-09 | 4 | V-kod | liten-medel | Ostartad |
+| S16 | Push-payload: `category` skriver över `aps` | F-08 | 5 | V-kod | liten | Ostartad |
+| S17 | Avvisa och Uteblev: bekräftelse eller ångra | F-07 | 5 | V-kod | liten-medel | Ostartad |
+| S18 | Kundskalet: splash täcker felvyn | F-35 | 5 | V-app | liten | Ostartad |
+| S19 | Leverantörens WebView-skal: dubbla kontroller och flytande knappar | F-14 | 5 | V-app | medel | Ostartad |
+| S20 | Bokningsflödet: hästvy i samma stack och synlig primärknapp | F-16, F-17 | 5 | V-app | liten | Ostartad |
+| S21 | Pushbehörighet i sammanhang och notisinställning | F-13 | 5 | V-app | medel | Ostartad |
+| S22 | Notisåtgärder och förgrundsvisning | F-19 | 5 | V-kod | liten-medel | Ostartad |
+| S23 | Sheets och formulär | F-18, F-27 | 5 | V-kod | liten | Ostartad |
+| S24 | Fel-, tom- och offlinelägen | F-21 | 5 | V-kod/V-app | medel (kan delas) | Ostartad |
+| S25 | Svenska datumformat | F-20 | 6 | V-app | mycket liten | Ostartad |
+| S26 | Kalender- och översiktsfinish | F-22, F-23, F-24 | 6 | V-app | liten | Ostartad |
+| S27 | Start och launch | F-25 | 6 | V-app/V-kod | liten-medel | Ostartad |
+| S28 | Appikon | F-12 | 6 | V-kod + skärmbild | medel (design) | Ostartad |
+| S29 | Städning | F-28, F-32, F-33, F-34 | 6 | V-kod | liten | Ostartad |
+| S30 | Okänd `userType` ska inte ge leverantörsappen | F-36 | utanför | V-app + V-kod | liten (triage) | Ostartad |
 
 ---
 
 ## Prio 1: Blockerande Dynamic Type och tillgänglighet
 
 ### S0 (valfri, rekommenderad före S1, S2 och S6) Layout-/snapshot-spår för stor text
+
+**Status (2026-10-15): uppskjuten, inte genomförd.** Sprinten gjordes utan S0. Beslut efter sprinten: snapshot-spåret införs inte nu (se "Sprintavslut Dynamic Type"). Texten nedan är den ursprungliga bedömningen.
 
 - **Problem och skärmar:** Det finns inget automatiserat sätt att fånga att layouten går sönder vid stor text. Utan det kan S1, S2 och S6 bara bevisas med manuella skärmbilder, och regressioner uppstår igen. Gäller Översikt, Bokningar, Kalender, Mer.
 - **Evidens:** Saknad infrastruktur (V-kod: inga snapshot-tester; befintlig backlogpunkt "iOS Snapshot-tester", 0,5-1 dag).
@@ -116,7 +118,7 @@ Evidensetiketter i varje slice: **V-app** (verifierat i körande app), **V-kod**
   - Implementation: `.frame(minWidth:)` med `.fixedSize` eller `ViewThatFits`; `@Environment(\.dynamicTypeSize)` med `isAccessibilitySize` för kolumnantal; `@ScaledMetric` för ikonstorlekar.
 - **Docs:** `.claude/rules/ios-learnings.md` (mönster för adaptiv layout), `docs/testing/testing-guide.md` (scenario "Stor text" för iOS).
 - **Beroenden och risker:** Ingen blockerande. Rör bara `NativeDashboardView.swift`. Låg risk; kan krocka med S9 (samma fil), så ta S1 före S9.
-- **Status (2026-10-10):** Implementerad på `feature/ios-hig-s1-dynamic-type-oversikt` (PR öppnad, ej mergad). Datumet blir radbruten rubrik i innehållet vid tillgänglighetsstorlekar (beslut: produktägaren). Nya fynd under verifieringen, utanför S1: N-1 onboardingchecklistans rader är 18 pt höga vid normal text (till S8); N-2 "Visa alla i kalendern" är 18 pt hög (till S8); N-3 offlinebannern täcker innehållets överkant och bryts över tre rader vid AX5 (före och efter; till S6/S24); N-4 felvyns text innehåller det långa ordet "internetanslutning" som avstavas vid AX5 (textval; till S24). Laddvyn (`ProgressView`) var för kortvarig att fånga i simulatorn och är därför bara kodgranskad.
+- **Status (2026-10-15):** Mergad (PR #547, `2a73cec7`). Implementerad på `feature/ios-hig-s1-dynamic-type-oversikt`. Datumet blir radbruten rubrik i innehållet vid tillgänglighetsstorlekar (beslut: produktägaren). Nya fynd under verifieringen, utanför S1: N-1 onboardingchecklistans rader är 18 pt höga vid normal text (till S8); N-2 "Visa alla i kalendern" är 18 pt hög (till S8); N-3 offlinebannern täcker innehållets överkant och bryts över tre rader vid AX5 (före och efter; till S6/S24); N-4 felvyns text innehåller det långa ordet "internetanslutning" som avstavas vid AX5 (textval; till S24). Laddvyn (`ProgressView`) var för kortvarig att fånga i simulatorn och är därför bara kodgranskad.
 - **HIG-källor:** `accessibility.md › Vision` ("enlarge text by at least 200 percent"); `typography.md › Supporting Dynamic Type` ("Make sure your app’s layout adapts to all font sizes"; "Consider adjusting your layout at large font sizes"); `layout.md › Adaptability` ("Be prepared for text-size changes").
 
 ### S2 Dynamic Type: bokningskort och filterchips
@@ -182,7 +184,7 @@ Evidensetiketter i varje slice: **V-app** (verifierat i körande app), **V-kod**
 
 ## Prio 2: VoiceOver, fokusordning, etiketter och tryckytor
 
-**Status S6a (2026-10-10): Kalender.** Implementerad på `feature/ios-hig-s6a-dynamic-type-kalender` (PR öppnad). Tidsraster, dagshuvud, veckoremsa (begränsad till xxxLarge, beslut redovisat i PR), händelseblock, stängd-dag-rad, offlinebanner och felvy anpassade; `large` är pixelidentiskt. Kvarstår: header + veckoremsa + chips tar cirka hälften av en liten telefons höjd vid AX5 (en krympande header är en uppföljning). Inte körda: sheets (Anteckning, Avboka).
+**Status S6a (2026-10-15): Kalender.** Mergad (PR #549, `f02a155d`); S6-kartläggningen mergades i PR #548 (`29c88c19`). Implementerad på `feature/ios-hig-s6a-dynamic-type-kalender`. Tidsraster, dagshuvud, veckoremsa (begränsad till xxxLarge, beslut redovisat i PR), händelseblock, stängd-dag-rad, offlinebanner och felvy anpassade; `large` är pixelidentiskt. Kvarstår: header + veckoremsa + chips tar cirka hälften av en liten telefons höjd vid AX5 (en krympande header är en uppföljning). Inte körda: sheets (Anteckning, Avboka).
 
 ### S7 Etiketter: kalenderns ikonknappar, inloggning, hints
 
