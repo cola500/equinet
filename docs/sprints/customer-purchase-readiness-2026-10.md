@@ -204,6 +204,9 @@ måste verifieras av sakkunnig, inte slutsatser.
 
 **2. Vem säljer och vem tar emot pengarna (ny huvudfråga)**
 
+Beslutsspåret finns i
+[payment-marketplace-model-decision.md](../architecture/payment-marketplace-model-decision.md).
+
 Betalningen skapas direkt på Equinets Stripe-konto. Det finns ingen Stripe
 Connect, ingen överföring till leverantören och ingen plattformsavgift. Kvittot
 anger leverantörens företagsnamn som om leverantören var säljaren. Det innebär
@@ -296,6 +299,10 @@ akutbesök hos en pilotleverantör, när C1–C3 och säljarmodellen är lösta.
   juridisk bedömning av betaltjänstfrågan. Jämför sedan direct charges och
   destination charges, med eller utan `on_behalf_of`, utifrån den beslutade
   modellen. Ingen laddningstyp väljs innan säljarmodellen är beslutad.
+  Separat beslutsspår:
+  [payment-marketplace-model-decision.md](../architecture/payment-marketplace-model-decision.md).
+  D1 blockerar `READY` och alla livebetalningar, men inte genomförandet av
+  R4. Är D1 olöst vid R4 klassas livebetalningar som `NOT READY`.
 - **D2 (P0):** fullständiga villkor och integritetspolicy med bolagsuppgifter,
   betalning, avbokning, återbetalning och supportväg. Villkor och kod ska
   stämma överens.

@@ -45,7 +45,7 @@ sections:
 
 ## Beslut eller frågor till Johan
 
-- **D1 är en ny P0-fråga:** vem ska vara säljare? Behövs en juridisk bedömning av betaltjänsttillstånd innan R4 prioriteras? Först därefter jämförs direct charges och destination charges. Ingen laddningstyp är vald.
+- **D1 är ett separat beslutsspår som blockerar livebetalningar:** `docs/architecture/payment-marketplace-model-decision.md`. Det innehåller arbetshypotes, en jämförelse av direct och destination charges, ansvarsfrågor, frågor till Stripe, jurist och redovisningskonsult samt beslutsgate. D1 blockerar `READY` och livebetalningar men **inte genomförandet av R4**. Är D1 olöst vid R4 klassas livebetalningar som `NOT READY`. Ingen modell är vald.
 
 ## Rekommenderat nästa steg
 
