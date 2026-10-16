@@ -20,7 +20,7 @@ sections:
 
 > **Nuläge (2026-06-07):** Ingen numrerad sprint pågår. Arbetet sedan S67 körs som **ad-hoc slices** (t.ex. Dagens rutt, CI-gate på staging, backlog-hygien — PR #367–373) och spåras i den kanoniska **[backlog.md](backlog.md)** ("Aktiva produktspår" + "Arkiv / Done"). Senast avslutade numrerade sprint: **S67**.
 
-> **Readiness-sprint (2026-10-16):** [Customer Purchase Readiness](customer-purchase-readiness-2026-10.md) — gap-to-live-genomlysning inför skarpa kunder, personuppgifter och betalningar. R0–R4 genomförda; klassning **`NOT READY`** (D1 säljarmodell olöst, P0-slices öppna). Retro återstår. Prioriterade slices: se R4-beslut i sprintdokumentet och [backlog.md](backlog.md#live-betalningar-production-readiness). Agentöverlämningar: [docs/agent-handoffs/](../agent-handoffs/README.md).
+> **Readiness-sprint (2026-10-16) — AVSLUTAD:** [Customer Purchase Readiness](customer-purchase-readiness-2026-10.md) — gap-to-live-genomlysning inför skarpa kunder, personuppgifter och betalningar. R0–R4 och [retro](../retrospectives/2026-10-16-customer-purchase-readiness-retro.md) genomförda; klassning **`NOT READY`** (D1 säljarmodell olöst, P0-slices öppna). Nästa: våg 0–1 enligt R4. Prioriterade slices: se R4-beslut i sprintdokumentet och [backlog.md](backlog.md#live-betalningar-production-readiness). Agentöverlämningar: [docs/agent-handoffs/](../agent-handoffs/README.md).
 
 **Sprint 67** — iOS staging capability via separat Vercel-projekt. **KLAR 2026-05-09.** Se [sprint-67-ios-staging-capability.md](sprint-67-ios-staging-capability.md).
 
