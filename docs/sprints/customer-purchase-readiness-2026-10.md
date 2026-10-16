@@ -186,6 +186,133 @@ Källor:
 - [Fresha: Self Checkout efter besöket](https://www.fresha.com/help-center/knowledge-base/payments/101284-collect-payments-using-self-checkout)
 - [Fresha: cancellation- och no-show-avgifter](https://www.fresha.com/help-center/knowledge-base/payments/617-charge-no-show-and-cancellation-fees)
 
+#### R3-resultat (2026-10-16)
+
+Underlag: kod och dokument på `main`, R0–R2 samt officiella källor. Inga
+miljö-, Stripe- eller dataändringar. Juridiska bedömningar nedan är frågor som
+måste verifieras av sakkunnig, inte slutsatser.
+
+**1. Kundens villkor, kvitto och supportväg**
+
+| Område | Nuläge | Bedömning |
+|---|---|---|
+| Användarvillkor och integritetspolicy | Platshållare för företagsnamn, org.nr, adress och e-post; senast uppdaterade 2026-02-15; inget om betalning, moms eller återbetalning (R1) | Blockerare för skarpa kunder |
+| Avbokning | Villkoren anger 24 h eller leverantörens regler, men koden saknar avbokningsgräns för kunden och leverantörer kan inte ange egna avbokningsregler | Villkor och kod motsäger varandra |
+| Återbetalning | Ingen refund-kod, inget adminverktyg, webhooken hanterar inte refund eller tvist (`charge.dispute.*`) | Blockerare: undantagsrefund kräver manuell Stripe-hantering utan spårbarhet i Equinet |
+| Kvitto | HTML-kvitto med företagsnamn, tjänst, datum och belopp; ingen moms, inget org.nr eller momsregistreringsnummer | Två skilda frågor. (a) *Betalningsunderlag till privatkund:* kunden behöver ett begripligt kvitto, men en faktura krävs inte i alla fall. Vad underlaget minst ska innehålla beror på säljarmodellen (D1) och behöver verifieras. (b) *Förenklad faktura:* om en faktura utfärdas eller krävs, t.ex. när köparen är näringsidkare, ska även en förenklad faktura (högst 4 000 kr inkl. moms) innehålla säljarens identitetsnummer och moms. Det nuvarande kvittot uppfyller inte de kraven |
+| Supportväg | Ingen kontaktväg i villkoren; `support@equinet.se` finns bara i en felkomponent; meddelanden till leverantör finns | Otydlig ägare för betalningsfrågor |
+
+**2. Vem säljer och vem tar emot pengarna (ny huvudfråga)**
+
+Betalningen skapas direkt på Equinets Stripe-konto. Det finns ingen Stripe
+Connect, ingen överföring till leverantören och ingen plattformsavgift. Kvittot
+anger leverantörens företagsnamn som om leverantören var säljaren. Det innebär
+att:
+
+- Equinet i praktiken tar emot betalning för leverantörens tjänst utan
+  automatisk väg att betala ut till leverantören.
+- Det är oklart vem som är säljare (merchant of record) och vem som ska utfärda
+  kvitto eller faktura och redovisa moms.
+- Att ta emot pengar för annans räkning kan kräva tillstånd som
+  betaltjänstleverantör, om inget undantag gäller. **Juridisk fråga för
+  Johan och sakkunnig**, inte en slutsats.
+- Stripe beskriver Connect som stöd för marknadsplatser, med flera
+  laddningstyper (bland annat direct charges och destination charges) för
+  avgift, utbetalning och refund. `on_behalf_of` styr vilken part som är
+  "business of record" i Stripe-flödet, till exempel kontoutdragstext och
+  avräkning. Det avgör inte ensamt vem som juridiskt är säljare eller
+  merchant of record, eftersom det också följer av avtal, villkor och
+  momsredovisning.
+
+**3. Undantagsåterbetalning (föreslagen process, ej implementerad)**
+
+1. *Initiering:* kund via support eller leverantör via meddelande; orsak
+   (feldebitering, reklamation, godkänt undantag) registreras.
+2. *Godkännande:* leverantören godkänner reklamation om sin tjänst; Equinet
+   godkänner feldebitering. Belopp ≤ betalt belopp, och delrefund tillåts.
+3. *Utförande:* refund via Stripe på den lyckade PaymentIntent; Equinet
+   uppdaterar `Payment.status` (`refunded`/delvis) via webhook, med
+   idempotens.
+4. *Kommunikation:* kund och leverantör får besked, och kvittot eller en
+   kreditnota uppdateras.
+5. *Uppföljning:* revisionslogg (vem, när, varför) och månatlig avstämning mot
+   Stripe.
+
+Detta förutsätter att frågan i punkt 2 är löst, eftersom vem som bär
+refund-kostnaden beror på säljarmodellen.
+
+**4. Förutsättningar för livebetalningar**
+
+| Krav | Status |
+|---|---|
+| Stripe företagsverifiering (live-konto) | Ej verifierbar: endast sandbox syns via anslutningen. Dokumenterad blockerare |
+| Prod-env | `PAYMENT_PROVIDER=mock`, `stripe_payments` av, Stripe-nycklar är testnycklar, `STRIPE_WEBHOOK_SECRET` saknas (R0) |
+| Webhook i live-läge | Ingen live-endpoint kunde verifieras; testendpointen prenumererar inte på refund- eller tvistevent |
+| Domän / wallets | Apple Pay-domänen är inte registrerad. R2 observerade ett `Permissions-Policy`-fel från Google Pay i konsolen; om Google Pay faktiskt är tillgängligt för kunden är inte verifierat |
+| Env-guard | `check-prod-env` kräver Stripe-variabler när `PAYMENT_PROVIDER=stripe` |
+| Övervakning | Sentry-DSN finns i prod, men `logger` skickar inte fel till Sentry; Betterstack och Stripe-mejllarm är dokumenterade men inte verifierade |
+| GDPR | Stripe som personuppgiftsbiträde: DPA och dataplats inte verifierade; bolagsuppgifter saknas |
+| Manuella rutiner | Ingen dokumenterad avstämning, refund, tvist eller utbetalning till leverantör |
+
+**5. Betalningsincidenter: upptäckt, ägarskap och hantering**
+
+- *Nuläge:* incident-runbookens Stripe-avsnitt beskriver
+  prenumerationswebhooks. Det saknas avsnitt för misslyckade kundbetalningar,
+  dubbeldebitering, utebliven webhook, refund och tvist. Inget larm fångar
+  fel i `/api/webhooks/stripe`.
+- *Föreslaget:* Johan är ägare tills annat beslutas. Upptäckt sker via
+  Stripe-mejllarm för misslyckade webhook-leveranser, fel som rapporteras till
+  Sentry från webhook- och betalningsrouter, samt daglig avstämning av
+  `Payment` mot Stripe (status och antal öppna PaymentIntents). Åtgärder står i
+  en runbook-sektion per incidenttyp. Kunden får besked inom en bestämd tid.
+
+**6. Marknadsjämförelse**
+
+| Plattform | Modell enligt officiella källor |
+|---|---|
+| Bokadirekt | Per tjänst: full förskottsbetalning, delbetalning/bokningsavgift eller kortgaranti. Leverantören väljer avbokningspolicy (t.ex. full återbetalning vid avbokning senast 24 h före). Hur salongen får utbetalning framgår inte av källan. Faktura för t.ex. uteblivet besök skickas via Billogram |
+| Fresha | Deposition, sparat kort (no-show-skydd) och valfri full förskottsbetalning. Self checkout-länk efter besöket (giltig 48 h). Avgifter får inte överstiga överenskommen policy, och no-show-avgift kan inte återföras |
+
+Bedömning för mobila hästtjänster:
+
+1. *Tjänstebetalning efter `completed`* (grundregeln) passar bäst. Priset kan
+   ändras på plats (fler hovar, akut åtgärd), kunden betalar för något
+   utfört, och refund-behovet blir litet. Risken ligger hos leverantören vid
+   utebliven betalning. Fresha har motsvarande flöde med self checkout.
+2. *Bokningssäkring* (deposition eller kortgaranti) bör bara prövas för
+   dyra tjänster, långa resor eller nya kunder. Det kräver sparade kort
+   (Stripe SetupIntent) och tydligt samtycke, och ökar refund-ansvaret.
+3. *Avboknings- och no-show-avgift* måste vara en separat, i förväg
+   accepterad policy med tak (som hos Fresha) och får inte blandas ihop med
+   tjänstebetalningen. Det kräver eget produktbeslut.
+
+Förslag till senare experiment, utanför denna sprint: kortgaranti för
+akutbesök hos en pilotleverantör, när C1–C3 och säljarmodellen är lösta.
+
+**7. Kandidater till R4 från R3**
+
+- **D1 (P0):** säljarmodell och betalflöde. Besluta först säljarmodellen:
+  juridisk säljare, kvitto- och momsansvar, utbetalning och avgift, samt en
+  juridisk bedömning av betaltjänstfrågan. Jämför sedan direct charges och
+  destination charges, med eller utan `on_behalf_of`, utifrån den beslutade
+  modellen. Ingen laddningstyp väljs innan säljarmodellen är beslutad.
+- **D2 (P0):** fullständiga villkor och integritetspolicy med bolagsuppgifter,
+  betalning, avbokning, återbetalning och supportväg. Villkor och kod ska
+  stämma överens.
+- **D3 (P0/P1):** betalningsunderlag till privatkund, plus förenklad faktura
+  i de fall faktura utfärdas eller krävs. Innehållet följer säljarmodellen i
+  D1 och verifieras mot Skatteverkets krav.
+- **D4 (P1):** refund- och tvistprocess med verktyg, webhook-event och
+  revisionslogg.
+- **D5 (P1):** betalningsövervakning och runbook: Sentry-integration, larm och
+  avstämning.
+
+Källor (utöver dem ovan):
+[Skatteverket: momslagens regler om fakturering](https://www.skatteverket.se/4.58d555751259e4d66168000403.html),
+[Finansinspektionen: betaltjänster](https://www.fi.se/sv/betalningar/sok-tillstand/betaltjanster/),
+[Stripe: build a marketplace](https://docs.stripe.com/connect/marketplace),
+[Stripe: Connect charge types](https://docs.stripe.com/connect/charges).
+
 ### R4 – Beslut och åtgärdsplan
 
 Klassificera resultatet:
