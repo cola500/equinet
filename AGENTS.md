@@ -71,7 +71,9 @@ Detaljerade checklistor finns i `.claude/rules/team-workflow.md`.
 **Station 7 ar tech lead-granskning.** Triggas via "kor review".
 
 **VIKTIGT: En branch at gangen.** Alla sessioner delar samma working directory.
-Kor en session, lat den bli klar, kor review, sedan nasta. Aldrig parallella sessioner.
+Kor en session, lat den bli klar, kor review, sedan nasta. Parallella sessioner i
+samma checkout ar aldrig tillatna. Parallellt arbete ar ett undantag som kraver
+separata worktrees enligt `.claude/rules/parallel-sessions.md`.
 
 **Regler:**
 - Hoppa ALDRIG over en station
@@ -83,6 +85,14 @@ Kor en session, lat den bli klar, kor review, sedan nasta. Aldrig parallella ses
 ---
 
 ## Kommunikation mellan sessioner
+
+### Överlämning mellan Claude Code och Codex
+
+Läs `docs/agent-handoffs/README.md` samt båda agenternas överlämningsfiler före
+nytt arbete. Varje agent skriver endast i sin egen fil. Överlämningarna är korta
+(cirka 40 rader), tillfälliga operativa notiser och ersätter inte
+`docs/sprints/status.md`, backlogg, Git eller PR:er. Städning vid sprintavslut
+och evidensmarkörerna `[läst]`/`[körd]` beskrivs i README:n.
 
 ### Live-status (docs/sprints/status.md) -- OBLIGATORISK
 

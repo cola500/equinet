@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-06-07
+last_updated: 2026-10-16
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -19,6 +19,8 @@ sections:
 ## Aktiv sprint
 
 > **Nuläge (2026-06-07):** Ingen numrerad sprint pågår. Arbetet sedan S67 körs som **ad-hoc slices** (t.ex. Dagens rutt, CI-gate på staging, backlog-hygien — PR #367–373) och spåras i den kanoniska **[backlog.md](backlog.md)** ("Aktiva produktspår" + "Arkiv / Done"). Senast avslutade numrerade sprint: **S67**.
+
+> **Föreslagen readiness-sprint (2026-10-16):** [Customer Purchase Readiness](customer-purchase-readiness-2026-10.md) — gap-to-live-genomlysning inför skarpa kunder, personuppgifter och betalningar. Status: `draft`. Agentöverlämningar: [docs/agent-handoffs/](../agent-handoffs/README.md).
 
 **Sprint 67** — iOS staging capability via separat Vercel-projekt. **KLAR 2026-05-09.** Se [sprint-67-ios-staging-capability.md](sprint-67-ios-staging-capability.md).
 
