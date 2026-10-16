@@ -81,11 +81,13 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 ## Live-betalningar (Production Readiness)
 
 > Öppna trådar inför **live-betalningar**. Härstammar från betalnings-hardening-spåret — se [wrap-up-retro](../retrospectives/2026-06-06-payment-hardening-wrapup.md).
+>
+> **Customer Purchase Readiness (R4, 2026-10-16): `NOT READY`.** Den prioriterade slice-listan (D1, C1–C7, D2–D5, A, B, E1–E2) med vågor och villkor för en pilot finns i [sprintdokumentet, R4-beslut](customer-purchase-readiness-2026-10.md). D1 (säljarmodell, [beslutsunderlag](../architecture/payment-marketplace-model-decision.md)) blockerar alla livebetalningar.
 
 | Item | Storlek | Beskrivning | Trigger |
 |------|---------|-------------|---------|
 | Checkout Sessions Spike | S | Utvärdera Stripe Checkout Sessions (`ui_mode=elements`) mot nuvarande direkt-PaymentIntents. Se [spike-doc](../architecture/spike-stripe-checkout-sessions.md). Mer färdigt checkout-stöd, mindre egen kod. | Före production payments |
-| Stripe Idempotency Keys | S | Idempotency key på `StripePaymentGateway.initiatePayment`. Varje Betala-klick skapar idag ny PaymentIntent via upsert → övergivna PIs; dubbelklick = två PIs. | Före live |
+| Stripe Idempotency Keys (ersatt av C1) | S | Ersatt av readiness-slice C1 (en betalningsstart per bokning, P0). R2 visade tre bekräftningsbara PaymentIntents för samma bokning. Se [sprintdokumentet](customer-purchase-readiness-2026-10.md). | Före live |
 | Restricted Stripe Keys | S | Byt `sk_` → restricted key (`rk_`) med least-privilege per miljö. En komprometterad `rk_` gör mindre skada. | Före live (test + prod) |
 | 3DS Verification (omklassad 2026-10-16) | S | CSP-ändringen behövs inte: 3DS-testkortet gick igenom i staging (Customer Purchase Readiness R2), eftersom utmaningen laddas inuti Stripes egen iframe. Kvar är en go-live-kontroll med 3DS i fler webbläsare och med live-kort. Se [sprintdokumentet](customer-purchase-readiness-2026-10.md). | Vid live-E2E |
 
@@ -97,7 +99,7 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 |------|---------|-------------|---------|
 | Service Worker Update Strategy | M | Säkerställ att ny SW tar över efter deploy (skipWaiting-prompt eller versions-trigger). Browser fastnade på gammal SW efter deploy → risk att fixar inte når användare. | Nästa SW-bugg, eller före prod |
 | Payment Security Review | M | Formell oberoende säkerhetsgranskning av hela betalflödet (IDOR, server-side amount, webhook-signatur, ownership, idempotens). | Före production payments |
-| Production Monitoring | M | Alerting/observability för betalningar (failed payments, webhook-fel, dedup-anomalier) via Sentry/loggar + larm. | Vid/före live |
+| Production Monitoring (ingår i D5) | M | Alerting/observability för betalningar (failed payments, webhook-fel, dedup-anomalier) via Sentry/loggar + larm. Ingår i readiness-slice D5. R3 visade att `logger` inte skickar fel till Sentry. | Vid/före live |
 | Fixa fire-and-forget i AuthService + övriga notifiers | 1-2h | `AuthService.requestPasswordReset` skickar `emailService.sendPasswordReset(...).catch(() => {})` och returnerar direkt. På Fluid Compute kan instansen termineras innan fetch slutförs → mail skickas aldrig. **Bevis 2026-04-30**: 2 av 3 password-reset-mail nådde aldrig Resend. Fix: `await waitUntil(...)` från `@vercel/functions` eller blockerande `await`. Audit alla `.catch(() => {})` i `src/`. |
 | CI-guard: kräv icke-tom APP_URL i prod-build | 1-2h | `APP_URL` saknades i Vercel prod-env i månader → email-länkar pekade på localhost. `scripts/check-prod-env.ts` verifierar att vars finns men inte att de har värde. Lägg till non-empty-check i `prebuild` när `VERCEL_ENV=production` (APP_URL, DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, RESEND_API_KEY, STRIPE_SECRET_KEY). |
 
