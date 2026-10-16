@@ -3,7 +3,7 @@ title: "Betalningar -- production readiness (go-live-gate)"
 description: "Konsoliderad checklista för vad som krävs innan Equinet tar emot riktiga betalningar. Test-mode är verifierat; live-mode är gated."
 category: architecture
 status: active
-last_updated: 2026-06-07
+last_updated: 2026-10-16
 tags: [payment, stripe, production-readiness, go-live, checklist]
 related:
   - docs/architecture/stripe-webhook-architecture.md
@@ -52,7 +52,7 @@ sections:
 
 ### Kodhärdning
 - ⬜ **Idempotency key på `StripePaymentGateway.initiatePayment`** — i dag skapar varje Betala-klick en ny PaymentIntent (övergivna PIs).
-- ⬜ **3DS-stöd:** `frame-src https://hooks.stripe.com` i CSP + testa SCA-kort (testkortet `4242` är non-3DS; riktiga EU-kort triggar ofta 3DS).
+- ✅ **3DS-stöd i test mode:** verifierat 2026-10-16 i Customer Purchase Readiness R2. Testkortet `4000 0025 0000 3155` visade utmaningen, gick igenom och gav `succeeded`, utan CSP-ändring. Utmaningen laddas i en ram inuti Stripes egen iframe, så `frame-src https://hooks.stripe.com` behövs inte. Kvarstår som ordinarie go-live-kontroll: 3DS i fler webbläsare och med live-kort. Se [sprintdokumentet](../sprints/customer-purchase-readiness-2026-10.md) (R4, "Stängd hypotes").
 
 ### Plattformshärdning
 - ⬜ **Service Worker update-strategi** — användare fastnade på gammal SW efter deploy (risk att fixar inte når användare).
