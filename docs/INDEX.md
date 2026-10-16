@@ -3,7 +3,7 @@ title: "Equinet -- Dokumentationsindex"
 description: "Centralt navigeringsdokument for all projektdokumentation"
 category: root
 status: active
-last_updated: 2026-10-08
+last_updated: 2026-10-16
 sections:
   - Arkitektur
   - Operations
@@ -31,7 +31,8 @@ sections:
 |----------|-------------|
 | [database.md](architecture/database.md) | Databasschema, RLS, pooling, backup |
 | [offline-pwa.md](architecture/offline-pwa.md) | Offline PWA-arkitektur (service worker, IndexedDB, sync) |
-| [booking-flow.md](architecture/booking-flow.md) | Bokningsflode och betalning |
+| [business-rules.md](architecture/business-rules.md) | **Affärsregler** -- samlad katalog med status, var regeln upprätthålls, avvikelser och öppna beslut |
+| [booking-flow.md](architecture/booking-flow.md) | Bokningsflode och betalning (delvis inaktuell, se business-rules.md) |
 | [scaling.md](architecture/scaling.md) | Skalningsplan for 500 anvandare |
 | [provider-workday.md](architecture/provider-workday.md) | Leverantörens arbetsdag -- rutter, geo-integrationer, Dagens rutt |
 | [architecture-review.md](architecture-review.md) | Arkitekturgenomgang Q1 2026 |

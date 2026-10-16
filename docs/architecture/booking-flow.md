@@ -20,6 +20,8 @@ sections:
 
 > Dokumentation för det kompletta bokningsflödet från kundbehov till betalning.
 
+> **Delvis inaktuell (2026-10-16):** betalning beskrivs som mock med Stripe som "nästa steg", buffertvärdena för restid (10/15 min) är fel (koden använder 60/60 min), kvittoformatet är fel och statusen `no_show` saknas. För gällande affärsregler, se [business-rules.md](business-rules.md).
+
 ## Översikt
 
 Equinet har nu ett komplett bokningsflöde som täcker hela kundresan:

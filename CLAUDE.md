@@ -54,6 +54,7 @@ sections:
 | Commit-strategi (PR vs direkt) | [.claude/rules/commit-strategy.md](.claude/rules/commit-strategy.md) |
 | Deploy | [docs/operations/deployment.md](docs/operations/deployment.md) |
 | **Var verifiera demo/staging?** | [docs/operations/deployment-verification-guide.md](docs/operations/deployment-verification-guide.md) (kolla FÖRE demo-UX-verifiering) |
+| **Affärsregler** | [docs/architecture/business-rules.md](docs/architecture/business-rules.md) (kolla FÖRE ändring av boknings-/betalningslogik) |
 | Bokningsflöde | [docs/architecture/booking-flow.md](docs/architecture/booking-flow.md) |
 | **Refactor triggers** | [docs/architecture/refactor-triggers.md](docs/architecture/refactor-triggers.md) (kolla FÖRE varje refactor) |
 | Retros | [docs/retrospectives/](docs/retrospectives/) |
