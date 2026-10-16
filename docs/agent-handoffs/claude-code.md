@@ -16,59 +16,51 @@ sections:
 
 # Claude Code – överlämning
 
-**Senast uppdaterad:** 2026-10-16  
-**Aktuell uppgift:** Slutreview av docs-slicen på branchen  
-**Branch eller worktree:** `docs/agent-handoffs-readiness-sprint` (huvudcheckout)  
-**Status:** klar, väntar på Johans besked om commit
+**Senast uppdaterad:** 2026-10-16\
+**Aktuell uppgift:** R4-plan från R2 + städning av R2-testdata (klar, R3 ej startad)\
+**Branch eller worktree:** `docs/readiness-r0-inventory`\
+**Status:** väntar på Codex/Johan-granskning
 
 ## Gjort
 
-- Granskat hela diffen: `AGENTS.md`, `docs/sprints/status.md`, README, båda
-  handoff-filerna och sprintfilen.
-- **Omdöme: READY FOR COMMIT.** Inga blockerare. Små anmärkningar nedan.
+- Sprintdokumentet, R4-avsnittet "Slices från R2", har sju slices:
+  - C1 (P0): en betalningsstart per bokning
+  - C2 (P0): betalning först efter `completed`
+  - C3 (P0/P1): `completed` före sluttid
+  - C4 (P1): betalstatus synlig för båda parter
+  - C5 (P1): information före bokning
+  - C6 (P1): betalnotiser och kvitto
+  - C7 (P1): nekat kort och retry
+
+  Varje slice har problem, acceptanskriterier, beroenden och evidens. CSP/3DS-hypotesen står som **stängd**, och R2 har fått en kort notis om städningen. Ingen produktkod är ändrad.
+- [körd] Städning i staging, i en transaktion med räknevakter. Raderat:
+  - 9 notiser kopplade till R2-bokningarna
+  - 4 webhook-event, alla matchade mot R2:s PaymentIntents i Stripe
+  - 3 betalningsrader
+  - 3 R2-märkta bokningar
+- [körd] Två öppna PaymentIntents avbrutna (status `canceled`) via Stripes API med stagings testnyckel. Nyckeltypen kontrollerades först och skrevs aldrig ut. Stripe-MCP saknar cancel-operation.
 
 ## Verifierat
 
-- [körd] `git status`: endast `AGENTS.md`, `docs/sprints/status.md`,
-  `docs/agent-handoffs/` och sprintfilen är ändrade eller nya. Inga produktfiler,
-  konfiguration, miljöer eller testdata.
-- [körd] `git diff --check` utan fel. `npm run docs:validate`: 160 äldre fel,
-  inga i handoff-filerna, sprintfilen eller `status.md`.
-- [läst] Sprintens `sections` (8 st) matchar dess H2-rubriker exakt. Samma för
-  README och båda handoff-filerna.
-- [läst] Sprintmålet anger skarpa kunder, riktiga personuppgifter och riktiga
-  pengar. Customer Preview och test mode beskrivs som vägen dit.
-- [läst] Sprintfil och `status.md` har båda `draft`.
-- [läst] `codex.md`: 38 rader brödtext, alla rubriker finns, `[läst]` används
-  korrekt för dokument- och kodläsning. Inga hemligheter eller persondata.
-- [läst] Parallellitet, kanonisk/tillfällig-tabell, 40-radersgräns, markörer och
-  städning (varje agent nollställer sin egen fil) är konsekventa mellan
-  README och `AGENTS.md`. R2 behandlar dubbelklick som känt gap.
+- [körd] Alla 13 baslinjeantal i staging är identiska med före R2: bokning 20, betalning 0, notis 11, webhook-event 4, användare 41, auth 27 med flera. Inga R2-bokningar och inga betalningsrader från R2 finns kvar.
+- [körd] Demoleverantörens 20 bokningar finns kvar, och 0 av dem har ändrats sedan start. Kundens 4 bokningar och båda personornas notisantal är som före R2.
+- [körd] Stripe test mode: båda de öppna PaymentIntents är `canceled`. De tre lyckade test-intenterna ligger kvar, eftersom Stripe inte tillåter radering. Inga andra sandboxobjekt rördes och ingen global rensning gjordes.
+- [körd] Prod (read-only): 0 bokningar och 0 betalningar i dag, 0 Stripe-betalningar totalt. Inga riktiga betalningar påverkades.
 
 ## Beslut eller frågor till Johan
 
-Icke-blockerande anmärkningar (kan tas i senare slice):
-
-1. R2 saknar fortfarande 3DS som känd CSP-lucka (`hooks.stripe.com`), ett steg 0
-   för att bekräfta stagings aktuella konfiguration och städning av testdata.
-2. `codex.md` redovisar inte `git diff --check`/`docs:validate` som `[körd]`.
-3. `status.md` har kvar ett äldre "Nuläge (2026-06-07)" ovanför den nya raden.
-4. Nya `AGENTS.md`-stycket har å/ä/ö medan resten av filen är ASCII.
-5. Företagskatalogen (Git, enhetliga rubriker) är fortfarande inte åtgärdad.
+- Inga öppna frågor. 3DS-uppföljningen är gjord i samma docs-slice: `payment-production-readiness.md` markerar 3DS i test mode som verifierat, och backlograden "3DS Verification" är omklassad till en go-live-kontroll (S).
 
 ## Rekommenderat nästa steg
 
-- Johan ger besked om commit. Lägg filerna uttryckligen, inte `git add -A`:
-  `AGENTS.md`, `docs/sprints/status.md`, `docs/agent-handoffs/`,
-  `docs/sprints/customer-purchase-readiness-2026-10.md`. PR-texten listar
-  uppdaterade docs. Pre-commit-hooks är inte körda av mig.
-- Därefter R0 som ren läsning.
+- Codex och Johan granskar R4-slicesen. Därefter R3.
 
 ## Rör inte
 
-- `codex.md`, produktkod, konfiguration, miljöer, testdata.
+- `codex.md`, produktion, Stripe-inställningar, env, flaggor, `.vercel`, produktkod.
 
 ## Relaterade filer och PR
 
-- `docs/agent-handoffs/README.md`, `docs/sprints/customer-purchase-readiness-2026-10.md`
-- PR: ingen ännu. Ingenting är committat eller pushat.
+- `docs/sprints/customer-purchase-readiness-2026-10.md` (R2-notis, R4 "Slices från R2")
+- Evidens: `docs/operations/e2e-runs/customer-purchase-readiness-r2-2026-10-16/`
+- PR: ingen. Ocommittat.

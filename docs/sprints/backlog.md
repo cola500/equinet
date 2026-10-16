@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Kanonisk backlog för Equinet. Alla kända stories, uppgifter och beslut. status.md pekar hit; roadmap.md är den strategiska vyn."
 category: sprint
 status: active
-last_updated: 2026-10-07
+last_updated: 2026-10-16
 tags: [backlog, roadmap, planning]
 sections:
   - Aktiva produktspår
@@ -87,7 +87,7 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Checkout Sessions Spike | S | Utvärdera Stripe Checkout Sessions (`ui_mode=elements`) mot nuvarande direkt-PaymentIntents. Se [spike-doc](../architecture/spike-stripe-checkout-sessions.md). Mer färdigt checkout-stöd, mindre egen kod. | Före production payments |
 | Stripe Idempotency Keys | S | Idempotency key på `StripePaymentGateway.initiatePayment`. Varje Betala-klick skapar idag ny PaymentIntent via upsert → övergivna PIs; dubbelklick = två PIs. | Före live |
 | Restricted Stripe Keys | S | Byt `sk_` → restricted key (`rk_`) med least-privilege per miljö. En komprometterad `rk_` gör mindre skada. | Före live (test + prod) |
-| 3DS Verification | M | Lägg `https://hooks.stripe.com` i CSP `frame-src` och testa 3DS-kort (SCA). Testkortet `4242` är non-3DS; riktiga EU-kort triggar ofta 3DS i `hooks.stripe.com`-iframe. | Före live med riktiga kort |
+| 3DS Verification (omklassad 2026-10-16) | S | CSP-ändringen behövs inte: 3DS-testkortet gick igenom i staging (Customer Purchase Readiness R2), eftersom utmaningen laddas inuti Stripes egen iframe. Kvar är en go-live-kontroll med 3DS i fler webbläsare och med live-kort. Se [sprintdokumentet](customer-purchase-readiness-2026-10.md). | Vid live-E2E |
 
 ## Plattformshärdning (pre-live)
 
