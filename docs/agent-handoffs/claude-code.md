@@ -17,39 +17,37 @@ sections:
 # Claude Code – överlämning
 
 **Senast uppdaterad:** 2026-10-16\
-**Aktuell uppgift:** R3 – operativ och affärsmässig readiness (klar)\
-**Branch eller worktree:** `docs/readiness-r3`\
+**Aktuell uppgift:** R4 – beslut och åtgärdsplan (klar)\
+**Branch eller worktree:** `docs/readiness-r4`\
 **Status:** väntar på Codex/Johan-granskning
 
 ## Gjort
 
-- R3-resultatet står i sprintdokumentet under "R3-resultat (2026-10-16)":
-  - villkor, kvitto och support
-  - säljarmodell
-  - refund-process
-  - krav för livebetalning
-  - incidenthantering
-  - marknadsjämförelse
-  - R4-kandidaterna D1–D5
-- Endast läsning av kod, dokument och officiella källor. Inga miljö-, Stripe- eller dataändringar.
+- R4-beslutet står i sprintdokumentet: klassningen **`NOT READY`**, prioritetsnivåer, en samlad slice-lista med evidens, ägare, beroende och våg, villkoren för `READY WITH CONDITIONS` i en pilot och kopplingen till backloggen.
+- Backloggen har en hänvisning till R4. "Stripe Idempotency Keys" är markerad som ersatt av C1 och "Production Monitoring" som en del av D5. `status.md` säger att R0–R4 är genomförda och att retron återstår.
+- Ingen produktkod, miljö eller data ändrad.
 
 ## Verifierat
 
-- [läst] Ingen Stripe Connect, ingen transfer och ingen plattformsavgift. Betalningen landar på Equinets konto, medan kvittot anger leverantören. Merchant of record, utbetalning och momsansvar är odefinierade. Betaltjänstfrågan är juridisk och inte avgjord.
-- [läst] Ingen avbokningsgräns i koden, trots 24 h i villkoren. Leverantörer saknar egna avbokningsregler.
-- [läst] Ingen refund- eller tvisthantering, varken i kod, admin eller webhook.
-- [läst] Kvittot saknar moms och säljarens identitetsnummer. Betalningsunderlag till privatkund och förenklad faktura är skilda frågor: faktura krävs inte alltid, men när en förenklad faktura utfärdas eller krävs ska den enligt Skatteverket innehålla säljarens identitetsnummer och moms. Det nuvarande kvittot uppfyller inte de kraven.
-- [läst] `on_behalf_of` styr "business of record" i Stripe-flödet men avgör inte ensamt juridisk säljare. Google Pay: R2 observerade ett `Permissions-Policy`-fel, men faktisk tillgänglighet är inte verifierad.
-- [läst] `logger` skickar inte fel till Sentry, trots att DSN finns i prod. Incident-runbooken täcker bara prenumerationswebhooks.
-- [läst] Marknadskällorna (Bokadirekt, Fresha) hämtades. Bokadirekts sidor anger inte hur utbetalning till salongen sker.
+- [läst] D1 är olöst och blockerar enligt beslutsgaten alla livebetalningar. Därför är klassningen `NOT READY`, även bortsett från övriga P0-fynd.
+- [läst] Prioriteringar, alla med evidens från R0–R3:
+  - P0: D1, C1, C2, C3, A, D2 och D3. D2 inkluderar verifierat personuppgiftsbiträdesavtal och dataplats för Stripe. D3 är P0 för pilot, medan senare layout- och automatiseringsförbättringar är P1.
+  - D5: grundlarm och runbook är P0, övriga förbättringar P1.
+  - P1: C4–C7, D4, B.
+  - P2: E1, E2.
+- [läst] Ordningen är våg 0 (beslut), 1 (P0 utan D1), 2 (P0 med D1), 3 (P1) och 4 (P2).
+- [läst] Pilotens live-gate kräver dessutom restricted Stripe keys och en formell Payment Security Review. Grundläggande D5 får **inte** ersättas av en manuell rutin. Bara kvarvarande D5-förbättringar får ha en tillfällig manuell kompensation.
+- [läst] R2: API:t avvisar `pending` och en annan kunds bokning, men tillåter fortfarande felaktigt betalning vid `confirmed`. Det hanteras av C2.
+- [läst] Nya slices från R1 som inte fanns tidigare är E1 (publik kundresa) och E2 (`.vercel`-driftgap).
 
 ## Beslut eller frågor till Johan
 
-- **D1 är ett separat beslutsspår som blockerar livebetalningar:** `docs/architecture/payment-marketplace-model-decision.md`. Det innehåller arbetshypotes, en jämförelse av direct och destination charges, ansvarsfrågor, frågor till Stripe, jurist och redovisningskonsult samt beslutsgate. D1 blockerar `READY` och livebetalningar men **inte genomförandet av R4**. Är D1 olöst vid R4 klassas livebetalningar som `NOT READY`. Ingen modell är vald.
+- Våg 0 behöver dina beslut: att starta extern verifiering för D1, om C3 ska förhindra eller bekräfta, och att godkänna en plan för A.
+- Backlograden "CI-guard: kräv icke-tom APP_URL" är inaktuell, eftersom guarden redan finns (R0). Jag har inte rört den. Ska den städas i en senare docs-slice?
 
 ## Rekommenderat nästa steg
 
-- Codex och Johan granskar R3. Därefter R4: samlat READY-beslut och prioritering av A, B, C1–C7 och D1–D5.
+- Codex och Johan granskar R4. Därefter sprintens retro enligt Definition of Done, och varje agent nollställer sin handoff.
 
 ## Rör inte
 
@@ -57,5 +55,5 @@ sections:
 
 ## Relaterade filer och PR
 
-- `docs/sprints/customer-purchase-readiness-2026-10.md` (R3-resultat)
-- PR: ingen. Ocommittat på `docs/readiness-r3`.
+- `docs/sprints/customer-purchase-readiness-2026-10.md` (R4-beslut), `docs/sprints/backlog.md`, `docs/sprints/status.md`
+- PR: ingen. Ocommittat på `docs/readiness-r4`.

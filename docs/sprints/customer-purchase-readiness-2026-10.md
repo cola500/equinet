@@ -332,6 +332,96 @@ Klassificera resultatet:
 Varje fynd ska ha allvarlighetsgrad, evidens, ägare och rekommenderad minsta
 åtgärdsslice. Ingen fix startas i denna sprint utan nytt beslut.
 
+#### R4-beslut (2026-10-16)
+
+**Klassning: `NOT READY`** – för skarpa kunder, riktiga personuppgifter och
+riktiga pengar.
+
+Motivering: D1 (säljarmodell) är olöst och blockerar enligt
+[beslutsgaten](../architecture/payment-marketplace-model-decision.md#beslutsgate)
+alla livebetalningar. Utöver det finns P0-fynd som var för sig stoppar skarpa
+kunder: platshållare i villkor och integritetspolicy (D2), publik testdata i
+produktion (A), flera bekräftningsbara PaymentIntents per bokning (C1) och
+betalning före utförd tjänst (C2–C3). Fortsatt Customer Preview med fiktiv
+data påverkas inte av klassningen.
+
+Det som fungerar (R2, Stripe test mode): serverstyrt belopp, webhook-signatur
+och deduplicering, kvitto, 3D Secure och skydd mot betalning av redan betald
+bokning. API:t avvisar betalning av `pending`-bokningar och av en annan kunds
+bokning, men tillåter fortfarande felaktigt betalning vid `confirmed`. Det
+hanteras av C2.
+
+**Prioritetsnivåer**
+
+- **P0** – blockerar skarpa kunder eller livebetalningar.
+- **P1** – krävs före bred lansering; kan accepteras under namngivna villkor i
+  en begränsad pilot.
+- **P2** – förbättring utan direkt lanseringsrisk.
+
+**Samlad slice-lista**
+
+| ID | Slice | Prio | Evidens | Ägare | Beroende | Våg |
+|---|---|---|---|---|---|---|
+| D1 | Säljarmodell och betalflöde | P0 | R3 §2, [beslutsunderlag](../architecture/payment-marketplace-model-decision.md) | Johan + jurist, redovisningskonsult, Stripe | – | 0 |
+| C3 | `completed` före bokad sluttid | P0 | R2 | Johan (produktbeslut), sedan Claude Code | Beslut: förhindra eller bekräfta | 0→1 |
+| A | Inventera och städa testdata i prod | P0 | R1 skärmbilder 02, 03, 07; kontoinventering | Johan (godkännande), Claude Code | Separat plan och backup | 1 |
+| C1 | En betalningsstart per bokning | P0 | R2 fall 2 (tre intents) | Claude Code | – | 1 |
+| C2 | Betalning först efter `completed` | P0 | R2 skärmbild 02, API-svar | Claude Code | C3 | 1 |
+| D2 | Villkor och integritetspolicy kompletta, inklusive verifierat personuppgiftsbiträdesavtal (DPA) och dataplats för Stripe | P0 | R1 skärmbilder 05, 06; R3 §1 och §4 | Johan + jurist, sedan Claude Code | D1 (betalningsdelar) | 2 |
+| D3 | Betalningsunderlag och förenklad faktura | P0 för pilot (senare layout- och automatiseringsförbättringar P1) | R3 §1 | Johan + redovisningskonsult, sedan Claude Code | D1 | 2 |
+| D5 | Betalningsövervakning och incident-runbook | P0 för grundläggande larm och runbook, P1 för övriga förbättringar | R3 §4–5 | Claude Code | – | 1 (grund), 3 (förbättringar) |
+| C4 | Betalstatus synlig och aktuell för båda parter | P1 | R2 skärmbilder 03, 06, 07 | Claude Code | – | 3 |
+| C5 | Information före bokning | P1 | R2 skärmbild 01 | Claude Code | D2 (texter) | 3 |
+| C6 | Betalningsnotiser och kvitto | P1 | R2 notisräkning | Claude Code | D3 för kvittoinnehåll | 3 |
+| C7 | Nekat kort och retry | P1 | R2 fall 2 | Claude Code | C1 | 3 |
+| D4 | Refund- och tvistprocess | P1 | R3 §3 | Johan (ansvar), Claude Code | D1 | 3 |
+| B | Isolerade syntetiska produktionsidentiteter | P1 | R1 kontoinventering | Johan (godkännande), Claude Code | A | 3 |
+| E1 | Publik kundresa: returadress efter inloggning, dölj passerade rutter, "Stängt" i stället för 00:00, touch targets | P2 | R1 skärmbilder 04, 07, 09 | Claude Code | – | 4 |
+| E2 | Lokal `.vercel`-länk pekar på staging trots runbook | P2 | R0 miljökontroll | Johan | – | 4 |
+
+Codex granskar varje slice tillsammans med Johan innan merge. Ingen slice
+startas i denna sprint.
+
+**Ordning**
+
+- *Våg 0 – beslut (parallellt):* D1:s externa verifiering, produktbeslut för
+  C3, godkännande av plan för A.
+- *Våg 1 – P0 utan D1-beroende:* C1, C3 + C2, A, samt grundläggande D5.
+- *Våg 2 – P0 som kräver D1:* D2, D3 och slutlig betalningsarkitektur.
+- *Våg 3 – P1:* C4–C7, D4, B och kvarvarande D5- och D3-förbättringar.
+- *Våg 4 – P2:* E1, E2.
+
+**Väg till `READY WITH CONDITIONS` för en begränsad pilot**
+
+Alla följande villkor måste vara uppfyllda:
+
+1. D1 beslutat och verifierat, och betalflödet implementerat enligt beslutet.
+2. Alla P0-slices klara: C1, C2, C3, A, D2 (inklusive verifierat
+   personuppgiftsbiträdesavtal och dataplats för Stripe) och D3.
+3. Grundläggande D5 klar: larm på webhook- och betalningsfel samt runbook. Det
+   är obligatoriskt och får **inte** ersättas av en manuell rutin.
+4. Live-konfiguration enligt
+   [payment-production-readiness.md](../architecture/payment-production-readiness.md):
+   företagsverifiering, livenycklar, webhook och env-guard.
+5. Restricted Stripe keys (`rk_`) med minsta nödvändiga behörighet i
+   produktion.
+6. Formell Payment Security Review av hela betalflödet, genomförd och utan
+   öppna blockerare.
+7. Live-E2E med eget kort, inklusive återbetalning, efter separat godkännande.
+
+P1-slices som inte är klara vid pilotstart ska namnges som villkor. Endast
+kvarvarande D5-förbättringar, utöver grundlarm och runbook, får ha en
+tillfällig manuell kompensation, t.ex. daglig manuell avstämning mot Stripe.
+
+**Koppling till befintlig backlogg**
+
+- "Stripe Idempotency Keys" ersätts av C1.
+- "Production Monitoring" ingår i D5.
+- "Checkout Sessions Spike" beslutas efter D1, eftersom debiteringsmodellen
+  påverkar valet.
+- "Restricted Stripe Keys" och "Payment Security Review" ingår i pilotens
+  live-gate (villkor 5 och 6 ovan).
+
 #### Förberedda slices för produktionsidentiteter och testdata
 
 R1 visar att produktion blandar riktiga identiteter med publikt synlig testdata.
