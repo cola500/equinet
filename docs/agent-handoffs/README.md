@@ -43,6 +43,17 @@ Sådant flyttas till sprintens slutrapport innan sprinten avslutas.
 6. Produktstatus och prioriteringar uppdateras i de kanoniska projektfilerna,
    inte här.
 7. Hemligheter, kunduppgifter och känsliga produktionsdata får inte skrivas här.
+8. Vid varje stoppunkt där Johan behöver ta ställning ska avsnittet
+   "Beslut eller frågor till Johan" innehålla en kort beslutsruta:
+   1. Vad är verifierat?
+   2. Vad är fortfarande osäkert?
+   3. Vilket beslut behövs nu?
+   4. Vad rekommenderar agenterna, uttryckt i vanlig svenska?
+   5. Vad kan fortsätta utan beslutet?
+
+   Om inget beslut behövs räcker det att skriva det tydligt; skapa inte en tom
+   beslutsruta. Claude Code skriver beslutsrutan och Codex kontrollerar den vid
+   granskning.
 
 ## Sekventiellt och parallellt arbete
 

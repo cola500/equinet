@@ -2,7 +2,7 @@
 title: "Customer Purchase Readiness – oktober 2026"
 description: "Gap-to-live-genomlysning inför skarpa kunder, riktiga personuppgifter och riktiga betalningar"
 category: sprint
-status: draft
+status: active
 last_updated: 2026-10-16
 tags: [readiness, production, customer-journey, booking, payment]
 sections:
@@ -18,6 +18,9 @@ sections:
 ---
 
 # Customer Purchase Readiness
+
+> **Status: Avslutad 2026-10-16.** Klassning `NOT READY`. Se R4-beslut och
+> [retro](../retrospectives/2026-10-16-customer-purchase-readiness-retro.md).
 
 ## Sprintmål
 
@@ -363,7 +366,7 @@ hanteras av C2.
 | ID | Slice | Prio | Evidens | Ägare | Beroende | Våg |
 |---|---|---|---|---|---|---|
 | D1 | Säljarmodell och betalflöde | P0 | R3 §2, [beslutsunderlag](../architecture/payment-marketplace-model-decision.md) | Johan + jurist, redovisningskonsult, Stripe | – | 0 |
-| C3 | `completed` före bokad sluttid | P0 | R2 | Johan (produktbeslut), sedan Claude Code | Beslut: förhindra eller bekräfta | 0→1 |
+| C3 | `completed` före bokad sluttid | P0 | R2 | Claude Code (produktbeslut fattat i retron: förhindra) | – | 1 |
 | A | Inventera och städa testdata i prod | P0 | R1 skärmbilder 02, 03, 07; kontoinventering | Johan (godkännande), Claude Code | Separat plan och backup | 1 |
 | C1 | En betalningsstart per bokning | P0 | R2 fall 2 (tre intents) | Claude Code | – | 1 |
 | C2 | Betalning först efter `completed` | P0 | R2 skärmbild 02, API-svar | Claude Code | C3 | 1 |
@@ -384,8 +387,9 @@ startas i denna sprint.
 
 **Ordning**
 
-- *Våg 0 – beslut (parallellt):* D1:s externa verifiering, produktbeslut för
-  C3, godkännande av plan för A.
+- *Våg 0 – beslut (parallellt):* D1:s externa verifiering och godkännande av
+  en separat, återställningsbar plan för A. Produktbeslutet för C3 är fattat
+  (se C3).
 - *Våg 1 – P0 utan D1-beroende:* C1, C3 + C2, A, samt grundläggande D5.
 - *Våg 2 – P0 som kräver D1:* D2, D3 och slutlig betalningsarkitektur.
 - *Våg 3 – P1:* C4–C7, D4, B och kvarvarande D5- och D3-förbättringar.
@@ -495,12 +499,15 @@ produktkod ändras i denna sprint; varje slice kräver eget beslut.
 
 - *Problem:* Leverantören kunde markera bokningen `completed` cirka tre timmar
   före bokad tid, utan bekräftelse.
-- *Önskat utfall:* Förhindra, eller kräva uttrycklig bekräftelse, före bokad
-  sluttid.
-- *Acceptanskriterier:* statusbyte före sluttid blockeras eller kräver
-  bekräftelse med tydlig text; beslutet är dokumenterat och testat i
-  `BookingStatus`/`BookingService`.
-- *Beroenden:* produktbeslut om förhindra vs bekräfta.
+- *Beslut (Johan, 2026-10-16, retro):* En bokning får normalt inte markeras
+  som utförd före bokad sluttid. En eventuell framtida override ska vara
+  behörighetsstyrd, motiverad och loggad. Override ingår inte i första
+  versionen av C3.
+- *Önskat utfall:* `completed` före bokad sluttid avvisas.
+- *Acceptanskriterier:* statusbyte till `completed` före sluttid avvisas i
+  domänlagret med begripligt felmeddelande, testat i
+  `BookingStatus`/`BookingService` och i API:t; tidszon hanteras korrekt.
+- *Beroenden:* inga (produktbeslutet är fattat).
 
 **C4 (P1) – Betalstatus synlig och aktuell för båda parter**
 
