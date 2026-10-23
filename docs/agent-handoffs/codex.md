@@ -19,7 +19,7 @@ sections:
 **Senast uppdaterad:** 2026-10-23
 **Aktuell uppgift:** Oberoende granskning av specifikationspiloten
 **Branch eller worktree:** `docs/spec-pilot-booking-payment`
-**Status:** slutgranskad; en precisionsjustering behövs före commit
+**Status:** slutgranskad och godkänd för PR
 
 ## Gjort
 
@@ -42,10 +42,9 @@ sections:
 
 ## Rekommenderat nästa steg
 
-- Justera SC-PAY-025: scenariot får inte samtidigt slå fast 950 kr och säga
-  att vilket belopp som gäller är obeslutat. Låt utfallet för beloppet vara
-  öppet, men behåll kravet att det äldre försöket inte längre kan slutföras.
-- Därefter är specifikationspiloten redo för commit och PR.
+- [läst] SC-PAY-025 är korrigerat: äldre försök kan inte slutföras och valet
+  av aktuellt belopp ligger fortsatt öppet i Q-PAY-003.
+- Specifikationspiloten är redo för CI, PR-granskning och merge.
 
 ## Rör inte
 
