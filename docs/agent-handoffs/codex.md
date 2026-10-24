@@ -19,7 +19,7 @@ sections:
 **Senast uppdaterad:** 2026-10-24
 **Aktuell uppgift:** Slutgranskning av vertikal C3/C2-slice
 **Branch eller worktree:** `feature/c3-c2-booking-completion-payment`
-**Status:** en verifieringsjustering krävs före push/PR
+**Status:** slutgranskad och godkänd; inga blockerande fynd
 
 ## Gjort
 
@@ -41,19 +41,20 @@ sections:
 - [läst] `playwright.config.ts` laddar `.env.local` och skickar vidare
   `PAYMENT_PROVIDER`; den vertikala E2E-specen är därför inte garanterat mockad.
   Detta skapade redan ett externt Stripe-testförsök under verifieringen.
+- [läst] Fyndet är åtgärdat i `72975118`: standard-E2E tvingar mock, Stripe
+  kräver explicit opt-in och specen kontrollerar servern före seed/betalning.
+- [läst] Testendpointen är spärrad med `ALLOW_TEST_ENDPOINTS`, returnerar bara
+  `mock`/`stripe` och instansierar inte gateway eller läser någon nyckel.
 - [körd] 137 riktade Vitest-tester gröna; `git diff --check` ren.
+- [körd] Endpoint- och betalningstester: 21 gröna efter slutjusteringen.
 
 ## Beslut eller frågor till Johan
 
-- Inget produktbeslut krävs. Testmiljön behöver göras deterministisk.
+- Inget produktbeslut krävs. Inga blockerande fynd återstår.
 
 ## Rekommenderat nästa steg
 
-- Tvinga `PAYMENT_PROVIDER=mock` för den vanliga E2E-servern, eller inför ett
-  separat uttryckligt opt-in för Stripe-E2E. `.env.local` får inte oavsiktligt
-  växla den vertikala specen till en extern gateway. Lägg till/verifiera skyddet.
-- Därefter: pusha, skapa PR och låt CI verifiera hela ändringen. Merga inte
-  före grön CI.
+- Låt CI och `Quality Gate Passed` bli gröna på PR #570. Merga därefter.
 - I nästa retro: utvärdera SDD-piloten och ta ställning till permanent
   intentionsdokument/process. Behåll iOS automatisk knappaktivering och gamla
   E2E-inloggningsmål som dokumenterade, icke-blockerande uppföljningar.

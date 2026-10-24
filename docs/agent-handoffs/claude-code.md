@@ -19,7 +19,7 @@ sections:
 **Senast uppdaterad:** 2026-10-24\
 **Aktuell uppgift:** Vertikal SDD-slice C3 (utförd tidigast vid sluttid) + C2 (betalning först efter utförd). Styrande: BR-BOOK-001, BR-PAY-001, SC-BOOK-001–008, SC-PAY-001–005.\
 **Branch eller worktree:** `feature/c3-c2-booking-completion-payment` (från `main` `4b9101ed`), pushad\
-**Status:** Codex slutgranskning åtgärdad (deterministisk E2E-betalmiljö). PR skapad, ej mergad; väntar på CI.
+**Status:** Codex slutgranskning godkänd utan blockerande fynd. PR #570 skapad, ej mergad; väntar på CI.
 
 ## Gjort
 
@@ -34,6 +34,7 @@ sections:
 - `[körd]` `/code-review`: 10 fynd, 5 åtgärdade (datumtolkning utan zon och väster om UTC, automatisk webbaktivering, iOS-400-text, push-kö), 3 dokumenterade som kvarstående, 2 avböjda (avsiktlig dubbelanrop, 2 kopior < extraheringsgräns).
 - `[körd]` `/security-review`: inga fynd med hög konfidens.
 - `[körd]` Skyddet: utan override körs mock trots `.env.local`=stripe (4 passed). Mot en återanvänd dev-server med Stripe avbryter specen med tydligt fel; 0 seedade bokningar och 0 nya betalningar. `check:all` 4/4 (4934 tester).
+- `[läst]` Codex slutgranskning: godkänd; testendpointen granskad (spärrad, returnerar bara `mock`/`stripe`, läser ingen nyckel).
 - `[körd]` ios-expert: inga blockers/majors; felrutan i kalendern visas efter stängd sheet, VoiceOver-hint, köpolicyn begränsad till 4xx.
 
 ## Beslut eller frågor till Johan
@@ -41,7 +42,7 @@ sections:
 1. **Verifierat:** båda reglerna verkställs på servern; inget schema ändrat.
 2. **Osäkert:** atomiciteten provkörs inte mot riktig PostgreSQL (bygger på en enda `UPDATE`-sats). iOS-knappar aktiveras inte av sig själva vid sluttiden.
 3. **Att känna till:** en E2E-körning mot lokal `.env.local` (`PAYMENT_PROVIDER="stripe"`) skapade ett betalningsförsök i Stripes testkonto innan jag tvingade `PAYMENT_PROVIDER=mock`. Ingen debitering, ingen prod. Flera E2E-specar har inaktuella inloggningsmål (`/provider/dashboard`), befintligt.
-4. **Rekommendation:** merga efter grön CI. Den lilla testendpointen har bara självgranskats och täcks av egna tester; den returnerar endast gatewayns namn.
+4. **Rekommendation:** merga efter grön CI. Testendpointen är granskad av Codex och täcks av egna tester.
 5. **Kan fortsätta utan beslut:** inget mer i slicen.
 
 ## Rekommenderat nästa steg
@@ -55,4 +56,4 @@ sections:
 
 ## Relaterade filer och PR
 
-- `docs/specifications/implementation/booking-completion-payment.md`, `docs/specifications/traceability/booking-payment-matrix.md`; PR: se `gh pr view`.
+- `docs/specifications/implementation/booking-completion-payment.md`, `docs/specifications/traceability/booking-payment-matrix.md`; PR #570.

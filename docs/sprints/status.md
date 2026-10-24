@@ -29,7 +29,7 @@ sections:
 | PLAN | done (48b2f712) |
 | RED | C3 done (47843b65); C2 done (812c2d88) |
 | GREEN | C3 done (a8191152); C2 done (94001634); vertikal E2E + docs (denna commit) |
-| REVIEW | /code-review, /security-review, ios-expert klara; fynd åtgärdade eller dokumenterade; Codex slutgranskning åtgärdad (deterministisk E2E-betalmiljö) |
+| REVIEW | /code-review, /security-review, ios-expert klara; fynd åtgärdade eller dokumenterade; Codex slutgranskning godkänd utan blockerande fynd; PR #570 väntar på CI |
 | VERIFY | check:all 4/4, offline-E2E och vertikal E2E gröna lokalt; iOS full svit 386/386 |
 
 **Sprint 67** — iOS staging capability via separat Vercel-projekt. **KLAR 2026-05-09.** Se [sprint-67-ios-staging-capability.md](sprint-67-ios-staging-capability.md).
