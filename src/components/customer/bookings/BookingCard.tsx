@@ -438,8 +438,7 @@ function BookingActions({
               </a>
             )}
           </div>
-        ) : showPayment && (booking.status === "confirmed" ||
-          booking.status === "completed") ? (
+        ) : showPayment && booking.status === "completed" ? (
           <Button
             variant="default"
             size="sm"
@@ -456,6 +455,9 @@ function BookingActions({
               <>Betala {booking.service.price} kr</>
             )}
           </Button>
+        ) : showPayment && booking.status === "confirmed" ? (
+          // BR-PAY-001: explain why there is no pay button yet
+          <p className="text-sm text-gray-600">Betalning öppnas när besöket är genomfört</p>
         ) : null}
 
         {/* Reschedule button */}

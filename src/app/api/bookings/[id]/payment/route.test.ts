@@ -36,7 +36,7 @@ vi.mock("@/domain/payment", () => ({
     const map: Record<string, string> = {
       BOOKING_NOT_FOUND: "Bokning hittades inte",
       ALREADY_PAID: "Bokningen är redan betald",
-      INVALID_STATUS: "Bokningen måste vara bekräftad innan betalning kan göras",
+      INVALID_STATUS: "Bokningen kan betalas först när tjänsten är utförd.",
     }
     if (error.type === "GATEWAY_FAILED") return error.message || "Betalningen misslyckades"
     return map[error.type] ?? "Ett fel uppstod vid betalning"

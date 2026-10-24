@@ -126,7 +126,8 @@ export class PaymentService {
       return Result.fail({ type: "ALREADY_PAID" })
     }
 
-    if (!["confirmed", "completed"].includes(booking.status)) {
+    // BR-PAY-001: payment only after the service is performed
+    if (booking.status !== "completed") {
       return Result.fail({ type: "INVALID_STATUS", status: booking.status })
     }
 
