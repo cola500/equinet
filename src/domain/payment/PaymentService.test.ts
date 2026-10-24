@@ -5,10 +5,11 @@ import type { IPaymentGateway, PaymentResult } from "./PaymentGateway"
 
 // --- Helpers ---
 
-function mockConfirmedBooking(overrides: Partial<BookingForPayment> = {}): BookingForPayment {
+// BR-PAY-001: only a completed booking is payable, so that is the default
+function mockCompletedBooking(overrides: Partial<BookingForPayment> = {}): BookingForPayment {
   return {
     id: "booking-1",
-    status: "confirmed",
+    status: "completed",
     providerId: "provider-1",
     bookingDate: new Date("2026-03-20"),
     service: { price: 500, name: "Hovvård" },
@@ -64,7 +65,7 @@ function failGateway(error?: string): IPaymentGateway {
 
 function createDeps(overrides: Partial<PaymentServiceDeps> = {}): PaymentServiceDeps {
   return {
-    findBookingForPayment: vi.fn().mockResolvedValue(mockConfirmedBooking()),
+    findBookingForPayment: vi.fn().mockResolvedValue(mockCompletedBooking()),
     findBookingForStatus: vi.fn().mockResolvedValue(mockBookingForStatus()),
     upsertPayment: vi.fn().mockResolvedValue({
       id: "pay-1",
@@ -103,7 +104,7 @@ describe("PaymentService.processPayment", () => {
   it("returns ALREADY_PAID when payment status is succeeded", async () => {
     const deps = createDeps({
       findBookingForPayment: vi.fn().mockResolvedValue(
-        mockConfirmedBooking({ payment: { status: "succeeded" } })
+        mockCompletedBooking({ payment: { status: "succeeded" } })
       ),
     })
     const service = new PaymentService(deps)
@@ -114,10 +115,10 @@ describe("PaymentService.processPayment", () => {
     expect(result.error.type).toBe("ALREADY_PAID")
   })
 
-  it("returns INVALID_STATUS for pending booking", async () => {
+  it("SC-PAY-002 – returns INVALID_STATUS for pending booking", async () => {
     const deps = createDeps({
       findBookingForPayment: vi.fn().mockResolvedValue(
-        mockConfirmedBooking({ status: "pending" })
+        mockCompletedBooking({ status: "pending" })
       ),
     })
     const service = new PaymentService(deps)
@@ -131,10 +132,10 @@ describe("PaymentService.processPayment", () => {
     }
   })
 
-  it("returns INVALID_STATUS for cancelled booking", async () => {
+  it("SC-PAY-004 – returns INVALID_STATUS for cancelled booking", async () => {
     const deps = createDeps({
       findBookingForPayment: vi.fn().mockResolvedValue(
-        mockConfirmedBooking({ status: "cancelled" })
+        mockCompletedBooking({ status: "cancelled" })
       ),
     })
     const service = new PaymentService(deps)
@@ -145,7 +146,40 @@ describe("PaymentService.processPayment", () => {
     expect(result.error.type).toBe("INVALID_STATUS")
   })
 
-  it("succeeds for confirmed booking", async () => {
+  it("SC-PAY-003 – avvisar bekräftad bokning (även efter sluttid) och startar ingen betalning", async () => {
+    const gateway = successGateway()
+    const deps = createDeps({
+      paymentGateway: gateway,
+      findBookingForPayment: vi.fn().mockResolvedValue(
+        mockCompletedBooking({ status: "confirmed", bookingDate: new Date("2020-01-01") })
+      ),
+    })
+    const service = new PaymentService(deps)
+
+    const result = await service.processPayment("booking-1", "customer-1")
+
+    expect(result.isFailure).toBe(true)
+    expect(result.error).toEqual({ type: "INVALID_STATUS", status: "confirmed" })
+    expect(gateway.initiatePayment).not.toHaveBeenCalled()
+    expect(deps.upsertPayment).not.toHaveBeenCalled()
+  })
+
+  it("SC-PAY-005 – avvisar utebliven kund (no_show) och startar ingen betalning", async () => {
+    const gateway = successGateway()
+    const deps = createDeps({
+      paymentGateway: gateway,
+      findBookingForPayment: vi.fn().mockResolvedValue(mockCompletedBooking({ status: "no_show" })),
+    })
+    const service = new PaymentService(deps)
+
+    const result = await service.processPayment("booking-1", "customer-1")
+
+    expect(result.isFailure).toBe(true)
+    expect(result.error.type).toBe("INVALID_STATUS")
+    expect(gateway.initiatePayment).not.toHaveBeenCalled()
+  })
+
+  it("SC-PAY-001 – lyckas för utförd bokning", async () => {
     const deps = createDeps()
     const service = new PaymentService(deps)
 
@@ -153,19 +187,6 @@ describe("PaymentService.processPayment", () => {
 
     expect(result.isSuccess).toBe(true)
     expect(result.value.payment.id).toBe("pay-1")
-  })
-
-  it("succeeds for completed booking", async () => {
-    const deps = createDeps({
-      findBookingForPayment: vi.fn().mockResolvedValue(
-        mockConfirmedBooking({ status: "completed" })
-      ),
-    })
-    const service = new PaymentService(deps)
-
-    const result = await service.processPayment("booking-1", "customer-1")
-
-    expect(result.isSuccess).toBe(true)
   })
 
   it("returns GATEWAY_FAILED when gateway fails", async () => {
@@ -251,7 +272,7 @@ describe("PaymentService.processPayment", () => {
   it("handles null customer with fallback name", async () => {
     const deps = createDeps({
       findBookingForPayment: vi.fn().mockResolvedValue(
-        mockConfirmedBooking({ customer: null as never })
+        mockCompletedBooking({ customer: null as never })
       ),
     })
     const service = new PaymentService(deps)

@@ -183,14 +183,14 @@ describe("POST /api/bookings/[id]/payment", () => {
     expect(body.error).toBe("Bokningen är redan betald")
   })
 
-  it("returns 400 when booking status is not confirmed or completed", async () => {
+  it("returns 400 when booking status is not completed", async () => {
     mockProcessPayment.mockResolvedValue(
-      Result.fail({ type: "INVALID_STATUS", status: "pending" }),
+      Result.fail({ type: "INVALID_STATUS", status: "confirmed" }),
     )
     const res = await POST(createRequest(BOOKING_ID), { params })
     const body = await res.json()
     expect(res.status).toBe(400)
-    expect(body.error).toBe("Bokningen måste vara bekräftad innan betalning kan göras")
+    expect(body.error).toBe("Bokningen kan betalas först när tjänsten är utförd.")
   })
 
   it("returns 200 with payment data on successful payment", async () => {
