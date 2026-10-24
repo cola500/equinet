@@ -87,7 +87,6 @@ final class PendingActionStoreTests: XCTestCase {
         XCTAssertFalse(PendingActionStore.shouldQueue(APIError.serverError(403)))
         XCTAssertFalse(PendingActionStore.shouldQueue(APIError.serverError(404)))
         XCTAssertFalse(PendingActionStore.shouldQueue(APIError.serverError(409)))
-        XCTAssertFalse(PendingActionStore.shouldQueue(APIError.unauthorized))
     }
 
     func testNetworkAndTransientErrorsAreQueued() {
@@ -96,5 +95,8 @@ final class PendingActionStoreTests: XCTestCase {
         XCTAssertTrue(PendingActionStore.shouldQueue(APIError.timeout))
         XCTAssertTrue(PendingActionStore.shouldQueue(APIError.serverError(503)))
         XCTAssertTrue(PendingActionStore.shouldQueue(APIError.rateLimited(retryAfter: nil)))
+        // Unchanged from before: auth problems may resolve after re-login
+        XCTAssertTrue(PendingActionStore.shouldQueue(APIError.unauthorized))
+        XCTAssertTrue(PendingActionStore.shouldQueue(APIError.noToken))
     }
 }

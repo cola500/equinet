@@ -725,6 +725,7 @@ private struct BookingCard: View {
         Button(action: onComplete) { actionLabel("Genomförd", "checkmark.circle", fill: fill) }
             .buttonStyle(.borderedProminent).tint(Color.equinetGreen)
             .disabled(isActionInProgress || !canComplete)
+            .accessibilityHint(canComplete ? "" : BookingCompletionRules.completionHint(endTime: booking.endTime))
     }
 
     private func noShowButton(fill: Bool) -> some View {

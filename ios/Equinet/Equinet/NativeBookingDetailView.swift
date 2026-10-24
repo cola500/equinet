@@ -575,6 +575,9 @@ struct NativeBookingDetailView: View {
             .tint(.green)
             .controlSize(.large)
             .disabled(isLoading || !canComplete(booking))
+            .accessibilityHint(
+                canComplete(booking) ? "" : BookingCompletionRules.completionHint(endTime: booking.endTime)
+            )
 
             if !canComplete(booking) {
                 Text(BookingCompletionRules.completionHint(endTime: booking.endTime))

@@ -209,6 +209,7 @@ struct BookingDetailSheet: View {
                 .tint(.green)
                 .controlSize(.large)
                 .disabled(!canComplete)
+                .accessibilityHint(canComplete ? "" : BookingCompletionRules.completionHint(endTime: booking.endTime))
 
                 if !canComplete {
                     Text(BookingCompletionRules.completionHint(endTime: booking.endTime))

@@ -46,14 +46,12 @@ enum PendingActionStore {
     /// decision (e.g. BR-BOOK-001 before end time) and is shown to the user
     /// instead of being retried and silently discarded.
     static func shouldQueue(_ error: Error) -> Bool {
-        switch error {
-        case APIError.serverError(let code):
+        if case APIError.serverError(let code) = error {
             return !(400..<500).contains(code)
-        case APIError.unauthorized, APIError.noToken, APIError.decodingError:
-            return false
-        default:
-            return true
         }
+        // Network errors, timeouts, rate limits and auth/token problems
+        // (resolved after re-login) keep being queued as before.
+        return true
     }
 
     static func clear(from defaults: UserDefaults = .standard) {

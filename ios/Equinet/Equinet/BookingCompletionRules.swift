@@ -79,7 +79,7 @@ enum BookingCompletionRules {
         }
         var dayCalendar = calendar
         if calendar.timeZone.secondsFromGMT(for: instant) < 0 {
-            dayCalendar.timeZone = TimeZone(identifier: "UTC")!
+            dayCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
         }
         let c = dayCalendar.dateComponents([.year, .month, .day], from: instant)
         guard let y = c.year, let m = c.month, let d = c.day else { return nil }
