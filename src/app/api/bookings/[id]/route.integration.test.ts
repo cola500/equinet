@@ -8,7 +8,7 @@
  * The real BookingService validates status transitions, authorization,
  * and delegates to the mocked PrismaBookingRepository.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { NextRequest } from "next/server"
 
 // --- Class mock instances (must be defined before vi.mock) ---
@@ -403,6 +403,69 @@ describe("PUT /api/bookings/[id] (integration)", () => {
     )
 
     expect(res.status).toBe(401)
+  })
+
+  describe("BR-BOOK-001 – utförd tidigast vid sluttid (serverns mottagningstid)", () => {
+    // Base example: 10 Nov 2026, 10:00–11:00 Stockholm (UTC+1) => ends 10:00 UTC
+    const c3Booking = {
+      ...mockBookingData,
+      bookingDate: new Date("2026-11-10T00:00:00.000Z"),
+      status: "confirmed" as const,
+    }
+    const completedBooking = { ...c3Booking, status: "completed" as const }
+
+    beforeEach(() => {
+      mockBookingRepo.findById.mockResolvedValue(c3Booking)
+      mockBookingRepo.updateStatusWithAuth.mockResolvedValue(completedBooking)
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    async function putCompletedAt(isoNow: string) {
+      vi.useFakeTimers({ toFake: ["Date"] })
+      vi.setSystemTime(new Date(isoNow))
+      const res = await PUT(createPutRequest({ status: "completed" }), { params })
+      return { res, body: await res.json() }
+    }
+
+    it("SC-BOOK-001 – completed klockan 11:30 ger 200", async () => {
+      const { res, body } = await putCompletedAt("2026-11-10T10:30:00.000Z")
+
+      expect(res.status).toBe(200)
+      expect(body.status).toBe("completed")
+    })
+
+    it("SC-BOOK-002 – completed klockan 07:00 ger 400 med svenskt besked och ingen skrivning", async () => {
+      const { res, body } = await putCompletedAt("2026-11-10T06:00:00.000Z")
+
+      expect(res.status).toBe(400)
+      expect(body.error).toBe(
+        "Bokningen kan markeras som genomförd först efter bokad sluttid (kl. 11:00)."
+      )
+      expect(mockBookingRepo.updateStatusWithAuth).not.toHaveBeenCalled()
+    })
+
+    it("SC-BOOK-008 – samma statusbyte avvisas när servern tar emot det 10:55 och godkänns 11:10", async () => {
+      const early = await putCompletedAt("2026-11-10T09:55:00.000Z")
+      const late = await putCompletedAt("2026-11-10T10:10:00.000Z")
+
+      expect(early.res.status).toBe(400)
+      expect(late.res.status).toBe(200)
+      expect(late.body.status).toBe("completed")
+    })
+
+    it("SC-BOOK-002 – bokningen ändrades mellan kontroll och skrivning ger 409", async () => {
+      // Conditional write found no row matching the checked values,
+      // but the booking still exists (e.g. it was rescheduled concurrently).
+      mockBookingRepo.updateStatusWithAuth.mockResolvedValue(null)
+
+      const { res, body } = await putCompletedAt("2026-11-10T10:30:00.000Z")
+
+      expect(res.status).toBe(409)
+      expect(body.error).toBe("Bokningen ändrades samtidigt. Ladda om och försök igen.")
+    })
   })
 })
 

@@ -38,6 +38,7 @@ import { FirstUseTooltip } from "@/components/ui/first-use-tooltip"
 import { sortBookings, filterBookings, countByStatus, type BookingFilter } from "./booking-utils"
 import { clientLogger } from "@/lib/client-logger"
 import { getBookingStatusStyle } from "@/components/booking/booking-status"
+import { MarkCompletedButton } from "@/components/booking/MarkCompletedButton"
 
 // Demo: contextual copy for an empty status filter, in the same helpful tone as
 // the Tjänster empty state (so no demo surface shows a bare "Inga ...").
@@ -71,6 +72,7 @@ interface Booking {
   bookingDate: string
   startTime: string
   endTime: string
+  timezone?: string
   status: string
   horseId?: string
   horseName?: string
@@ -146,6 +148,7 @@ function ProviderBookingsContent() {
     const body = JSON.stringify({ status })
     await guardMutation(
       async () => {
+        let errorMessage = "Kunde inte uppdatera bokning"
         try {
           const response = await fetch(`/api/bookings/${bookingId}`, {
             method: "PUT",
@@ -156,7 +159,10 @@ function ProviderBookingsContent() {
           })
 
           if (!response.ok) {
-            throw new Error("Failed to update booking")
+            // Show the server's reason (e.g. BR-BOOK-001: before end time)
+            const data = await response.json().catch(() => null)
+            if (typeof data?.error === "string") errorMessage = data.error
+            throw new Error(`Failed to update booking: HTTP ${response.status}`)
           }
 
           toast.success("Bokning uppdaterad!")
@@ -165,7 +171,8 @@ function ProviderBookingsContent() {
           // Stay on current filter -- booking moves within the list naturally
         } catch (error) {
           clientLogger.error("Error updating booking:", error)
-          toast.error("Kunde inte uppdatera bokning")
+          toast.error(errorMessage)
+          mutateBookings()
         }
       },
       {
@@ -477,12 +484,10 @@ function ProviderBookingsContent() {
                         />
                       </div>
                       <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
-                        <Button
+                        <MarkCompletedButton
+                          booking={booking}
                           onClick={() => updateBookingStatus(booking.id, "completed")}
-                          className="flex-1"
-                        >
-                          Markera som genomförd
-                        </Button>
+                        />
                         <Button
                           onClick={() => updateBookingStatus(booking.id, "no_show")}
                           variant="outline"

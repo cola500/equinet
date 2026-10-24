@@ -50,6 +50,7 @@ const mockBooking = {
   bookingDate: new Date("2026-03-14"),
   startTime: "10:00",
   endTime: "11:00",
+  timezone: "Europe/Stockholm",
   status: "pending",
   horseName: "Blansen",
   customerNotes: "Var snäll",
@@ -136,6 +137,13 @@ describe("GET /api/native/bookings", () => {
     expect(b.providerNotes).toBeNull()
     expect(b.cancellationMessage).toBeNull()
     expect(b.customerReview).toBeNull()
+  })
+
+  it("SC-BOOK-007 – returnerar bokningens tidszon så att iOS räknar sluttiden i den", async () => {
+    const res = await GET(createRequest())
+    const body = await res.json()
+
+    expect(body[0].timezone).toBe("Europe/Stockholm")
   })
 
   it("filters bookings by status query param", async () => {

@@ -42,6 +42,18 @@ enum PendingActionStore {
         return actions.filter { Date.now.timeIntervalSince($0.createdAt) < 86400 }
     }
 
+    /// Only failures that may succeed later are queued. A 4xx is the server's
+    /// decision (e.g. BR-BOOK-001 before end time) and is shown to the user
+    /// instead of being retried and silently discarded.
+    static func shouldQueue(_ error: Error) -> Bool {
+        if case APIError.serverError(let code) = error {
+            return !(400..<500).contains(code)
+        }
+        // Network errors, timeouts, rate limits and auth/token problems
+        // (resolved after re-login) keep being queued as before.
+        return true
+    }
+
     static func clear(from defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: key)
     }

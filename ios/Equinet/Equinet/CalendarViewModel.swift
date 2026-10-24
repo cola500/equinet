@@ -86,6 +86,8 @@ final class CalendarViewModel {
 
     var selectedDate: Date = .now
     var bookings: [NativeBooking] = []
+    /// Visible error after the server rejected a status change (shown as alert)
+    var statusErrorMessage: String?
     var availability: [NativeAvailability] = []
     var exceptions: [NativeException] = []
     var isLoading = false
@@ -277,8 +279,10 @@ final class CalendarViewModel {
         guard oldStatus != newStatus else { return }
 
         // Optimistic update
+        let original = bookings[index]
         bookings[index] = bookings[index].withStatus(newStatus)
         actionInProgress = bookingId
+        statusErrorMessage = nil
 
         Task {
             do {
@@ -300,8 +304,20 @@ final class CalendarViewModel {
                 #endif
                 AppLogger.calendar.error("Failed to update booking status: \(error.localizedDescription)")
 
-                // Save for offline retry
-                PendingActionStore.save(bookingId: bookingId, status: newStatus)
+                if PendingActionStore.shouldQueue(error) {
+                    // Transient failure: save for offline retry
+                    PendingActionStore.save(bookingId: bookingId, status: newStatus)
+                } else {
+                    // The server rejected the change: tell the provider now
+                    statusErrorMessage = BookingCompletionRules.statusUpdateErrorMessage(
+                        for: error,
+                        newStatus: newStatus,
+                        endTime: original.endTime,
+                        endTimePassed: BookingCompletionRules.canMarkCompleted(
+                            bookingDate: original.bookingDate, endTime: original.endTime, timezone: original.timezone
+                        )
+                    )
+                }
             }
             actionInProgress = nil
         }

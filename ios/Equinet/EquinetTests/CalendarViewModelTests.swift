@@ -99,7 +99,8 @@ private func makeBooking(
         isPaid: false,
         bookingSeriesId: nil,
         customerNotes: nil,
-        providerNotes: nil
+        providerNotes: nil,
+        timezone: "Europe/Stockholm"
     )
 }
 
@@ -279,6 +280,37 @@ final class CalendarViewModelTests: XCTestCase {
 
         XCTAssertEqual(sync.statusChangeCalls.count, 1)
         XCTAssertEqual(sync.statusChangeCalls.first?.bookingId, "b1")
+    }
+
+    func testSCBOOK002_rejectedCompletionShowsErrorAndIsNotQueued() async {
+        PendingActionStore.clear()
+        defer { PendingActionStore.clear() }
+        // Booking ends in the future, so the rejection is explained by the end time
+        sut.bookings = [makeBooking(id: "b1", date: "2099-01-01", status: "confirmed")]
+        fetcher.updateResult = .failure(APIError.serverError(400))
+
+        sut.updateBookingStatus(bookingId: "b1", newStatus: "completed")
+        try? await Task.sleep(for: .milliseconds(50))
+
+        XCTAssertEqual(sut.bookings.first?.status, "confirmed")
+        XCTAssertEqual(
+            sut.statusErrorMessage,
+            "Bokningen kan markeras som genomförd först efter bokad sluttid (kl. 11:00)."
+        )
+        XCTAssertTrue(PendingActionStore.load().isEmpty)
+    }
+
+    func testNetworkFailureIsQueuedWithoutErrorMessage() async {
+        PendingActionStore.clear()
+        defer { PendingActionStore.clear() }
+        sut.bookings = [makeBooking(id: "b1", status: "pending")]
+        fetcher.updateResult = .failure(URLError(.notConnectedToInternet))
+
+        sut.updateBookingStatus(bookingId: "b1", newStatus: "confirmed")
+        try? await Task.sleep(for: .milliseconds(50))
+
+        XCTAssertEqual(PendingActionStore.load().count, 1)
+        XCTAssertNil(sut.statusErrorMessage)
     }
 
     func testUpdateBlocksWhileInProgress() async {

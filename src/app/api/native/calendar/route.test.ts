@@ -55,6 +55,7 @@ const mockBooking = {
   bookingDate: new Date("2026-03-10"),
   startTime: "10:00",
   endTime: "11:00",
+  timezone: "Europe/Stockholm",
   status: "confirmed",
   horseName: "Blansen",
   customer: { firstName: "Anna", lastName: "Andersson", phone: "070-123 4567" },
@@ -178,6 +179,13 @@ describe("GET /api/native/calendar", () => {
     expect(body.exceptions).toHaveLength(1)
     expect(body.exceptions[0].isClosed).toBe(true)
     expect(body.exceptions[0].reason).toBe("Semester")
+  })
+
+  it("SC-BOOK-007 – returnerar bokningens tidszon så att iOS räknar sluttiden i den", async () => {
+    const res = await GET(createRequest({ from: "2026-03-10", to: "2026-03-16" }))
+    const body = await res.json()
+
+    expect(body.bookings[0].timezone).toBe("Europe/Stockholm")
   })
 
   it("returns empty arrays when no data exists", async () => {

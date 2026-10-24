@@ -27,7 +27,7 @@ export function mapPaymentErrorToMessage(error: PaymentError): string {
     case "ALREADY_PAID":
       return "Bokningen är redan betald"
     case "INVALID_STATUS":
-      return "Bokningen måste vara bekräftad innan betalning kan göras"
+      return "Bokningen kan betalas först när tjänsten är utförd."
     case "GATEWAY_FAILED":
       return error.message || "Betalningen misslyckades"
     default:

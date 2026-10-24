@@ -3,7 +3,7 @@ title: "Sprint Status -- Live"
 description: "Delad statusfil som alla Claude-sessioner uppdaterar vid commit"
 category: sprint
 status: active
-last_updated: 2026-10-16
+last_updated: 2026-10-24
 sections:
   - Aktiv sprint
   - Tidigare sprintar
@@ -21,6 +21,16 @@ sections:
 > **Nuläge (2026-06-07):** Ingen numrerad sprint pågår. Arbetet sedan S67 körs som **ad-hoc slices** (t.ex. Dagens rutt, CI-gate på staging, backlog-hygien — PR #367–373) och spåras i den kanoniska **[backlog.md](backlog.md)** ("Aktiva produktspår" + "Arkiv / Done"). Senast avslutade numrerade sprint: **S67**.
 
 > **Readiness-sprint (2026-10-16) — AVSLUTAD:** [Customer Purchase Readiness](customer-purchase-readiness-2026-10.md) — gap-to-live-genomlysning inför skarpa kunder, personuppgifter och betalningar. R0–R4 och [retro](../retrospectives/2026-10-16-customer-purchase-readiness-retro.md) genomförda; klassning **`NOT READY`** (D1 säljarmodell olöst, P0-slices öppna). Nästa: våg 0–1 enligt R4. Prioriterade slices: se R4-beslut i sprintdokumentet och [backlog.md](backlog.md#live-betalningar-production-readiness). Agentöverlämningar: [docs/agent-handoffs/](../agent-handoffs/README.md).
+
+**Slice C3+C2 (2026-10-24) — PÅGÅR:** Utförd tidigast vid sluttid (BR-BOOK-001) och betalning först efter utförd (BR-PAY-001). Kontrakt: [booking-completion-payment.md](../specifications/implementation/booking-completion-payment.md). Branch `feature/c3-c2-booking-completion-payment`.
+
+| Station | Status |
+|---------|--------|
+| PLAN | done (48b2f712) |
+| RED | C3 done (47843b65); C2 done (812c2d88) |
+| GREEN | C3 done (a8191152); C2 done (94001634); vertikal E2E + docs (denna commit) |
+| REVIEW | /code-review, /security-review, ios-expert klara; fynd åtgärdade eller dokumenterade; Codex slutgranskning godkänd utan blockerande fynd; PR #570 väntar på CI |
+| VERIFY | check:all 4/4, offline-E2E och vertikal E2E gröna lokalt; iOS full svit 386/386 |
 
 **Sprint 67** — iOS staging capability via separat Vercel-projekt. **KLAR 2026-05-09.** Se [sprint-67-ios-staging-capability.md](sprint-67-ios-staging-capability.md).
 
@@ -205,7 +215,7 @@ sections:
 
 | Session | Roll | Arbetar pa | Branch | Startad |
 |---------|------|-----------|--------|---------|
-| (ingen aktiv -- väntar på S43-1 Pilot) | - | - | - | - |
+| Claude Code | fullstack + iOS | Slice C3+C2 | feature/c3-c2-booking-completion-payment | 2026-10-24 |
 
 ## Beslut
 

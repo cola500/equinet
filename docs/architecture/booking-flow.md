@@ -4,7 +4,7 @@ description: "Komplett bokningsflode fran kundbehov till betalning med API-endpo
 category: architecture
 tags: [booking, payment, api, travel-time]
 status: active
-last_updated: 2026-03-02
+last_updated: 2026-10-24
 sections:
   - Översikt
   - Implementerade Komponenter
@@ -109,7 +109,7 @@ model Payment {
 **Fil:** `src/app/customer/bookings/page.tsx`
 
 Uppdaterad med:
-- "Betala X kr"-knapp för bekräftade bokningar
+- "Betala X kr"-knapp för genomförda bokningar (BR-PAY-001); bekräftade bokningar visar "Betalning öppnas när besöket är genomfört"
 - "Betald"-badge med kvittonummer
 - "Ladda ner kvitto"-länk
 - Förhindrar avbokning av betalda bokningar
@@ -276,20 +276,19 @@ const pdfBuffer = await pdf(<InvoicePDF />).toBuffer()
 
 ### E2E-tester
 
-E2E-tester för betalningsflödet finns i `e2e/payment.spec.ts`:
+E2E-tester för betalningsflödet finns i `e2e/payment.spec.ts` (vertikal slice C3 + C2, 2026-10-24):
 
 | Test | Beskrivning |
 |------|-------------|
-| `should pay for a confirmed booking` | Verifierar att kund kan betala bekräftad bokning |
-| `should show receipt link after payment` | Kontrollerar att kvittolänk visas efter betalning |
-| `should show invoice number after payment` | Verifierar att kvittonummer (EQ-YYYYMM-XXXX) visas |
-| `should hide cancel button for paid bookings` | Kontrollerar att avbokning blockeras för betalda |
-| `should not allow double payment` | Verifierar dubbelbetalningsskydd |
-| `should not show pay button for pending bookings` | Pending-bokningar kan inte betalas |
+| `SC-BOOK-001 + SC-PAY-001` | Leverantören markerar en bokning med passerad sluttid som genomförd; kunden betalar och ser "Betald" |
+| `SC-BOOK-003 + SC-PAY-003` | En framtida bekräftad bokning: leverantörens knapp är inaktiverad, kunden ser ingen "Betala", och servern avvisar båda åtgärderna även vid direkta API-anrop |
 
-Kör testerna:
+E2E kör alltid mock-gatewayen: `playwright.config.ts` ignorerar
+`PAYMENT_PROVIDER` från `.env.local`, och specen avbryter före första betalningen
+om servern (t.ex. en återanvänd dev-server) använder en annan gateway. Stripe i
+E2E kräver uttryckligt `E2E_PAYMENT_PROVIDER=stripe`.
 ```bash
-npx playwright test e2e/payment.spec.ts
+npx playwright test e2e/payment.spec.ts --project=chromium
 ```
 
 ---
@@ -300,7 +299,7 @@ npx playwright test e2e/payment.spec.ts
 
 - [x] Auth check på alla payment endpoints
 - [x] Ownership validation (kund kan bara betala sina egna bokningar)
-- [x] Status validation (endast confirmed/completed kan betalas)
+- [x] Status validation (endast completed kan betalas, BR-PAY-001; completed tidigast vid bokad sluttid, BR-BOOK-001)
 - [x] Dubbelbetalningsskydd (redan betald = 400 error)
 - [x] Email/phone inte exponerade i customer view
 

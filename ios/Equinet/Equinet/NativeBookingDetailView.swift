@@ -552,6 +552,13 @@ struct NativeBookingDetailView: View {
         }
     }
 
+    /// BR-BOOK-001 guidance in the booking's timezone; the server still decides.
+    private func canComplete(_ booking: BookingsListItem) -> Bool {
+        BookingCompletionRules.canMarkCompleted(
+            bookingDate: booking.bookingDate, endTime: booking.endTime, timezone: booking.timezone
+        )
+    }
+
     private func confirmedActions(_ booking: BookingsListItem, isLoading: Bool) -> some View {
         VStack(spacing: 12) {
             Button {
@@ -567,7 +574,17 @@ struct NativeBookingDetailView: View {
             .buttonStyle(.borderedProminent)
             .tint(.green)
             .controlSize(.large)
-            .disabled(isLoading)
+            .disabled(isLoading || !canComplete(booking))
+            .accessibilityHint(
+                canComplete(booking) ? "" : BookingCompletionRules.completionHint(endTime: booking.endTime)
+            )
+
+            if !canComplete(booking) {
+                Text(BookingCompletionRules.completionHint(endTime: booking.endTime))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
 
             HStack(spacing: 12) {
                 Button {

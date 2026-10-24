@@ -117,3 +117,32 @@ describe('mapBookingErrorToMessage', () => {
       .toBe('Max antal ombokningar (2) har uppnåtts')
   })
 })
+
+describe('BR-BOOK-001 – fel för utförd före sluttid', () => {
+  it('SC-BOOK-002 – COMPLETION_BEFORE_END_TIME ger 400 och meddelande med klockslag', () => {
+    const error = { type: 'COMPLETION_BEFORE_END_TIME', endTime: '11:00' } as const
+
+    expect(mapBookingErrorToStatus(error)).toBe(400)
+    expect(mapBookingErrorToMessage(error)).toBe(
+      'Bokningen kan markeras som genomförd först efter bokad sluttid (kl. 11:00).'
+    )
+  })
+
+  it('COMPLETION_BEFORE_END_TIME utan klockslag (ogiltig tidszon) ger meddelande utan klockslag', () => {
+    const error = { type: 'COMPLETION_BEFORE_END_TIME' } as const
+
+    expect(mapBookingErrorToStatus(error)).toBe(400)
+    expect(mapBookingErrorToMessage(error)).toBe(
+      'Bokningen kan markeras som genomförd först efter bokad sluttid.'
+    )
+  })
+
+  it('BOOKING_CHANGED_CONCURRENTLY ger 409 och uppmaning att ladda om', () => {
+    const error = { type: 'BOOKING_CHANGED_CONCURRENTLY' } as const
+
+    expect(mapBookingErrorToStatus(error)).toBe(409)
+    expect(mapBookingErrorToMessage(error)).toBe(
+      'Bokningen ändrades samtidigt. Ladda om och försök igen.'
+    )
+  })
+})

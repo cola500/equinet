@@ -9,9 +9,10 @@ import { NextRequest } from "next/server"
 
 // --- Mock Prisma ---
 
+// BR-PAY-001: only a completed booking is payable
 const mockBooking = {
   id: "booking-1",
-  status: "confirmed",
+  status: "completed",
   providerId: "provider-1",
   bookingDate: new Date("2026-05-01"),
   service: { price: 1200, name: "Hovslagning" },
@@ -170,7 +171,34 @@ describe("POST /api/bookings/[id]/payment (integration)", () => {
     expect(res.status).toBe(400)
   })
 
-  it("returns 400 when booking status is pending", async () => {
+  it("SC-PAY-003 – bekräftad men inte utförd bokning ger 400 och ingen betalning", async () => {
+    vi.mocked(prisma.booking.findUnique).mockResolvedValue({
+      ...mockBooking,
+      status: "confirmed",
+      bookingDate: new Date("2020-01-01"),
+    } as never)
+
+    const res = await POST(createRequest(BOOKING_ID), { params })
+    const body = await res.json()
+
+    expect(res.status).toBe(400)
+    expect(body.error).toBe("Bokningen kan betalas först när tjänsten är utförd.")
+    expect(prisma.payment.upsert).not.toHaveBeenCalled()
+  })
+
+  it("SC-PAY-005 – utebliven kund ger 400 och ingen betalning", async () => {
+    vi.mocked(prisma.booking.findUnique).mockResolvedValue({
+      ...mockBooking,
+      status: "no_show",
+    } as never)
+
+    const res = await POST(createRequest(BOOKING_ID), { params })
+
+    expect(res.status).toBe(400)
+    expect(prisma.payment.upsert).not.toHaveBeenCalled()
+  })
+
+  it("SC-PAY-002 – returns 400 when booking status is pending", async () => {
     vi.mocked(prisma.booking.findUnique).mockResolvedValue({
       ...mockBooking,
       status: "pending",

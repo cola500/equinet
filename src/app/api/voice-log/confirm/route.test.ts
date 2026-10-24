@@ -83,6 +83,7 @@ vi.mock("@/domain/booking", () => ({
 import { getAuthUser } from "@/lib/auth-dual"
 import { rateLimiters } from "@/lib/rate-limit"
 import { isFeatureEnabled } from "@/lib/feature-flags"
+import { mapBookingErrorToMessage } from "@/domain/booking"
 const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 const VALID_BOOKING_ID = "a0000000-0000-4000-a000-000000000001"
@@ -271,6 +272,46 @@ describe("POST /api/voice-log/confirm", () => {
     const data = await response.json()
     expect(data.actions).toContain("providerNotes")
     expect(data.actions).not.toContain("completed")
+  })
+
+  it("SC-BOOK-001 – svaret anger att anteckningen sparades och bokningen blev utförd", async () => {
+    const response = await POST(makeRequest(validBody({ markAsCompleted: true })))
+
+    expect(response.status).toBe(200)
+    const data = await response.json()
+    expect(data.actions).toContain("providerNotes")
+    expect(data.completion).toEqual({ status: "completed" })
+  })
+
+  it("SC-BOOK-002 – svaret anger att anteckningen sparades men markeringen avvisades före sluttid", async () => {
+    mockUpdateStatus.mockResolvedValue({
+      isSuccess: false,
+      isFailure: true,
+      error: { type: "COMPLETION_BEFORE_END_TIME", endTime: "11:00" },
+    })
+    vi.mocked(mapBookingErrorToMessage).mockReturnValueOnce(
+      "Bokningen kan markeras som genomförd först efter bokad sluttid (kl. 11:00)."
+    )
+
+    const response = await POST(makeRequest(validBody({ markAsCompleted: true })))
+
+    expect(response.status).toBe(200)
+    const data = await response.json()
+    expect(data.actions).toContain("providerNotes")
+    expect(data.actions).not.toContain("completed")
+    expect(data.completion).toEqual({
+      status: "rejected",
+      reason: "COMPLETION_BEFORE_END_TIME",
+      message: "Bokningen kan markeras som genomförd först efter bokad sluttid (kl. 11:00).",
+    })
+  })
+
+  it("svaret anger not_requested när markering inte begärdes", async () => {
+    const response = await POST(makeRequest(validBody()))
+
+    const data = await response.json()
+    expect(data.completion).toEqual({ status: "not_requested" })
+    expect(mockUpdateStatus).not.toHaveBeenCalled()
   })
 
   it("returns 404 when booking not found or unauthorized", async () => {

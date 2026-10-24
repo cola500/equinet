@@ -214,6 +214,29 @@ final class BookingsViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.bookings.first?.status, "pending")  // reverted
     }
 
+    func testSCBOOK002_rejectedCompletionShowsVisibleError() async {
+        // Booking ends in the future, so the rejection is explained by the end time
+        viewModel.bookings = [makeBooking(id: "b1", status: "confirmed", date: "2099-01-01")]
+        fetcher.updateResult = .failure(APIError.serverError(400))
+
+        await viewModel.completeBooking(id: "b1")
+
+        XCTAssertEqual(viewModel.bookings.first?.status, "confirmed")
+        XCTAssertEqual(
+            viewModel.statusErrorMessage,
+            "Bokningen kan markeras som genomförd först efter bokad sluttid (kl. 11:00)."
+        )
+    }
+
+    func testSuccessfulStatusUpdateClearsErrorMessage() async {
+        viewModel.bookings = [makeBooking(id: "b1", status: "confirmed")]
+        viewModel.statusErrorMessage = "Gammalt fel"
+
+        await viewModel.completeBooking(id: "b1")
+
+        XCTAssertNil(viewModel.statusErrorMessage)
+    }
+
     func testCancelBookingIncludesMessage() async {
         let bookings = [makeBooking(id: "b1", status: "confirmed")]
         viewModel.bookings = bookings

@@ -64,6 +64,8 @@ final class BookingsViewModel {
     // MARK: - State
 
     var bookings: [BookingsListItem] = []
+    /// Visible error after a failed status change (shown as alert)
+    var statusErrorMessage: String?
     var selectedFilter: BookingFilter = .all
     private(set) var isLoading = false
     private(set) var error: String?
@@ -254,6 +256,7 @@ final class BookingsViewModel {
 
         let oldBooking = bookings[index]
         actionInProgress = id
+        statusErrorMessage = nil
 
         // Optimistic update
         bookings[index] = oldBooking.withStatus(newStatus)
@@ -279,6 +282,14 @@ final class BookingsViewModel {
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             #endif
             AppLogger.network.error("updateStatus: failed id=\(id) newStatus=\(newStatus) error=\(error.localizedDescription)")
+            statusErrorMessage = BookingCompletionRules.statusUpdateErrorMessage(
+                for: error,
+                newStatus: newStatus,
+                endTime: oldBooking.endTime,
+                endTimePassed: BookingCompletionRules.canMarkCompleted(
+                    bookingDate: oldBooking.bookingDate, endTime: oldBooking.endTime, timezone: oldBooking.timezone
+                )
+            )
         }
     }
 }

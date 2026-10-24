@@ -119,6 +119,8 @@ export interface CalendarBooking {
   bookingDate: string
   startTime: string
   endTime: string
+  /** IANA timezone of the booking (BR-BOOK-001); absent in cached data from before it was sent */
+  timezone?: string
   status: string
   horseId?: string
   horseName?: string

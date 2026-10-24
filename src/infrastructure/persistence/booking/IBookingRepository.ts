@@ -41,6 +41,16 @@ export interface Booking {
 }
 
 /**
+ * Values a booking must still have for a conditional status write
+ */
+export interface StatusWriteExpectation {
+  status: Booking['status']
+  bookingDate: Date
+  endTime: string
+  timezone: string
+}
+
+/**
  * CreateBookingData - Data required to create a new booking
  *
  * Used by createWithOverlapCheck for atomic booking creation.
@@ -323,13 +333,18 @@ export interface IBookingRepository extends IRepository<Booking> {
    * @param id - Booking ID
    * @param status - New status
    * @param authContext - Either providerId or customerId for authorization
+   * @param expected - Optional values the row must still have at write time
+   *   (atomic compare-and-set). Used by BR-BOOK-001 so a concurrent reschedule
+   *   cannot change the end time between the check and the write.
    * @returns Updated booking with relations, or null if not found/unauthorized
+   *   or if the row no longer matches `expected`
    */
   updateStatusWithAuth(
     id: string,
     status: Booking['status'],
     authContext: { providerId?: string; customerId?: string },
-    cancellationMessage?: string
+    cancellationMessage?: string,
+    expected?: StatusWriteExpectation
   ): Promise<BookingWithRelations | null>
 
   /**

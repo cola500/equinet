@@ -25,6 +25,8 @@ import {
 import { TravelTimeService } from './TravelTimeService'
 import { BookingStatus } from './BookingStatus'
 import { BookingValidation } from './BookingValidation'
+import { getBookingEndInstant } from './BookingTime'
+import { logger } from '@/lib/logger'
 
 // Re-export createBookingService from its new home for backwards compatibility
 export { createBookingService } from './createBookingService'
@@ -133,6 +135,10 @@ export type BookingError =
   | { type: 'RESCHEDULE_WINDOW_PASSED'; hoursRequired: number }
   | { type: 'MAX_RESCHEDULES_REACHED'; max: number }
   | { type: 'INACTIVE_SERVICE_FOR_RESCHEDULE' }
+  /** BR-BOOK-001: "completed" before the booked end time. endTime omitted if it cannot be determined. */
+  | { type: 'COMPLETION_BEFORE_END_TIME'; endTime?: string }
+  /** The booking changed between the BR-BOOK-001 check and the write */
+  | { type: 'BOOKING_CHANGED_CONCURRENTLY' }
 
 /**
  * Route order info for validation
@@ -205,6 +211,8 @@ export interface BookingServiceDeps {
   hasCompletedBookingWith?: (providerId: string, customerId: string) => Promise<boolean>
   /** Get provider reschedule settings */
   getProviderRescheduleSettings?: (providerId: string) => Promise<ProviderRescheduleInfo | null>
+  /** Server clock (injected for tests). Defaults to the real clock. */
+  now?: () => Date
 }
 
 /**
@@ -396,23 +404,78 @@ export class BookingService {
       })
     }
 
-    // 5. Delegate to repository (preserves IDOR protection via WHERE clause)
+    // 5. BR-BOOK-001: "completed" only at or after the booked end time,
+    //    judged by the server clock in the booking's own timezone.
+    const isCompletion = dto.newStatus === 'completed'
+    if (isCompletion) {
+      // Ownership first, so a non-owner gets the same 404 as before and
+      // never learns the booking's end time. The write re-checks ownership.
+      if (!this.isActorOwner(booking, dto)) {
+        return Result.fail({ type: 'BOOKING_NOT_FOUND' })
+      }
+      const endInstant = getBookingEndInstant(booking)
+      if (endInstant.isFailure) {
+        logger.error('Cannot determine booking end time; rejecting completion', undefined, {
+          bookingId: booking.id,
+          reason: endInstant.error,
+          timezone: booking.timezone,
+        })
+        return Result.fail({ type: 'COMPLETION_BEFORE_END_TIME' })
+      }
+      const now = (this.deps.now ?? (() => new Date()))()
+      if (now.getTime() < endInstant.value.getTime()) {
+        return Result.fail({ type: 'COMPLETION_BEFORE_END_TIME', endTime: booking.endTime })
+      }
+    }
+
+    // 6. Delegate to repository (preserves IDOR protection via WHERE clause).
+    //    For completion, the write is conditional on the values just checked,
+    //    so a concurrent reschedule cannot slip in between check and write.
     const authContext: { providerId?: string; customerId?: string } = {}
     if (dto.providerId) authContext.providerId = dto.providerId
     if (dto.customerId) authContext.customerId = dto.customerId
 
-    const updated = await this.deps.bookingRepository.updateStatusWithAuth(
-      dto.bookingId,
-      dto.newStatus as 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show',
-      authContext,
-      dto.cancellationMessage
-    )
+    const newStatus = dto.newStatus as 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
+    const updated = isCompletion
+      ? await this.deps.bookingRepository.updateStatusWithAuth(
+          dto.bookingId,
+          newStatus,
+          authContext,
+          dto.cancellationMessage,
+          {
+            status: booking.status,
+            bookingDate: booking.bookingDate,
+            endTime: booking.endTime,
+            timezone: booking.timezone,
+          }
+        )
+      : await this.deps.bookingRepository.updateStatusWithAuth(
+          dto.bookingId,
+          newStatus,
+          authContext,
+          dto.cancellationMessage
+        )
 
     if (!updated) {
+      if (isCompletion) {
+        const current = await this.deps.bookingRepository.findById(dto.bookingId)
+        if (current && this.isActorOwner(current, dto)) {
+          return Result.fail({ type: 'BOOKING_CHANGED_CONCURRENTLY' })
+        }
+      }
       return Result.fail({ type: 'BOOKING_NOT_FOUND' })
     }
 
     return Result.ok(updated)
+  }
+
+  private isActorOwner(
+    booking: { providerId: string; customerId: string },
+    actor: { providerId?: string; customerId?: string }
+  ): boolean {
+    if (actor.providerId) return booking.providerId === actor.providerId
+    if (actor.customerId) return booking.customerId === actor.customerId
+    return false
   }
 
   /**

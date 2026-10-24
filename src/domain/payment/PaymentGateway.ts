@@ -61,10 +61,13 @@ export class MockPaymentGateway implements IPaymentGateway {
  * Switches based on PAYMENT_PROVIDER env variable.
  * Default: MockPaymentGateway (instant success, no external calls).
  */
-export function getPaymentGateway(): IPaymentGateway {
-  const provider = process.env.PAYMENT_PROVIDER
+/** Which gateway getPaymentGateway() selects, without instantiating it */
+export function getPaymentProviderName(): "stripe" | "mock" {
+  return process.env.PAYMENT_PROVIDER === "stripe" ? "stripe" : "mock"
+}
 
-  if (provider === "stripe") {
+export function getPaymentGateway(): IPaymentGateway {
+  if (getPaymentProviderName() === "stripe") {
     const secretKey = process.env.STRIPE_SECRET_KEY
     if (!secretKey) {
       throw new Error("STRIPE_SECRET_KEY is required when PAYMENT_PROVIDER=stripe")

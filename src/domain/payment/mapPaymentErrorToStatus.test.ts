@@ -33,9 +33,9 @@ describe("mapPaymentErrorToMessage", () => {
     )
   })
 
-  it("returns correct message for INVALID_STATUS", () => {
-    expect(mapPaymentErrorToMessage({ type: "INVALID_STATUS", status: "pending" })).toBe(
-      "Bokningen måste vara bekräftad innan betalning kan göras"
+  it("SC-PAY-003 – returns correct message for INVALID_STATUS", () => {
+    expect(mapPaymentErrorToMessage({ type: "INVALID_STATUS", status: "confirmed" })).toBe(
+      "Bokningen kan betalas först när tjänsten är utförd."
     )
   })
 

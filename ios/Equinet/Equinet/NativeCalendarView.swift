@@ -32,6 +32,9 @@ struct NativeCalendarView: View {
     var onNavigateToBooking: ((_ bookingId: String) -> Void)?
     var onNavigateToWeb: ((_ path: String) -> Void)?
     @State private var selectedBooking: NativeBooking?
+    /// Shown only once the booking sheet is fully dismissed, so the alert is
+    /// never lost while the sheet is still animating away.
+    @State private var showStatusError = false
     @State private var newBookingTime: (date: Date, time: String)?
     @State private var exceptionSheetDate: Date?
     @State private var timeSlotTapCount = 0
@@ -182,7 +185,17 @@ struct NativeCalendarView: View {
                 newBookingTime = nil
             }
         }
-        .sheet(item: $selectedBooking) { booking in
+        .alert("Kunde inte uppdatera bokningen", isPresented: $showStatusError) {
+            Button("OK", role: .cancel) { viewModel.statusErrorMessage = nil }
+        } message: {
+            Text(viewModel.statusErrorMessage ?? "")
+        }
+        .onChange(of: viewModel.statusErrorMessage) { _, message in
+            if message != nil && selectedBooking == nil { showStatusError = true }
+        }
+        .sheet(item: $selectedBooking, onDismiss: {
+            if viewModel.statusErrorMessage != nil { showStatusError = true }
+        }) { booking in
             BookingDetailSheet(
                 booking: booking,
                 onAction: { bookingId, newStatus in

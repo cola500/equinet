@@ -109,6 +109,39 @@ final class BookingsModelsTests: XCTestCase {
         XCTAssertEqual(item.customerFullName, "Erik Svensson")
     }
 
+    func testSCBOOK007_decodesTimezoneAndKeepsItInCopies() throws {
+        let json = """
+        {
+            "id": "b3", "bookingDate": "2026-11-10T00:00:00.000Z", "startTime": "10:00",
+            "endTime": "11:00", "status": "confirmed", "serviceName": "Hovslagning",
+            "servicePrice": 800.0, "customerFirstName": "Erik", "customerLastName": "Svensson",
+            "customerEmail": "erik@example.com", "isPaid": false, "isManualBooking": false,
+            "timezone": "Europe/Stockholm"
+        }
+        """.data(using: .utf8)!
+
+        let item = try JSONDecoder().decode(BookingsListItem.self, from: json)
+
+        XCTAssertEqual(item.timezone, "Europe/Stockholm")
+        XCTAssertEqual(item.withStatus("completed").timezone, "Europe/Stockholm")
+        XCTAssertEqual(item.withProviderNotes("x").timezone, "Europe/Stockholm")
+    }
+
+    func testDecodeBookingsListItemWithoutTimezoneIsNil() throws {
+        let json = """
+        {
+            "id": "b4", "bookingDate": "2026-11-10", "startTime": "10:00",
+            "endTime": "11:00", "status": "confirmed", "serviceName": "Hovslagning",
+            "servicePrice": 800.0, "customerFirstName": "Erik", "customerLastName": "Svensson",
+            "customerEmail": "erik@example.com", "isPaid": false, "isManualBooking": false
+        }
+        """.data(using: .utf8)!
+
+        let item = try JSONDecoder().decode(BookingsListItem.self, from: json)
+
+        XCTAssertNil(item.timezone)
+    }
+
     func testDecodeBookingsListItemFailsOnMissingRequiredField() {
         let json = """
         {
