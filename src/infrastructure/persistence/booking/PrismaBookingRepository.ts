@@ -11,6 +11,7 @@ import {
   BookingWithQuickNoteContext,
   CreateBookingData,
   BookingWithCustomerLocation,
+  StatusWriteExpectation,
 } from './IBookingRepository'
 import { BookingMapper } from './BookingMapper'
 import { logger } from '@/lib/logger'
@@ -39,6 +40,30 @@ const CUSTOMER_CONTACT_SELECT = {
 /** Customer relation (minimal): name + email. Used in status change notifications. */
 const CUSTOMER_EMAIL_SELECT = {
   select: { firstName: true, lastName: true, email: true },
+} as const
+
+/** Fields returned after a status update (core fields + relations for email) */
+const STATUS_UPDATE_SELECT = {
+  id: true,
+  customerId: true,
+  providerId: true,
+  serviceId: true,
+  bookingDate: true,
+  startTime: true,
+  endTime: true,
+  status: true,
+  horseName: true,
+  horseInfo: true,
+  customerNotes: true,
+  providerNotes: true,
+  cancellationMessage: true,
+  rescheduleCount: true,
+  bookingSeriesId: true,
+  createdAt: true,
+  updatedAt: true,
+  customer: CUSTOMER_EMAIL_SELECT,
+  service: SERVICE_SELECT,
+  provider: PROVIDER_SELECT,
 } as const
 
 /** Horse relation (full): id, name, breed, gender. Used in create/reschedule/notes. */
@@ -542,7 +567,8 @@ export class PrismaBookingRepository
     id: string,
     status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show',
     authContext: { providerId?: string; customerId?: string },
-    cancellationMessage?: string
+    cancellationMessage?: string,
+    expected?: StatusWriteExpectation
   ): Promise<BookingWithRelations | null> {
     // Build atomic WHERE clause
     const whereClause: { id: string; providerId?: string; customerId?: string } = { id }
@@ -556,38 +582,40 @@ export class PrismaBookingRepository
       return null
     }
 
+    const data = {
+      status,
+      ...(cancellationMessage !== undefined && { cancellationMessage }),
+    }
+
     try {
+      if (expected) {
+        // Compare-and-set as ONE `UPDATE ... WHERE` statement (updateMany).
+        // PostgreSQL re-evaluates the WHERE against the latest row version
+        // under the row lock, so either every checked value still matches and
+        // the status is written, or nothing is written.
+        const { count } = await prisma.booking.updateMany({
+          where: {
+            ...whereClause,
+            status: expected.status,
+            bookingDate: expected.bookingDate,
+            endTime: expected.endTime,
+            timezone: expected.timezone,
+          },
+          data,
+        })
+        if (count === 0) return null
+
+        const written = await prisma.booking.findUnique({
+          where: whereClause,
+          select: STATUS_UPDATE_SELECT,
+        })
+        return written as BookingWithRelations | null
+      }
+
       const updated = await prisma.booking.update({
         where: whereClause,
-        data: {
-          status,
-          ...(cancellationMessage !== undefined && { cancellationMessage }),
-        },
-        select: {
-          // Core booking fields
-          id: true,
-          customerId: true,
-          providerId: true,
-          serviceId: true,
-          bookingDate: true,
-          startTime: true,
-          endTime: true,
-          status: true,
-          horseName: true,
-          horseInfo: true,
-          customerNotes: true,
-          providerNotes: true,
-          cancellationMessage: true,
-          rescheduleCount: true,
-          bookingSeriesId: true,
-          createdAt: true,
-          updatedAt: true,
-
-          // Relations for email notification
-          customer: CUSTOMER_EMAIL_SELECT,
-          service: SERVICE_SELECT,
-          provider: PROVIDER_SELECT,
-        },
+        data,
+        select: STATUS_UPDATE_SELECT,
       })
 
       return updated as BookingWithRelations
@@ -709,8 +737,10 @@ export class PrismaBookingRepository
         }
 
         // Update the booking atomically
+        // Status guard: never move a booking that became completed/cancelled
+        // after the caller's status check (P2025 -> null)
         return await tx.booking.update({
-          where: { id: bookingId, customerId },
+          where: { id: bookingId, customerId, status: { in: ['pending', 'confirmed'] } },
           data: {
             bookingDate: data.bookingDate,
             startTime: data.startTime,
@@ -813,8 +843,10 @@ export class PrismaBookingRepository
           throw new Error('BOOKING_OVERLAP')
         }
 
+        // Status guard: never move a booking that became completed/cancelled
+        // after the caller's status check (P2025 -> null)
         return await tx.booking.update({
-          where: { id: bookingId, providerId },
+          where: { id: bookingId, providerId, status: { in: ['pending', 'confirmed'] } },
           data: {
             bookingDate: data.bookingDate,
             startTime: data.startTime,

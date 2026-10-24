@@ -27,6 +27,25 @@ export interface InterpretedData {
   confidence: number
 }
 
+export type VoiceLogCompletion =
+  | { status: "not_requested" }
+  | { status: "completed" }
+  | { status: "rejected"; reason: string; message: string }
+
+/** Toast to show after a confirmed voice log, based on the completion outcome */
+export function describeVoiceLogResult(data: { completion?: VoiceLogCompletion }): {
+  tone: "success" | "warning"
+  message: string
+} {
+  if (data.completion?.status === "rejected") {
+    return {
+      tone: "warning",
+      message: `Arbetsloggen sparades, men bokningen markerades inte som genomförd. ${data.completion.message}`,
+    }
+  }
+  return { tone: "success", message: "Arbetslogg sparad!" }
+}
+
 function todayString(): string {
   return new Date().toISOString().slice(0, 10)
 }
@@ -158,7 +177,12 @@ export function useVoiceWorkLog(options?: { onSuccess?: () => void }) {
 
       const data = await response.json()
       setStep("done")
-      toast.success("Arbetslogg sparad!")
+      const outcome = describeVoiceLogResult(data)
+      if (outcome.tone === "warning") {
+        toast.warning(outcome.message)
+      } else {
+        toast.success(outcome.message)
+      }
 
       if (data.nextVisitWeeks) {
         toast.info(`Förslag: nästa besök om ${data.nextVisitWeeks} veckor`)

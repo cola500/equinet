@@ -11,6 +11,7 @@ import {
   BookingWithQuickNoteContext,
   CreateBookingData,
   BookingWithCustomerLocation,
+  StatusWriteExpectation,
 } from './IBookingRepository'
 
 export class MockBookingRepository
@@ -462,7 +463,9 @@ export class MockBookingRepository
   async updateStatusWithAuth(
     id: string,
     status: Booking['status'],
-    authContext: { providerId?: string; customerId?: string }
+    authContext: { providerId?: string; customerId?: string },
+    _cancellationMessage?: string,
+    expected?: StatusWriteExpectation
   ): Promise<BookingWithRelations | null> {
     const booking = this.bookings.get(id)
     if (!booking) return null
@@ -472,6 +475,17 @@ export class MockBookingRepository
       return null
     }
     if (authContext.customerId && booking.customerId !== authContext.customerId) {
+      return null
+    }
+
+    // Conditional write: same semantics as the Prisma compare-and-set
+    if (
+      expected &&
+      (booking.status !== expected.status ||
+        booking.bookingDate.getTime() !== expected.bookingDate.getTime() ||
+        booking.endTime !== expected.endTime ||
+        booking.timezone !== expected.timezone)
+    ) {
       return null
     }
 

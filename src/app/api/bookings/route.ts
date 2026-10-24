@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       const { data, error } = await supabase
         .from("Booking")
         .select(`
-          id, customerId, providerId, serviceId, bookingDate, startTime, endTime, status,
+          id, customerId, providerId, serviceId, bookingDate, startTime, endTime, timezone, status,
           horseId, horseName, horseInfo, customerNotes, providerNotes,
           cancellationMessage, rescheduleCount, bookingSeriesId, routeOrderId,
           isManualBooking, createdByProviderId,

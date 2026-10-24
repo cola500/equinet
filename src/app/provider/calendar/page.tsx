@@ -343,6 +343,7 @@ function CalendarContent() {
     }
 
     await guardMutation(async () => {
+      let errorMessage = "Kunde inte uppdatera bokning"
       try {
         const response = await fetch(`/api/bookings/${bookingId}`, {
           method: "PUT",
@@ -353,7 +354,10 @@ function CalendarContent() {
         })
 
         if (!response.ok) {
-          throw new Error("Failed to update booking")
+          // Show the server's reason (e.g. BR-BOOK-001: before end time)
+          const data = await response.json().catch(() => null)
+          if (typeof data?.error === "string") errorMessage = data.error
+          throw new Error(`Failed to update booking: HTTP ${response.status}`)
         }
 
         toast.success("Bokning uppdaterad!")
@@ -361,7 +365,8 @@ function CalendarContent() {
         mutateBookings()
       } catch (error) {
         clientLogger.error("Error updating booking:", error)
-        toast.error("Kunde inte uppdatera bokning")
+        toast.error(errorMessage)
+        mutateBookings()
       }
     }, {
       method: "PUT",

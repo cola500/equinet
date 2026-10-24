@@ -14,6 +14,7 @@ export function mapBookingErrorToStatus(error: BookingError): number {
     case 'INVALID_STATUS_TRANSITION':
     case 'INVALID_CUSTOMER_DATA':
     case 'PROVIDER_CLOSED':
+    case 'COMPLETION_BEFORE_END_TIME':
       return 400
     case 'GHOST_USER_CREATION_FAILED':
       return 500
@@ -25,6 +26,7 @@ export function mapBookingErrorToStatus(error: BookingError): number {
       return 404
     case 'OVERLAP':
     case 'INSUFFICIENT_TRAVEL_TIME':
+    case 'BOOKING_CHANGED_CONCURRENTLY':
       return 409
     case 'RESCHEDULE_WINDOW_PASSED':
     case 'MAX_RESCHEDULES_REACHED':
@@ -78,6 +80,12 @@ export function mapBookingErrorToMessage(error: BookingError): string {
       return `Max antal ombokningar (${error.max}) har uppnåtts`
     case 'INACTIVE_SERVICE_FOR_RESCHEDULE':
       return 'Tjänsten är inte längre tillgänglig'
+    case 'COMPLETION_BEFORE_END_TIME':
+      return error.endTime
+        ? `Bokningen kan markeras som genomförd först efter bokad sluttid (kl. ${error.endTime}).`
+        : 'Bokningen kan markeras som genomförd först efter bokad sluttid.'
+    case 'BOOKING_CHANGED_CONCURRENTLY':
+      return 'Bokningen ändrades samtidigt. Ladda om och försök igen.'
     default:
       return 'Ett fel uppstod vid bokning'
   }

@@ -32,6 +32,8 @@ struct BookingsListItem: Codable, Identifiable, Sendable {
     let providerNotes: String?
     let cancellationMessage: String?
     let customerReview: BookingReview?
+    /// IANA timezone of the booking (BR-BOOK-001). nil for cached data from before the field existed.
+    var timezone: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case id, bookingDate, startTime, endTime, status
@@ -40,6 +42,7 @@ struct BookingsListItem: Codable, Identifiable, Sendable {
         case horseName, horseId, horseBreed
         case isPaid, invoiceNumber, isManualBooking, bookingSeriesId
         case customerNotes, providerNotes, cancellationMessage, customerReview
+        case timezone
     }
 
     var customerFullName: String {
@@ -70,7 +73,8 @@ struct BookingsListItem: Codable, Identifiable, Sendable {
             customerNotes: customerNotes,
             providerNotes: providerNotes,
             cancellationMessage: cancellationMessage,
-            customerReview: customerReview
+            customerReview: customerReview,
+            timezone: timezone
         )
     }
 
@@ -98,7 +102,8 @@ struct BookingsListItem: Codable, Identifiable, Sendable {
             customerNotes: customerNotes,
             providerNotes: providerNotes,
             cancellationMessage: cancellationMessage,
-            customerReview: review
+            customerReview: review,
+            timezone: timezone
         )
     }
 
@@ -126,7 +131,8 @@ struct BookingsListItem: Codable, Identifiable, Sendable {
             customerNotes: customerNotes,
             providerNotes: notes,
             cancellationMessage: cancellationMessage,
-            customerReview: customerReview
+            customerReview: customerReview,
+            timezone: timezone
         )
     }
 }

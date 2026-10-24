@@ -182,6 +182,17 @@ struct NativeCalendarView: View {
                 newBookingTime = nil
             }
         }
+        .alert(
+            "Kunde inte uppdatera bokningen",
+            isPresented: Binding(
+                get: { viewModel.statusErrorMessage != nil },
+                set: { if !$0 { viewModel.statusErrorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.statusErrorMessage ?? "")
+        }
         .sheet(item: $selectedBooking) { booking in
             BookingDetailSheet(
                 booking: booking,

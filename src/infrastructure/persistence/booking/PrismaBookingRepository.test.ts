@@ -11,6 +11,8 @@ import { Prisma } from '@prisma/client'
 const { mockBooking } = vi.hoisted(() => ({
   mockBooking: {
     update: vi.fn(),
+    updateMany: vi.fn(),
+    findUnique: vi.fn(),
     findMany: vi.fn(),
   },
 }))
@@ -48,17 +50,20 @@ describe('PrismaBookingRepository – villkorade skrivningar', () => {
   })
 
   describe('updateStatusWithAuth', () => {
-    it('lägger kontrollerade värden i samma WHERE som id och ägare', async () => {
-      mockBooking.update.mockResolvedValue({ id: BOOKING_ID, status: 'completed' })
+    it('lägger kontrollerade värden i samma WHERE som id och ägare (en enda UPDATE-sats)', async () => {
+      mockBooking.updateMany.mockResolvedValue({ count: 1 })
+      mockBooking.findUnique.mockResolvedValue({ id: BOOKING_ID, status: 'completed' })
 
-      await repo.updateStatusWithAuth(BOOKING_ID, 'completed', { providerId: 'provider-1' }, undefined, {
+      const result = await repo.updateStatusWithAuth(BOOKING_ID, 'completed', { providerId: 'provider-1' }, undefined, {
         status: 'confirmed',
         bookingDate,
         endTime: '11:00',
         timezone: 'Europe/Stockholm',
       })
 
-      expect(mockBooking.update).toHaveBeenCalledWith(
+      expect(result).toMatchObject({ id: BOOKING_ID, status: 'completed' })
+      expect(mockBooking.update).not.toHaveBeenCalled()
+      expect(mockBooking.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
             id: BOOKING_ID,
@@ -82,8 +87,8 @@ describe('PrismaBookingRepository – villkorade skrivningar', () => {
       )
     })
 
-    it('ingen rad matchar villkoren (P2025) ger null', async () => {
-      mockBooking.update.mockRejectedValue(notFoundError())
+    it('ingen rad matchar villkoren ger null och ingen läsning', async () => {
+      mockBooking.updateMany.mockResolvedValue({ count: 0 })
 
       const result = await repo.updateStatusWithAuth(
         BOOKING_ID,
@@ -92,6 +97,15 @@ describe('PrismaBookingRepository – villkorade skrivningar', () => {
         undefined,
         { status: 'confirmed', bookingDate, endTime: '11:00', timezone: 'Europe/Stockholm' }
       )
+
+      expect(result).toBeNull()
+      expect(mockBooking.findUnique).not.toHaveBeenCalled()
+    })
+
+    it('okänd bokning utan villkor (P2025) ger null', async () => {
+      mockBooking.update.mockRejectedValue(notFoundError())
+
+      const result = await repo.updateStatusWithAuth(BOOKING_ID, 'confirmed', { providerId: 'provider-1' })
 
       expect(result).toBeNull()
     })

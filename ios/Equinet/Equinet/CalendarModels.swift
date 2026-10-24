@@ -26,6 +26,8 @@ struct NativeBooking: Codable, Identifiable, Sendable {
     let bookingSeriesId: String?
     let customerNotes: String?
     let providerNotes: String?
+    /// IANA timezone of the booking (BR-BOOK-001). nil for cached data from before the field existed.
+    var timezone: String? = nil
 
     var customerFullName: String {
         "\(customerFirstName) \(customerLastName)"
@@ -50,7 +52,8 @@ struct NativeBooking: Codable, Identifiable, Sendable {
             isPaid: isPaid,
             bookingSeriesId: bookingSeriesId,
             customerNotes: customerNotes,
-            providerNotes: providerNotes
+            providerNotes: providerNotes,
+            timezone: timezone
         )
     }
 

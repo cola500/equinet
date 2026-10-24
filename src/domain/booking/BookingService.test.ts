@@ -915,6 +915,19 @@ describe('BookingService', () => {
       expect(writeSpy).toHaveBeenCalledWith(BOOKING_ID, 'no_show', { providerId: 'provider-1' }, undefined)
     })
 
+    it('annan leverantör får BOOKING_NOT_FOUND före tidskontrollen och ser inte sluttiden', async () => {
+      const { svc, repo } = serviceAt('2026-11-10T06:00:00.000Z')
+      const writeSpy = vi.spyOn(repo, 'updateStatusWithAuth')
+
+      const result = await svc.updateStatus({
+        bookingId: BOOKING_ID, newStatus: 'completed', providerId: 'provider-2',
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error).toEqual({ type: 'BOOKING_NOT_FOUND' })
+      expect(writeSpy).not.toHaveBeenCalled()
+    })
+
     it('SC-BOOK-002 – samtidig ombokning mellan kontroll och skrivning kringgår inte sluttiden', async () => {
       // The provider completes at 11:30 against the old end time 11:00.
       // Between the read and the write, the booking is rescheduled to 14:00–15:00.

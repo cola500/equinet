@@ -5,7 +5,7 @@ import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { ProviderRepository } from "@/infrastructure/persistence/provider/ProviderRepository"
 import { PrismaBookingRepository } from "@/infrastructure/persistence/booking/PrismaBookingRepository"
-import { createBookingService } from "@/domain/booking"
+import { createBookingService, mapBookingErrorToMessage } from "@/domain/booking"
 import {
   parseVocabulary,
   addCorrections,
@@ -38,6 +38,12 @@ export const POST = withApiHandler(
     }
 
     const actions: string[] = []
+    // Explicit outcome of the completion request, so the client can tell
+    // "note saved and completed" from "note saved but completion rejected"
+    let completion:
+      | { status: "not_requested" }
+      | { status: "completed" }
+      | { status: "rejected"; reason: string; message: string } = { status: "not_requested" }
 
     // 1. Update provider notes on booking (atomic ownership check via WHERE)
     if (validated.workPerformed) {
@@ -71,8 +77,14 @@ export const POST = withApiHandler(
           bookingId: validated.bookingId,
           error: result.error.type,
         })
+        completion = {
+          status: "rejected",
+          reason: result.error.type,
+          message: mapBookingErrorToMessage(result.error),
+        }
       } else {
         actions.push("completed")
+        completion = { status: "completed" }
       }
     }
 
@@ -136,6 +148,7 @@ export const POST = withApiHandler(
     return NextResponse.json({
       success: true,
       actions,
+      completion,
       nextVisitWeeks: validated.nextVisitWeeks,
     })
   }

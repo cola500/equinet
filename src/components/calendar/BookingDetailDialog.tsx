@@ -33,6 +33,7 @@ import { useOfflineGuard } from "@/hooks/useOfflineGuard"
 import { ProviderRescheduleDialog } from "@/components/calendar/ProviderRescheduleDialog"
 import Link from "next/link"
 import { getBookingStatusStyle } from "@/components/booking/booking-status"
+import { MarkCompletedButton } from "@/components/booking/MarkCompletedButton"
 
 interface BookingDetailDialogProps {
   booking: CalendarBooking | null
@@ -268,12 +269,10 @@ export function BookingDetailDialog({
 
           {onStatusUpdate && booking.status === "confirmed" && (
             <div className="flex flex-wrap gap-2 pt-2 border-t">
-              <Button
+              <MarkCompletedButton
+                booking={booking}
                 onClick={() => onStatusUpdate(booking.id, "completed")}
-                className="flex-1"
-              >
-                Markera som genomförd
-              </Button>
+              />
               <Button
                 onClick={() => onStatusUpdate(booking.id, "no_show")}
                 variant="outline"

@@ -43,6 +43,17 @@ struct NativeBookingsView: View {
                 )
             }
         }
+        .alert(
+            "Kunde inte uppdatera bokningen",
+            isPresented: Binding(
+                get: { viewModel.statusErrorMessage != nil },
+                set: { if !$0 { viewModel.statusErrorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.statusErrorMessage ?? "")
+        }
         .task {
             await viewModel.loadBookings()
             if let id = pendingBookingId {
@@ -620,7 +631,14 @@ private struct BookingCard: View {
                 HStack(spacing: 8) { confirmButton; declineButton }
             }
         case "confirmed":
-            confirmedButtons
+            VStack(alignment: .leading, spacing: 6) {
+                confirmedButtons
+                if !canComplete {
+                    Text(BookingCompletionRules.completionHint(endTime: booking.endTime))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
         case "completed":
             if stacksDetails {
                 VStack(spacing: 8) { completedButtons(fill: true) }
@@ -696,9 +714,17 @@ private struct BookingCard: View {
             .buttonStyle(.bordered).tint(.red).disabled(isActionInProgress)
     }
 
+    /// BR-BOOK-001 guidance in the booking's timezone; the server still decides.
+    private var canComplete: Bool {
+        BookingCompletionRules.canMarkCompleted(
+            bookingDate: booking.bookingDate, endTime: booking.endTime, timezone: booking.timezone
+        )
+    }
+
     private func completeButton(fill: Bool) -> some View {
         Button(action: onComplete) { actionLabel("Genomförd", "checkmark.circle", fill: fill) }
-            .buttonStyle(.borderedProminent).tint(Color.equinetGreen).disabled(isActionInProgress)
+            .buttonStyle(.borderedProminent).tint(Color.equinetGreen)
+            .disabled(isActionInProgress || !canComplete)
     }
 
     private func noShowButton(fill: Bool) -> some View {

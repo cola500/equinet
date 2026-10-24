@@ -187,6 +187,13 @@ struct BookingDetailSheet: View {
         }
     }
 
+    /// BR-BOOK-001 guidance in the booking's timezone; the server still decides.
+    private var canComplete: Bool {
+        BookingCompletionRules.canMarkCompleted(
+            bookingDate: booking.bookingDate, endTime: booking.endTime, timezone: booking.timezone
+        )
+    }
+
     private var confirmedActions: some View {
         VStack(spacing: 12) {
             if let onAction {
@@ -201,6 +208,14 @@ struct BookingDetailSheet: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.green)
                 .controlSize(.large)
+                .disabled(!canComplete)
+
+                if !canComplete {
+                    Text(BookingCompletionRules.completionHint(endTime: booking.endTime))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
 
             detailLink("Hantera bokning")
