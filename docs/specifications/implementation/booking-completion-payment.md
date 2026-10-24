@@ -35,7 +35,14 @@ Det här dokumentet beskriver **hur** dagens Equinet ska verkställa
 `BR-BOOK-001` (C3) och `BR-PAY-001` (C2). Det skapar inga nya affärsregler.
 Vid konflikt gäller affärsreglerna och scenarierna i `docs/specifications/`.
 
-Status: **plan godkänd** (2026-10-24). Johan har godkänt de fyra UX-besluten;
+Status: **implementerad på branchen** `feature/c3-c2-booking-completion-payment`
+(2026-10-24), väntar på review och Codex slutgranskning. Avvikelser från
+planen under implementationen: knappen är en delad komponent
+(`MarkCompletedButton`) i stället för ändringar direkt i dialogen; ägarskap
+kontrolleras före tidskontrollen så att en annan leverantör får 404 och inte
+ser sluttiden; den villkorade skrivningen görs med `updateMany` (en enda
+`UPDATE`-sats) följd av en läsning, eftersom `update` med icke-unika villkor
+inte garanterat är en sats. Planen godkändes 2026-10-24. Johan har godkänt de fyra UX-besluten;
 Codex planeringsgranskning gav tre tekniska justeringar som är införda nedan
 (atomisk kontroll, `timezone` till klienterna, röstloggens utfall).
 Kodreferenser gäller `main` vid `4b9101ed` och är `[läst]` om inget annat
@@ -123,11 +130,10 @@ ett valfritt argument):
 
 1. `updateStatusWithAuth` får ett valfritt argument
    `expected?: { status, bookingDate, endTime, timezone }`. När det finns
-   läggs värdena till i samma `WHERE` som `id` och ägare:
-   `UPDATE … WHERE id = ? AND providerId = ? AND status = ? AND bookingDate = ?
-   AND endTime = ? AND timezone = ?`. Prisma 6 tillåter icke-unika fält i
-   `update`-villkoret; ingen träff ger `P2025`, som repositoryt redan
-   översätter till `null`.
+   skrivs statusen med `updateMany` och värdena i samma `WHERE` som `id` och
+   ägare: `UPDATE … WHERE id = ? AND providerId = ? AND status = ? AND
+   bookingDate = ? AND endTime = ? AND timezone = ?`. `count = 0` ger `null`;
+   annars läses den skrivna bokningen med samma `select` som tidigare.
 2. `BookingService.updateStatus` skickar `expected` med exakt de värden som
    sluttidskontrollen använde, när ny status är `completed`.
 3. Får tjänsten `null` trots att `expected` skickades, läser den bokningen en

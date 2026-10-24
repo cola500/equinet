@@ -3,7 +3,7 @@ title: "Manuell testningsguide"
 description: "Komplett checklista for manuell testning av Equinet -- alla floden, feature flags, mobil"
 category: testing
 status: active
-last_updated: 2026-10-14
+last_updated: 2026-10-24
 tags: [testing, manual, checklist, qa]
 sections:
   - Startsida och offentliga sidor
@@ -100,7 +100,8 @@ sections:
 - [ ] Lista visar alla bokningar
 - [ ] Filtrera pa status fungerar
 - [ ] Avboka vantande bokning
-- [ ] Betalning fungerar (mock)
+- [ ] Betalning fungerar (mock) for genomford bokning
+- [ ] Bekraftad bokning (aven efter sluttid) visar ingen "Betala", bara "Betalning öppnas när besöket är genomfört"
 - [ ] Kvitto kan laddas ner
 - [ ] Ombokning fungerar (styrs av leverantörsinställningen rescheduleEnabled)
 
@@ -146,7 +147,8 @@ sections:
 - [ ] Inkommande bokningar med filter
 - [ ] Acceptera -> Bekraftad
 - [ ] Avboj bokning
-- [ ] Markera som genomford
+- [ ] Markera som genomford: knappen ar inaktiv fore bokad sluttid och visar "Kan markeras som genomförd efter kl. HH:MM"; aktiv fran sluttiden (webb och iOS, bokningslista och kalender)
+- [ ] Rostloggning med "markera som klar" fore sluttid: anteckningen sparas och beskedet sager att bokningen inte markerades som genomförd
 - [ ] Markera som "ej infunnen"
 - [ ] Anteckningar och snabbanteckning
 
@@ -284,6 +286,7 @@ sections:
 - [ ] Oversikt, Kalender, Bokningar offline
 - [ ] Offlineindikator visas
 - [ ] Andringar synkas vid ateranslutning
+- [ ] "Genomford" offline fore sluttid: vid synk visas konflikt med serverns besked och "Försök igen" lyckas efter sluttiden
 - [ ] Ej cacheade sidor visar offline-meddelande
 
 ### Sjalvservice-ombokning (leverantorsinstallning rescheduleEnabled)

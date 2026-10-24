@@ -12,10 +12,10 @@ keywords:
   - pris
   - kr
   - fakturanummer
-summary: Betala för bekräftade bokningar direkt i appen och ladda ner kvitto som PDF.
+summary: Betala för genomförda bokningar direkt i appen och ladda ner kvitto som PDF.
 ---
 
-När en bokning är bekräftad eller genomförd kan du betala direkt i appen.
+När leverantören har markerat besöket som genomfört kan du betala direkt i appen. Före det står det "Betalning öppnas när besöket är genomfört" på bokningen.
 
 ---
 

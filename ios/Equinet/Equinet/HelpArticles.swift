@@ -251,7 +251,7 @@ let providerHelpArticles: [HelpArticle] = [
                 heading: "Statusar",
                 bullets: [
                     "Väntande -- Acceptera eller avböj (med anledning)",
-                    "Bekräftad -- Utför tjänsten, markera sedan som genomförd",
+                    "Bekräftad -- Utför tjänsten, markera sedan som genomförd. Det går först när bokad sluttid har passerat; före det är knappen inaktiv och visar från vilken tid det går.",
                     "Genomförd -- Klar, kunden kan nu betala och lämna omdöme",
                     "Ej infunnit -- Kunden infann sig inte",
                     "Avbokad -- Avbokad av kund eller dig",
