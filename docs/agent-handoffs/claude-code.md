@@ -3,7 +3,7 @@ title: "Claude Code – överlämning"
 description: "Claude Codes tillfälliga överlämning i pågående sprint"
 category: sprint
 status: active
-last_updated: 2026-10-23
+last_updated: 2026-10-24
 tags: [agents, collaboration, handoff]
 sections:
   - Gjort
@@ -16,37 +16,39 @@ sections:
 
 # Claude Code – överlämning
 
-**Senast uppdaterad:** 2026-10-23\
-**Aktuell uppgift:** Specifikationspilot – fyra regler för bokning och betalning (C3, C2, C1 + ägarskap). Ej D1, Connect, kvitto, moms, refund.\
-**Branch eller worktree:** `docs/spec-pilot-booking-payment` (från `main` `2ccfb541`)\
-**Status:** slutgranskad, committad och PR skapad mot `main`. Ej mergad.
+**Senast uppdaterad:** 2026-10-24\
+**Aktuell uppgift:** Vertikal SDD-slice C3 (utförd tidigast vid sluttid) + C2 (betalning först efter utförd). Styrande: BR-BOOK-001, BR-PAY-001, SC-BOOK-001–008, SC-PAY-001–005.\
+**Branch eller worktree:** `feature/c3-c2-booking-completion-payment` (från `main` `4b9101ed`)\
+**Status:** PLAN godkänd och committad; RED pågår.
 
 ## Gjort
 
-- Skapat `docs/specifications/`: README, affärsregler (4 BR), 25 scenarier, spårbarhetsmatris.
-- Infört Johans beslut 2026-10-23: BR-PAY-002 beslutad (inga ombud), BR-PAY-003-formulering godkänd, serverklocka + bokningens tidszon + mottagningstid vid offline-synk, `completed` tillåten när servertid ≥ sluttid.
-- Q-BOOK-001, Q-BOOK-002, Q-PAY-001 flyttade till "Lösta frågor"; historiken finns kvar i lineage. Q-PAY-002–005 öppna.
-- SC-BOOK-005–007 och SC-PAY-010–013 nu `beslutat`; nytt SC-BOOK-008 (offline-synk).
-- SC-PAY-025 enligt Codex: äldre försök kan inte slutföras; beloppet obeslutat (Q-PAY-003).
+- Implementationskontraktet uppdaterat med Codex tre justeringar (2026-10-24).
+- Johans fyra UX-beslut godkända och införda.
 
 ## Verifierat
 
-- `[körd]` `docs:validate`: inga fel i nya filer; `check-swedish.sh` grön; sections = H2.
-- `[läst]` Avvikelser oförändrade: BR-BOOK-001, BR-PAY-001, BR-PAY-003 följs inte av koden; BR-PAY-002 följs. Inga tester körda.
+- `[läst]` Konkurrens: `updateStatus` läser och skriver separat. Löses med villkorad `UPDATE` (`status`, `bookingDate`, `endTime`, `timezone` i `WHERE`) via valfritt `expected` på `updateStatusWithAuth`; ingen träff när bokningen finns → 409 `BOOKING_CHANGED_CONCURRENTLY`. Omvänd ordning: ombokningens `WHERE` får `status in (pending, confirmed)`. Ingen schemaändring.
+- `[läst]` `timezone` saknas i `GET /api/bookings` (Supabase-select), `native/bookings`, `native/calendar` och Swift-modellerna. Läggs till; iOS faller tillbaka på `Europe/Stockholm`, inte enhetens zon.
+- `[läst]` Röstloggen sparar anteckningen före statusbytet. Svaret får `completion: not_requested | completed | rejected (+ reason, message)`, alltid 200.
 
 ## Beslut eller frågor till Johan
 
-- Inget beslut behövs för att committa. Kvar som framtida beslut: Q-PAY-002–005.
+1. **Verifierat:** den atomiska lösningen ryms i kontraktet (repository-argument, inget schema, inget nytt mönster).
+2. **Osäkert:** atomiciteten provkörs inte mot riktig PostgreSQL i enhetstester; den vilar på radlås i `UPDATE`. Domäntest och `WHERE`-kontroll täcker logiken.
+3. **Beslut nu:** inga.
+4. **Rekommendation:** fortsätt enligt stationsflödet.
+5. **Kan fortsätta utan beslut:** RED → GREEN → REVIEW → VERIFY.
 
 ## Rekommenderat nästa steg
 
-- Johan: granska och merga PR:en när Quality Gate är grön.
-- Pilotutvärdering: `docs/specifications/README.md` › Pilotutvärdering. Behåll i liten form, pröva skarpt på C3/C2.
+- Claude Code: RED-station för C3 och C2, separat commit.
+- Codex: slutgranskning efter VERIFY, före PR.
 
 ## Rör inte
 
-- Produktkod, tester, miljöer, Stripe, data. `booking-flow.md` rättas först med C2.
+- Affärsregler och scenarier; schema; C1-logik; webhook.
 
 ## Relaterade filer och PR
 
-- `docs/specifications/**`; PR från denna branch mot `main`.
+- `docs/specifications/implementation/booking-completion-payment.md`; ingen PR ännu.
