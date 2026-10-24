@@ -283,9 +283,12 @@ E2E-tester för betalningsflödet finns i `e2e/payment.spec.ts` (vertikal slice 
 | `SC-BOOK-001 + SC-PAY-001` | Leverantören markerar en bokning med passerad sluttid som genomförd; kunden betalar och ser "Betald" |
 | `SC-BOOK-003 + SC-PAY-003` | En framtida bekräftad bokning: leverantörens knapp är inaktiverad, kunden ser ingen "Betala", och servern avvisar båda åtgärderna även vid direkta API-anrop |
 
-Kör testerna med mock-gatewayen (`.env.local` kan peka på Stripe test mode):
+E2E kör alltid mock-gatewayen: `playwright.config.ts` ignorerar
+`PAYMENT_PROVIDER` från `.env.local`, och specen avbryter före första betalningen
+om servern (t.ex. en återanvänd dev-server) använder en annan gateway. Stripe i
+E2E kräver uttryckligt `E2E_PAYMENT_PROVIDER=stripe`.
 ```bash
-PAYMENT_PROVIDER=mock npx playwright test e2e/payment.spec.ts --project=chromium
+npx playwright test e2e/payment.spec.ts --project=chromium
 ```
 
 ---

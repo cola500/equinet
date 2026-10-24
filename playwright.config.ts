@@ -11,6 +11,15 @@ if (!process.env.CI) {
   process.env.DIRECT_DATABASE_URL = LOCAL_DB;
 }
 
+// E2E always runs against the mock payment gateway. .env.local (loaded above)
+// may set PAYMENT_PROVIDER=stripe for manual development; that must never
+// switch E2E to an external gateway. Stripe E2E needs an explicit opt-in:
+// E2E_PAYMENT_PROVIDER=stripe. Setting process.env here also covers the
+// offline production server, which inherits the environment.
+export const E2E_PAYMENT_PROVIDER: 'mock' | 'stripe' =
+  process.env.E2E_PAYMENT_PROVIDER === 'stripe' ? 'stripe' : 'mock';
+process.env.PAYMENT_PROVIDER = E2E_PAYMENT_PROVIDER;
+
 /**
  * Playwright configuration for E2E tests
  * @see https://playwright.dev/docs/test-configuration
@@ -126,7 +135,7 @@ export default defineConfig({
         FEATURE_CUSTOMER_INVITE: 'true',
         FEATURE_STRIPE_PAYMENTS: 'true',
         ALLOW_TEST_ENDPOINTS: 'true',
-        PAYMENT_PROVIDER: process.env.PAYMENT_PROVIDER || 'mock',
+        PAYMENT_PROVIDER: E2E_PAYMENT_PROVIDER,
         // Force correct DB for E2E.
         // Local: Supabase CLI (supabase start). CI: set via $GITHUB_ENV.
         DATABASE_URL: process.env.CI

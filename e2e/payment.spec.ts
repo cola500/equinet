@@ -14,8 +14,9 @@ import { prisma } from './fixtures'
  *    rejects both actions even when called directly.
  *    (SC-BOOK-002/003, SC-PAY-003)
  *
- * Requires FEATURE_STRIPE_PAYMENTS=true (set in playwright.config.ts) and the
- * mock payment gateway (PAYMENT_PROVIDER unset).
+ * Requires FEATURE_STRIPE_PAYMENTS=true and the mock payment gateway, both
+ * forced in playwright.config.ts. beforeAll aborts before any payment if the
+ * server uses another gateway.
  */
 
 const SPEC_TAG = 'c3c2-payment'
@@ -65,7 +66,22 @@ function providerCard(page: Page, horseName: string) {
 test.describe('Utförd bokning och betalning (C3 + C2)', () => {
   test.describe.configure({ mode: 'serial' })
 
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ playwright }, testInfo) => {
+    // Guard: never pay through an external gateway by accident. A reused dev
+    // server may have been started with .env.local (PAYMENT_PROVIDER=stripe).
+    const expected = process.env.E2E_PAYMENT_PROVIDER === 'stripe' ? 'stripe' : 'mock'
+    const api = await playwright.request.newContext({ baseURL: testInfo.project.use.baseURL })
+    const res = await api.get('/api/test/payment-provider')
+    const actual = res.ok() ? ((await res.json()) as { provider: string }).provider : `HTTP ${res.status()}`
+    await api.dispose()
+    if (actual !== expected) {
+      throw new Error(
+        `E2E server uses payment provider "${actual}", expected "${expected}". ` +
+          'Stop the running dev server so Playwright starts one with the mock gateway, ' +
+          'or opt in explicitly with E2E_PAYMENT_PROVIDER=stripe.'
+      )
+    }
+
     await cleanupSpecData(SPEC_TAG)
 
     pastBooking = await seedBooking({
