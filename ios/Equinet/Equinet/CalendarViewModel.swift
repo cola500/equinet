@@ -279,7 +279,7 @@ final class CalendarViewModel {
         guard oldStatus != newStatus else { return }
 
         // Optimistic update
-        let endTime = bookings[index].endTime
+        let original = bookings[index]
         bookings[index] = bookings[index].withStatus(newStatus)
         actionInProgress = bookingId
         statusErrorMessage = nil
@@ -310,7 +310,12 @@ final class CalendarViewModel {
                 } else {
                     // The server rejected the change: tell the provider now
                     statusErrorMessage = BookingCompletionRules.statusUpdateErrorMessage(
-                        for: error, newStatus: newStatus, endTime: endTime
+                        for: error,
+                        newStatus: newStatus,
+                        endTime: original.endTime,
+                        endTimePassed: BookingCompletionRules.canMarkCompleted(
+                            bookingDate: original.bookingDate, endTime: original.endTime, timezone: original.timezone
+                        )
                     )
                 }
             }

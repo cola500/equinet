@@ -246,8 +246,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 )
                 try? await UNUserNotificationCenter.current().add(request)
 
-                // Save for retry when network returns
-                PendingActionStore.save(bookingId: bookingId, status: newStatus)
+                // Save for retry only when a later attempt can succeed;
+                // a 4xx is the server's decision and would be dropped silently
+                if PendingActionStore.shouldQueue(error) {
+                    PendingActionStore.save(bookingId: bookingId, status: newStatus)
+                }
             }
         }
     }

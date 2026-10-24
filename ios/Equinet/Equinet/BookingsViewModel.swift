@@ -283,7 +283,12 @@ final class BookingsViewModel {
             #endif
             AppLogger.network.error("updateStatus: failed id=\(id) newStatus=\(newStatus) error=\(error.localizedDescription)")
             statusErrorMessage = BookingCompletionRules.statusUpdateErrorMessage(
-                for: error, newStatus: newStatus, endTime: oldBooking.endTime
+                for: error,
+                newStatus: newStatus,
+                endTime: oldBooking.endTime,
+                endTimePassed: BookingCompletionRules.canMarkCompleted(
+                    bookingDate: oldBooking.bookingDate, endTime: oldBooking.endTime, timezone: oldBooking.timezone
+                )
             )
         }
     }

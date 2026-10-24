@@ -285,7 +285,8 @@ final class CalendarViewModelTests: XCTestCase {
     func testSCBOOK002_rejectedCompletionShowsErrorAndIsNotQueued() async {
         PendingActionStore.clear()
         defer { PendingActionStore.clear() }
-        sut.bookings = [makeBooking(id: "b1", status: "confirmed")]
+        // Booking ends in the future, so the rejection is explained by the end time
+        sut.bookings = [makeBooking(id: "b1", date: "2099-01-01", status: "confirmed")]
         fetcher.updateResult = .failure(APIError.serverError(400))
 
         sut.updateBookingStatus(bookingId: "b1", newStatus: "completed")

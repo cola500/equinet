@@ -46,6 +46,31 @@ describe('getBookingEndInstant', () => {
     expect(result.value.toISOString()).toBe('2026-11-10T10:00:00.000Z')
   })
 
+  it('tidsstämpel utan tidszon (Supabase-REST) tolkas som UTC, inte webbläsarens tid', () => {
+    for (const stored of ['2026-11-10T00:00:00', '2026-11-09T23:00:00', '2026-11-10']) {
+      const result = getBookingEndInstant({ ...winterBooking, bookingDate: stored })
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.toISOString()).toBe('2026-11-10T10:00:00.000Z')
+    }
+  })
+
+  it.each([
+    ['UTC-midnatt', '2026-11-10T00:00:00.000Z'],
+    ['lokal midnatt', '2026-11-10T05:00:00.000Z'],
+    ['lokal 10:00', '2026-11-10T15:00:00.000Z'],
+  ])('tidszon väster om UTC ger rätt dag för %s', (_label, stored) => {
+    // 11:00 in New York (UTC-5 in November) = 16:00 UTC
+    const result = getBookingEndInstant({
+      bookingDate: new Date(stored),
+      endTime: '11:00',
+      timezone: 'America/New_York',
+    })
+
+    expect(result.isSuccess).toBe(true)
+    expect(result.value.toISOString()).toBe('2026-11-10T16:00:00.000Z')
+  })
+
   it('ogiltig tidszon ger fel i stället för en gissad förskjutning', () => {
     const result = getBookingEndInstant({ ...winterBooking, timezone: 'Mars/Olympus_Mons' })
 

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest"
-import { render, screen, fireEvent } from "@testing-library/react"
+import { describe, it, expect, vi, afterEach } from "vitest"
+import { render, screen, fireEvent, act } from "@testing-library/react"
 import { MarkCompletedButton } from "./MarkCompletedButton"
 
 // Base example: 10 Nov 2026, 10:00–11:00 Stockholm (UTC+1) => ends 10:00 UTC
@@ -10,6 +10,10 @@ const booking = {
 }
 
 describe("MarkCompletedButton", () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it("SC-BOOK-003 – knappen är inaktiverad med förklaring medan besöket pågår", () => {
     const onClick = vi.fn()
     render(<MarkCompletedButton booking={booking} onClick={onClick} now={new Date("2026-11-10T09:30:00.000Z")} />)
@@ -36,6 +40,19 @@ describe("MarkCompletedButton", () => {
 
   it("SC-BOOK-005 – knappen är aktiv exakt vid sluttid", () => {
     render(<MarkCompletedButton booking={booking} onClick={vi.fn()} now={new Date("2026-11-10T10:00:00.000Z")} />)
+
+    expect(screen.getByRole("button", { name: "Markera som genomförd" })).toBeEnabled()
+  })
+
+  it("SC-BOOK-005 – en öppen vy aktiverar knappen av sig själv när sluttiden passeras", () => {
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] })
+    vi.setSystemTime(new Date("2026-11-10T09:59:30.000Z"))
+    render(<MarkCompletedButton booking={booking} onClick={vi.fn()} />)
+    expect(screen.getByRole("button", { name: "Markera som genomförd" })).toBeDisabled()
+
+    act(() => {
+      vi.advanceTimersByTime(31_000)
+    })
 
     expect(screen.getByRole("button", { name: "Markera som genomförd" })).toBeEnabled()
   })

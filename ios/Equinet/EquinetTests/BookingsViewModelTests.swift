@@ -215,7 +215,8 @@ final class BookingsViewModelTests: XCTestCase {
     }
 
     func testSCBOOK002_rejectedCompletionShowsVisibleError() async {
-        viewModel.bookings = [makeBooking(id: "b1", status: "confirmed")]
+        // Booking ends in the future, so the rejection is explained by the end time
+        viewModel.bookings = [makeBooking(id: "b1", status: "confirmed", date: "2099-01-01")]
         fetcher.updateResult = .failure(APIError.serverError(400))
 
         await viewModel.completeBooking(id: "b1")

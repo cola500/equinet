@@ -60,6 +60,31 @@ final class BookingCompletionRulesTests: XCTestCase {
         }
     }
 
+    func testTimestampWithoutZoneIsUTC() {
+        XCTAssertFalse(BookingCompletionRules.canMarkCompleted(
+            bookingDate: "2026-11-10T00:00:00", endTime: "11:00", timezone: "Europe/Stockholm",
+            now: at("2026-11-10T09:59:00Z")
+        ))
+        XCTAssertTrue(BookingCompletionRules.canMarkCompleted(
+            bookingDate: "2026-11-10T00:00:00", endTime: "11:00", timezone: "Europe/Stockholm",
+            now: at("2026-11-10T10:00:00Z")
+        ))
+    }
+
+    func testWestOfUTCUsesRightDayForAllStorageVariants() {
+        // 11:00 New York (UTC-5 in November) = 16:00 UTC
+        for stored in ["2026-11-10T00:00:00.000Z", "2026-11-10T05:00:00.000Z", "2026-11-10T15:00:00.000Z"] {
+            XCTAssertFalse(BookingCompletionRules.canMarkCompleted(
+                bookingDate: stored, endTime: "11:00", timezone: "America/New_York",
+                now: at("2026-11-10T15:59:00Z")
+            ), "stored=\(stored)")
+            XCTAssertTrue(BookingCompletionRules.canMarkCompleted(
+                bookingDate: stored, endTime: "11:00", timezone: "America/New_York",
+                now: at("2026-11-10T16:00:00Z")
+            ), "stored=\(stored)")
+        }
+    }
+
     func testUsesBookingTimezoneNotDeviceTimezone() {
         // A booking in Helsinki (UTC+2 in November) ends 11:00 local = 09:00 UTC.
         XCTAssertTrue(BookingCompletionRules.canMarkCompleted(
@@ -104,16 +129,26 @@ final class BookingCompletionRulesTests: XCTestCase {
     func testSCBOOK002_rejectedCompletionMessage() {
         XCTAssertEqual(
             BookingCompletionRules.statusUpdateErrorMessage(
-                for: APIError.serverError(400), newStatus: "completed", endTime: "11:00"
+                for: APIError.serverError(400), newStatus: "completed", endTime: "11:00", endTimePassed: false
             ),
             "Bokningen kan markeras som genomförd först efter bokad sluttid (kl. 11:00)."
+        )
+    }
+
+    func testRejectionAfterEndTimeIsNotBlamedOnEndTime() {
+        // e.g. the booking was cancelled from another device: 400 INVALID_STATUS_TRANSITION
+        XCTAssertEqual(
+            BookingCompletionRules.statusUpdateErrorMessage(
+                for: APIError.serverError(400), newStatus: "completed", endTime: "11:00", endTimePassed: true
+            ),
+            "Bokningens status kunde inte ändras. Ladda om och försök igen."
         )
     }
 
     func testConcurrentChangeMessage() {
         XCTAssertEqual(
             BookingCompletionRules.statusUpdateErrorMessage(
-                for: APIError.serverError(409), newStatus: "completed", endTime: "11:00"
+                for: APIError.serverError(409), newStatus: "completed", endTime: "11:00", endTimePassed: true
             ),
             "Bokningen ändrades samtidigt. Ladda om och försök igen."
         )
@@ -122,7 +157,7 @@ final class BookingCompletionRulesTests: XCTestCase {
     func testGenericMessageForOtherErrors() {
         XCTAssertEqual(
             BookingCompletionRules.statusUpdateErrorMessage(
-                for: APIError.serverError(500), newStatus: "confirmed", endTime: "11:00"
+                for: APIError.serverError(500), newStatus: "confirmed", endTime: "11:00", endTimePassed: true
             ),
             "Kunde inte uppdatera bokningen. Försök igen."
         )
