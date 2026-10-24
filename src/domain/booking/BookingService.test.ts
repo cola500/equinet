@@ -11,6 +11,7 @@ import {
 } from './BookingService'
 import { TravelTimeService } from './TravelTimeService'
 import { MockBookingRepository } from '@/infrastructure/persistence/booking/MockBookingRepository'
+import type { Booking } from '@/infrastructure/persistence/booking/IBookingRepository'
 
 describe('BookingService', () => {
   let bookingRepository: MockBookingRepository
@@ -738,6 +739,8 @@ describe('BookingService', () => {
     })
 
     it('should allow full lifecycle: pending -> confirmed -> completed', async () => {
+      // validDTO ends 2025-02-01 11:00 Stockholm; complete one hour after end time
+      service = new BookingService({ ...deps, now: () => new Date('2025-02-01T11:00:00.000Z') })
       const bookingId = await createPendingBooking()
 
       // Confirm
@@ -757,6 +760,187 @@ describe('BookingService', () => {
       })
       expect(completeResult.isSuccess).toBe(true)
       expect(completeResult.value.status).toBe('completed')
+    })
+  })
+
+  describe('updateStatus – BR-BOOK-001 utförd tidigast vid sluttid', () => {
+    // Base example: 10 Nov 2026, 10:00–11:00 Stockholm (UTC+1) => ends 10:00 UTC
+    const BOOKING_ID = 'booking-c3'
+    const confirmedBooking: Booking = {
+      id: BOOKING_ID,
+      customerId: 'customer-1',
+      providerId: 'provider-1',
+      serviceId: 'service-1',
+      bookingDate: new Date('2026-11-10T00:00:00.000Z'),
+      startTime: '10:00',
+      endTime: '11:00',
+      timezone: 'Europe/Stockholm',
+      status: 'confirmed',
+      rescheduleCount: 0,
+      createdAt: new Date('2026-11-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-11-01T00:00:00.000Z'),
+    }
+
+    function serviceAt(isoNow: string, repo = new MockBookingRepository([{ ...confirmedBooking }])) {
+      return {
+        repo,
+        svc: new BookingService({ ...deps, bookingRepository: repo, now: () => new Date(isoNow) }),
+      }
+    }
+
+    function complete(svc: BookingService) {
+      return svc.updateStatus({ bookingId: BOOKING_ID, newStatus: 'completed', providerId: 'provider-1' })
+    }
+
+    it('SC-BOOK-001 – tillåter completed klockan 11:30', async () => {
+      const { svc } = serviceAt('2026-11-10T10:30:00.000Z')
+
+      const result = await complete(svc)
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.status).toBe('completed')
+    })
+
+    it('SC-BOOK-002 – avvisar completed klockan 07:00 samma dag och lämnar bokningen bekräftad', async () => {
+      const { svc, repo } = serviceAt('2026-11-10T06:00:00.000Z')
+      const writeSpy = vi.spyOn(repo, 'updateStatusWithAuth')
+
+      const result = await complete(svc)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error).toEqual({ type: 'COMPLETION_BEFORE_END_TIME', endTime: '11:00' })
+      expect(writeSpy).not.toHaveBeenCalled()
+      expect((await repo.findById(BOOKING_ID))?.status).toBe('confirmed')
+    })
+
+    it('SC-BOOK-003 – avvisar completed klockan 10:30 medan besöket pågår', async () => {
+      const { svc } = serviceAt('2026-11-10T09:30:00.000Z')
+
+      const result = await complete(svc)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('COMPLETION_BEFORE_END_TIME')
+    })
+
+    it('SC-BOOK-004 – avvisar completed en minut före sluttid', async () => {
+      const { svc } = serviceAt('2026-11-10T09:59:00.000Z')
+
+      const result = await complete(svc)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('COMPLETION_BEFORE_END_TIME')
+    })
+
+    it('SC-BOOK-005 – tillåter completed exakt vid sluttid', async () => {
+      const { svc } = serviceAt('2026-11-10T10:00:00.000Z')
+
+      const result = await complete(svc)
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value.status).toBe('completed')
+    })
+
+    it('SC-BOOK-006 – serverklocka i UTC: 10:30 UTC tillåts och 09:30 UTC avvisas', async () => {
+      const after = await complete(serviceAt('2026-11-10T10:30:00.000Z').svc)
+      const before = await complete(serviceAt('2026-11-10T09:30:00.000Z').svc)
+
+      expect(after.isSuccess).toBe(true)
+      expect(before.isFailure).toBe(true)
+      expect(before.error.type).toBe('COMPLETION_BEFORE_END_TIME')
+    })
+
+    it('SC-BOOK-007 – sommartidens första dag: 10:30 avvisas och 11:05 tillåts', async () => {
+      const dstBooking: Booking = { ...confirmedBooking, bookingDate: new Date('2027-03-28T00:00:00.000Z') }
+
+      const early = await complete(
+        serviceAt('2027-03-28T08:30:00.000Z', new MockBookingRepository([{ ...dstBooking }])).svc
+      )
+      const late = await complete(
+        serviceAt('2027-03-28T09:05:00.000Z', new MockBookingRepository([{ ...dstBooking }])).svc
+      )
+
+      expect(early.isFailure).toBe(true)
+      expect(early.error.type).toBe('COMPLETION_BEFORE_END_TIME')
+      expect(late.isSuccess).toBe(true)
+    })
+
+    it('avvisar completed när bokningens tidszon är ogiltig (stänger)', async () => {
+      const repo = new MockBookingRepository([{ ...confirmedBooking, timezone: 'Nope/Nope' }])
+      const { svc } = serviceAt('2030-01-01T00:00:00.000Z', repo)
+
+      const result = await complete(svc)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('COMPLETION_BEFORE_END_TIME')
+    })
+
+    it('tidskontrollen gäller bara completed – no_show och cancelled före sluttid fungerar som förut', async () => {
+      const noShow = await serviceAt('2026-11-10T06:00:00.000Z').svc.updateStatus({
+        bookingId: BOOKING_ID, newStatus: 'no_show', providerId: 'provider-1',
+      })
+      const cancelled = await serviceAt('2026-11-10T06:00:00.000Z').svc.updateStatus({
+        bookingId: BOOKING_ID, newStatus: 'cancelled', providerId: 'provider-1',
+      })
+
+      expect(noShow.isSuccess).toBe(true)
+      expect(cancelled.isSuccess).toBe(true)
+    })
+
+    it('completed skickar de kontrollerade värdena som villkor för skrivningen', async () => {
+      const { svc, repo } = serviceAt('2026-11-10T10:30:00.000Z')
+      const writeSpy = vi.spyOn(repo, 'updateStatusWithAuth')
+
+      await complete(svc)
+
+      expect(writeSpy).toHaveBeenCalledWith(
+        BOOKING_ID,
+        'completed',
+        { providerId: 'provider-1' },
+        undefined,
+        {
+          status: 'confirmed',
+          bookingDate: confirmedBooking.bookingDate,
+          endTime: '11:00',
+          timezone: 'Europe/Stockholm',
+        }
+      )
+    })
+
+    it('andra statusbyten skickar inget skrivvillkor', async () => {
+      const { svc, repo } = serviceAt('2026-11-10T06:00:00.000Z')
+      const writeSpy = vi.spyOn(repo, 'updateStatusWithAuth')
+
+      await svc.updateStatus({ bookingId: BOOKING_ID, newStatus: 'no_show', providerId: 'provider-1' })
+
+      expect(writeSpy).toHaveBeenCalledWith(BOOKING_ID, 'no_show', { providerId: 'provider-1' }, undefined)
+    })
+
+    it('SC-BOOK-002 – samtidig ombokning mellan kontroll och skrivning kringgår inte sluttiden', async () => {
+      // The provider completes at 11:30 against the old end time 11:00.
+      // Between the read and the write, the booking is rescheduled to 14:00–15:00.
+      class RescheduleDuringCompletionRepo extends MockBookingRepository {
+        private rescheduled = false
+        async findById(id: string): Promise<Booking | null> {
+          const snapshot = await super.findById(id)
+          if (snapshot && !this.rescheduled) {
+            this.rescheduled = true
+            const readCopy = { ...snapshot }
+            await this.save({ ...snapshot, startTime: '14:00', endTime: '15:00' })
+            return readCopy
+          }
+          return snapshot
+        }
+      }
+      const repo = new RescheduleDuringCompletionRepo([{ ...confirmedBooking }])
+      const { svc } = serviceAt('2026-11-10T10:30:00.000Z', repo)
+
+      const result = await complete(svc)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error.type).toBe('BOOKING_CHANGED_CONCURRENTLY')
+      const stored = await repo.findById(BOOKING_ID)
+      expect(stored?.status).toBe('confirmed')
+      expect(stored?.endTime).toBe('15:00')
     })
   })
 

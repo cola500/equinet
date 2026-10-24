@@ -185,11 +185,13 @@ test.describe('Offline Mutations', () => {
   test.beforeAll(async () => {
     await cleanupSpecData(SPEC_TAG)
 
-    // Test 1: booking to mark as completed
+    // Test 1: booking to mark as completed. BR-BOOK-001 / SC-BOOK-008: the
+    // server accepts "completed" only after the booked end time, so both
+    // bookings that are marked completed lie in the past.
     bookingForTest1 = await seedBooking({
       specTag: SPEC_TAG,
       status: 'confirmed',
-      daysFromNow: 3,
+      daysFromNow: -3,
       horseName: 'E2E OfflineMut1',
       startTime: '08:00',
       endTime: '09:00',
@@ -199,7 +201,7 @@ test.describe('Offline Mutations', () => {
     bookingForTest3 = await seedBooking({
       specTag: SPEC_TAG,
       status: 'confirmed',
-      daysFromNow: 5,
+      daysFromNow: -5,
       horseName: 'E2E OfflineMut3',
       startTime: '14:00',
       endTime: '15:00',

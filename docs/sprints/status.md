@@ -26,8 +26,8 @@ sections:
 
 | Station | Status |
 |---------|--------|
-| PLAN | done (denna commit) |
-| RED | pending |
+| PLAN | done (48b2f712) |
+| RED | C3 done (denna commit); C2 pending |
 | GREEN | pending |
 | REVIEW | pending |
 | VERIFY | pending |

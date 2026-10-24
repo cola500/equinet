@@ -683,6 +683,26 @@ describe("sync-engine", () => {
       expect(all[0].error).toBe("HTTP 409: Bokningen har ändrats")
     })
 
+    it("SC-BOOK-008 – avvisad markering vid synk före sluttid blir konflikt med serverns besked", async () => {
+      await queueMutation({
+        method: "PUT",
+        url: "/api/bookings/a",
+        body: JSON.stringify({ status: "completed" }),
+        entityType: "booking",
+        entityId: "a",
+      })
+
+      const message = "Bokningen kan markeras som genomförd först efter bokad sluttid (kl. 11:00)."
+      mockFetch([{ status: 400, body: { error: message } }])
+
+      const result = await processMutationQueue()
+
+      expect(result.conflicts).toBe(1)
+      const all = await offlineDb.pendingMutations.toArray()
+      expect(all[0].status).toBe("conflict")
+      expect(all[0].error).toBe(`HTTP 400: ${message}`)
+    })
+
     it("should fall back to generic HTTP message when response has no JSON body", async () => {
       await queueMutation({
         method: "PUT",

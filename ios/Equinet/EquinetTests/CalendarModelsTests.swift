@@ -47,6 +47,38 @@ final class CalendarModelsTests: XCTestCase {
         XCTAssertTrue(booking.isPaid)
     }
 
+    func testSCBOOK007_nativeBookingDecodesTimezone() throws {
+        let json = """
+        {
+            "id": "booking-1", "bookingDate": "2026-11-10T00:00:00.000Z",
+            "startTime": "10:00", "endTime": "11:00", "status": "confirmed",
+            "customerFirstName": "Anna", "customerLastName": "Svensson",
+            "serviceName": "Ridlektion", "servicePrice": 450.0,
+            "isManualBooking": false, "isPaid": false, "timezone": "Europe/Stockholm"
+        }
+        """.data(using: .utf8)!
+
+        let booking = try JSONDecoder().decode(NativeBooking.self, from: json)
+
+        XCTAssertEqual(booking.timezone, "Europe/Stockholm")
+        XCTAssertEqual(booking.withStatus("completed").timezone, "Europe/Stockholm")
+    }
+
+    func testNativeBookingWithoutTimezoneDecodesAsNil() throws {
+        let json = """
+        {
+            "id": "booking-1", "bookingDate": "2026-11-10", "startTime": "10:00",
+            "endTime": "11:00", "status": "confirmed", "customerFirstName": "Anna",
+            "customerLastName": "Svensson", "serviceName": "Ridlektion",
+            "servicePrice": 450.0, "isManualBooking": false, "isPaid": false
+        }
+        """.data(using: .utf8)!
+
+        let booking = try JSONDecoder().decode(NativeBooking.self, from: json)
+
+        XCTAssertNil(booking.timezone)
+    }
+
     func testNativeBookingDecodesWithNilHorseName() throws {
         let json = """
         {

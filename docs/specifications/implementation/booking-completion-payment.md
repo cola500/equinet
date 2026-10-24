@@ -264,17 +264,20 @@ Scenario-ID skrivs först i testnamnet, t.ex.
 | Test | Fil | Scenario |
 |---|---|---|
 | PUT före sluttid → 400 med meddelande; efter → 200 (`vi.setSystemTime`) | `bookings/[id]/route.integration.test.ts` | SC-BOOK-002, SC-BOOK-001 |
-| PUT: `prisma.booking.update` får `WHERE` med `status`, `bookingDate`, `endTime`, `timezone`; `P2025` när bokningen finns → 409 | `bookings/[id]/route.integration.test.ts` | SC-BOOK-002 |
-| Ombokning skriver bara över `pending`/`confirmed` | befintliga reschedule-routetester | – |
-| `timezone` finns i svaren | `native/bookings/route.test.ts`, `native/calendar/route.test.ts`, webbens bokningsroute | – |
+| `updateStatusWithAuth` lägger `status`, `bookingDate`, `endTime`, `timezone` i samma `WHERE`; `P2025` → `null` | `PrismaBookingRepository.test.ts` (ny, Prisma mockad) | SC-BOOK-002 |
+| PUT: villkorad skrivning utan träff när bokningen finns → 409 | `bookings/[id]/route.integration.test.ts` | SC-BOOK-002 |
+| Ombokning (kund och leverantör) skriver bara över `pending`/`confirmed` | `PrismaBookingRepository.test.ts` | – |
+| `timezone` finns i svaren | `native/bookings/route.test.ts`, `native/calendar/route.test.ts`, `bookings/route.test.ts` | SC-BOOK-007 |
 | Röstlogg: anteckning sparas, `completion.status` är `rejected` med orsak och meddelande | `voice-log/confirm/route.test.ts` | SC-BOOK-002 |
 | Röstlogg: anteckning sparas och `completion.status` är `completed` | `voice-log/confirm/route.test.ts` | SC-BOOK-001 |
-| Röstlogg-hooken visar rätt besked för båda utfallen | `useVoiceWorkLog.test.ts` | SC-BOOK-001, -002 |
+| Röstloggens besked för båda utfallen (`describeVoiceLogResult`) | `useVoiceWorkLog.test.ts` (ny) | SC-BOOK-001, -002 |
 | Offlinekö: 400 sparar serverns meddelande som konflikt (finns delvis) | `sync-engine.test.ts` | SC-BOOK-008 |
 | Mottagningstiden avgör: samma body avvisas före och godkänns efter sluttid | `bookings/[id]/route.integration.test.ts` | SC-BOOK-008 |
-| Knapp inaktiverad före sluttid, aktiv efter | `BookingDetailDialog.test.tsx` (ny) | SC-BOOK-003, SC-BOOK-001 |
-| iOS: regel för om knappen är aktiv, i bokningens tidszon (även när enheten har annan tidszon) | `BookingsModelsTests` | SC-BOOK-004/005, -007 |
-| iOS: 400 köas inte i `PendingActionStore`, nätverksfel köas | `CalendarViewModelTests` | SC-BOOK-002 |
+| Knapp inaktiverad med förklaring före sluttid, aktiv vid och efter; Stockholm när tidszon saknas | `MarkCompletedButton.test.tsx` (ny, delas av kalenderdialogen och bokningslistan) | SC-BOOK-001, -003, -005 |
+| iOS: regel för om knappen är aktiv, i bokningens tidszon; texter och felmeddelanden | `BookingCompletionRulesTests` (ny) | SC-BOOK-002, -004, -005, -007 |
+| iOS: `timezone` avkodas och följer med i kopior | `BookingsModelsTests`, `CalendarModelsTests` | SC-BOOK-007 |
+| iOS: 4xx köas inte, nätverksfel och 5xx köas | `PendingActionStoreTests` | SC-BOOK-002 |
+| iOS: avvisad markering ger synligt fel (lista och kalender) | `BookingsViewModelTests`, `CalendarViewModelTests` | SC-BOOK-002 |
 | Befintligt offline-E2E: seed flyttas till passerad tid | `e2e/offline-mutations.spec.ts` | SC-BOOK-008 |
 
 **C2**
@@ -305,9 +308,10 @@ SC-PAY-006 testas inte: det beror på den öppna frågan Q-PAY-002.
 | `bookingDate` lagras i flera varianter | Datum läses i bokningens tidszon; täcks av test. Antagandet håller för tidszoner öster om UTC. |
 | Enhetens klocka fel | Servern avgör; klienterna hanterar 400. |
 | iOS-köns tysta 4xx-kastning vid senare synk | Dokumenteras som kvarstående gap (inte i denna slice). |
+| iOS saknar serverns felmeddelande (`APIError.serverError(Int)`) | iOS visar en lokal text per statuskod för statusbytet (400 vid `completed`, 409). Servern avgör fortfarande; att föra fram serverns text kräver ändrad `APIError` och hör inte till slicen. |
 | Öppna betalningsförsök skapade vid `confirmed` före C2 kan fortfarande slutföras hos Stripe | Gäller staging/sandbox (prod kör mock). Hör till C1/Q-PAY-002, inte denna slice. |
 | `BookingService` (667 rader) växer | Tidslogiken läggs i egen fil; `updateStatus` får bara ett anrop. |
-| Samtidig ombokning | Villkorad skrivning i båda riktningar; konkurrenstest på domännivå och kontroll av `WHERE` på API-nivå. Atomiciteten i själva databasen provkörs inte mot riktig PostgreSQL i enhetstesterna – den bygger på radlås i `UPDATE`. |
+| Samtidig ombokning | Villkorad skrivning i båda riktningar; konkurrenstest på domännivå och kontroll av `WHERE` i repositoryt. Hinner bokningen bli utförd före en ombokning ger ombokningen samma svar som vid krock (`null` från repositoryt) – ovanligt och ofarligt. Atomiciteten i själva databasen provkörs inte mot riktig PostgreSQL i enhetstesterna – den bygger på radlås i `UPDATE`. |
 
 ## Implementeringsordning
 

@@ -79,4 +79,22 @@ final class PendingActionStoreTests: XCTestCase {
         PendingActionStore.clear(from: testDefaults)
         XCTAssertTrue(PendingActionStore.load(from: testDefaults).isEmpty)
     }
+
+    // MARK: - Queue policy (BR-BOOK-001: rejections are shown, not queued)
+
+    func testSCBOOK002_serverRejectionIsNotQueued() {
+        XCTAssertFalse(PendingActionStore.shouldQueue(APIError.serverError(400)))
+        XCTAssertFalse(PendingActionStore.shouldQueue(APIError.serverError(403)))
+        XCTAssertFalse(PendingActionStore.shouldQueue(APIError.serverError(404)))
+        XCTAssertFalse(PendingActionStore.shouldQueue(APIError.serverError(409)))
+        XCTAssertFalse(PendingActionStore.shouldQueue(APIError.unauthorized))
+    }
+
+    func testNetworkAndTransientErrorsAreQueued() {
+        XCTAssertTrue(PendingActionStore.shouldQueue(URLError(.notConnectedToInternet)))
+        XCTAssertTrue(PendingActionStore.shouldQueue(APIError.networkError(URLError(.timedOut))))
+        XCTAssertTrue(PendingActionStore.shouldQueue(APIError.timeout))
+        XCTAssertTrue(PendingActionStore.shouldQueue(APIError.serverError(503)))
+        XCTAssertTrue(PendingActionStore.shouldQueue(APIError.rateLimited(retryAfter: nil)))
+    }
 }

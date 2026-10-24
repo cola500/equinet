@@ -189,6 +189,26 @@ describe('GET /api/bookings', () => {
     expect(data[0].customer.email).toBe('jane@example.com')
   })
 
+  it('SC-BOOK-007 – leverantörens bokningar hämtas med bokningens tidszon', async () => {
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: 'user123', userType: 'provider', email: '', isAdmin: false, providerId: 'provider123', stableId: null, authMethod: 'supabase' as const,
+    })
+    // The Supabase mock returns whatever it is given, so the column list is
+    // the observable contract for which fields reach the client.
+    const select = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    })
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      from: vi.fn().mockReturnValue({ select }),
+    } as never)
+
+    await GET(new NextRequest('http://localhost:3000/api/bookings'))
+
+    expect(select.mock.calls[0][0]).toMatch(/\btimezone\b/)
+  })
+
   it('should return 401 when user is not authenticated', async () => {
     vi.mocked(getAuthUser).mockResolvedValue(null)
 
