@@ -14,6 +14,13 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    groups:
+      # react and react-dom must have the exact same version, otherwise every
+      # test suite fails with "Incompatible React versions" (PR #567 + #571)
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
 
   # GitHub Actions -- security only
   - package-ecosystem: "github-actions"

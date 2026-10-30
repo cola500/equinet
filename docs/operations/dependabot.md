@@ -3,7 +3,7 @@ title: "Dependabot -- strategi och hantering"
 description: "Hur Dependabot-uppdateringar hanteras: auto-merge, risker per paket, manuell granskning"
 category: operations
 status: active
-last_updated: 2026-09-28
+last_updated: 2026-10-30
 tags: [operations, dependencies, security, ci]
 sections:
   - Översikt
@@ -193,6 +193,14 @@ Dependabot löser konflikter automatiskt vid nästa schemalagda körning. Om int
 ### Dependabot-PR failar på CI
 
 Läs logs -- om det är en regression i paketet, `gh pr close` och vänta på uppströms-fix. Om det är en bug i vår testsvit, fixa den först och låt Dependabot köra om.
+
+### Paket som måste uppdateras tillsammans (grupper)
+
+`react` och `react-dom` måste ha exakt samma version. Annars fallerar alla testsviter med `Incompatible React versions` innan något test körs. Därför är de grupperade i `.github/dependabot.yml` (`groups.react`), så att Dependabot uppdaterar båda i samma PR.
+
+**Bakgrund (2026-10-30):** utan grupp skapade Dependabot en PR per paket (#567 för `react-dom`, #571 för `react`, båda 19.2.8 → 19.2.9). Ingen av dem kunde bli grön ensam. De ersattes av en manuell PR som uppdaterade båda och införde gruppen.
+
+**Lägg till fler grupper** när två paket måste ha samma version, till exempel om en PR fallerar med ett versionskonfliktfel som bara löses genom att uppdatera ett annat paket samtidigt.
 
 ### Flera patch-PRs hopar sig
 
