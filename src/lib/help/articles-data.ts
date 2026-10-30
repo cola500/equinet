@@ -83,11 +83,11 @@ export const allArticles: HelpArticle[] = [
       "kr",
       "fakturanummer"
     ],
-    "summary": "Betala för bekräftade bokningar direkt i appen och ladda ner kvitto som PDF.",
+    "summary": "Betala för genomförda bokningar direkt i appen och ladda ner kvitto som PDF.",
     "content": [
       {
         "paragraphs": [
-          "När en bokning är bekräftad eller genomförd kan du betala direkt i appen."
+          "När leverantören har markerat besöket som genomfört kan du betala direkt i appen. Före det står det \"Betalning öppnas när besöket är genomfört\" på bokningen."
         ]
       },
       {
@@ -1381,7 +1381,7 @@ export const allArticles: HelpArticle[] = [
         "heading": "Statusar",
         "bullets": [
           "Väntande -- Acceptera eller avböj (med anledning)",
-          "Bekräftad -- Utför tjänsten, markera sedan som genomförd",
+          "Bekräftad -- Utför tjänsten, markera sedan som genomförd. Det går först när bokad sluttid har passerat; före det är knappen inaktiv och visar från vilken tid det går.",
           "Genomförd -- Klar, kunden kan nu betala och lämna omdöme",
           "Ej infunnit -- Kunden infann sig inte",
           "Avbokad -- Avbokad av kund eller dig"
@@ -2214,17 +2214,18 @@ export const allArticles: HelpArticle[] = [
       {
         "heading": "Skapa en optimerad rutt",
         "steps": [
-          "Välj de beställningar du vill ta med",
-          "Systemet beräknar automatiskt den mest effektiva ruttordningen",
-          "Du ser total körsträcka och beräknad tid",
-          "Justera ordningen manuellt om du vill",
-          "Namnge rutten och välj datum",
+          "Välj de beställningar du vill ta med (minst 2, högst 100)",
+          "Klicka på **Optimera rutt** -- systemet räknar ut den kortaste ordningen att besöka dem i",
+          "Du ser hur mycket kortare rutten blev och den verkliga körsträckan",
+          "Namnge rutten och välj datum och starttid",
           "Spara -- kunderna notifieras med beräknad ankomsttid"
         ]
       },
       {
         "paragraphs": [
-          "Optimeringen använder avståndberäkning fågelvägen med en marginal på 20% för verklig vägsträcka, plus 10 minuters buffert mellan varje stopp."
+          "Optimeringen räknar på avståndet fågelvägen och planerar en tur som börjar och slutar på din startadress. Därefter hämtas den verkliga körsträckan längs vägarna, så att siffrorna du ser stämmer med bilvägen.",
+          "Bara beställningar med en adress som har en position kan optimeras. Om en vald beställning saknar position får du ett meddelande om det.",
+          "Optimeringen sker helt i Equinet. Inga namn eller adresser skickas till någon annan tjänst."
         ]
       }
     ]

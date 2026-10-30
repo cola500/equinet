@@ -19,7 +19,7 @@ import { toast } from "sonner"
 import { ProviderLayout } from "@/components/layout/ProviderLayout"
 import { InfoPopover } from "@/components/ui/info-popover"
 import { OfflineNotAvailable } from "@/components/ui/OfflineNotAvailable"
-import { optimizeRoute, type Location } from "@/lib/route-optimizer"
+import { optimizeRoute, MAX_OPTIMIZE_ORDERS, type Location } from "@/lib/route-optimizer"
 import { getRoute } from "@/lib/routing"
 import { clientLogger } from "@/lib/client-logger"
 import { useDemoSession } from "@/components/providers/DemoSessionProvider"
@@ -116,34 +116,37 @@ export default function RoutePlanningPage() {
       return
     }
 
+    // Orders without coordinates can't be routed, so validate the filtered set
+    const selected = orders.filter(
+      o => selectedOrders.has(o.id) && o.latitude != null && o.longitude != null
+    ) as (typeof orders[number] & { latitude: number; longitude: number })[]
+
+    if (selected.length < 2) {
+      toast.error("Minst 2 av de valda beställningarna behöver en adress med position för att kunna optimeras")
+      return
+    }
+
+    if (selected.length > MAX_OPTIMIZE_ORDERS) {
+      toast.error(`Du kan optimera högst ${MAX_OPTIMIZE_ORDERS} beställningar åt gången`)
+      return
+    }
+
     setIsOptimizing(true)
     setOptimizationResult(null)
 
     try {
-      // Hämta valda orders (filtrera bort de utan koordinater -- kan inte ruttplaneras)
-      const selected = orders.filter(
-        o => selectedOrders.has(o.id) && o.latitude != null && o.longitude != null
-      ) as (typeof orders[number] & { latitude: number; longitude: number })[]
-
-      // Konvertera till Location format med index som ID för Modal API
-      const locations: Location[] = selected.map((order, index) => ({
-        id: index, // Använd array-index som ID för Modal API
+      // Only coordinates are sent; result.route holds indices into `selected`
+      const locations: Location[] = selected.map((order) => ({
         lat: order.latitude,
         lon: order.longitude,
-        customer: order.customer
-          ? `${order.customer.firstName} ${order.customer.lastName}`
-          : order.provider?.businessName ?? 'Okänd',
-        address: order.address,
-        service: order.serviceType,
       }))
 
-      // Anropa Modal API
       const result = await optimizeRoute(startLocation, locations)
 
       // Mappa tillbaka från array-index till riktiga order IDs
       const optimizedOrderIds = result.route.map(index => selected[index].id)
 
-      // Beräkna FAKTISK baseline distance med OSRM (istället för Modal API:s fågelväg)
+      // Beräkna FAKTISK baseline distance med OSRM (optimeringen räknar fågelväg)
       let actualBaselineDistanceKm = result.baseline_distance_km // Fallback
       let actualOptimizedDistanceKm = result.total_distance_km // Fallback
 
@@ -173,7 +176,10 @@ export default function RoutePlanningPage() {
         actualOptimizedDistanceKm = optimizedRoute.distance / 1000
 
         // Beräkna VERKLIG förbättring
-        const actualImprovement = ((actualBaselineDistanceKm - actualOptimizedDistanceKm) / actualBaselineDistanceKm) * 100
+        // Guard against 0 km (all stops at the start) to avoid NaN in the toast
+        const actualImprovement = actualBaselineDistanceKm > 0
+          ? ((actualBaselineDistanceKm - actualOptimizedDistanceKm) / actualBaselineDistanceKm) * 100
+          : 0
 
         // Spara resultat med FAKTISKA avstånd
         setOptimizationResult({
@@ -185,8 +191,8 @@ export default function RoutePlanningPage() {
 
         toast.success(`Rutt optimerad! ${actualImprovement.toFixed(1)}% kortare (${actualBaselineDistanceKm.toFixed(1)} km → ${actualOptimizedDistanceKm.toFixed(1)} km)`)
       } catch (error) {
-        clientLogger.error('OSRM distance calculation failed, using Modal API distances:', error)
-        // Fallback till Modal API:s resultat
+        clientLogger.error('OSRM distance calculation failed, using straight-line distances:', error)
+        // Fallback to the straight-line distances from the optimizer
         setOptimizationResult({
           optimizedOrderIds,
           improvement: result.improvement_percent,

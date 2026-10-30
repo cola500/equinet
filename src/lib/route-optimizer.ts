@@ -1,102 +1,51 @@
 /**
- * Route Optimizer API Client
+ * Route optimizer client
  *
- * Integrerar med Modal.com API från Experiment 001 för att optimera hovslagarrutter.
+ * Calls /api/optimize-route, which orders the stops inside Equinet.
+ * Only coordinates are sent; names and addresses never leave the page.
+ * Errors are thrown with a Swedish, user-facing message; the caller logs them.
  */
 
-import { logger } from "@/lib/logger"
+import type { GeoPoint, StopOrderResult } from "@/lib/geo/route-optimization"
 
-const MODAL_API_URL = process.env.MODAL_API_URL || 'https://johanlin--route-optimizer-fastapi-app.modal.run'
+export { MAX_OPTIMIZE_ORDERS } from "@/lib/geo/route-optimization"
 
-export interface Location {
-  lat: number;
-  lon: number;
-  id?: number;
-  customer?: string;
-  address?: string;
-  service?: string;
-}
+export type Location = GeoPoint
+export type OptimizeResponse = StopOrderResult
 
-export interface OptimizeResponse {
-  route: number[];
-  total_distance_km: number;
-  num_stops: number;
-  optimized_orders: Location[];
-  baseline_distance_km: number;
-  improvement_percent: number;
-}
-
-// Använd Next.js API route som proxy för att undvika CSP-problem
 const API_URL = '/api';
 
+// Prefer the specific Zod message ("Högst 100 ...") over the generic "Valideringsfel"
+function extractErrorMessage(data: unknown): string {
+  const body = data as { error?: unknown; details?: { message?: unknown }[] } | null
+  const detail = body?.details?.[0]?.message
+  if (typeof detail === 'string') return detail
+  if (typeof body?.error === 'string') return body.error
+  return 'Optimering misslyckades'
+}
+
 /**
- * Optimera rutt via Modal API (genom Next.js proxy)
+ * Optimize the visiting order. `route` holds indices into `orders`.
  */
 export async function optimizeRoute(
   startLocation: Location,
   orders: Location[]
 ): Promise<OptimizeResponse> {
-  try {
-    const response = await fetch(`${API_URL}/optimize-route`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        start_location: startLocation,
-        orders: orders,
-      }),
-    });
+  const response = await fetch(`${API_URL}/optimize-route`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      start_location: startLocation,
+      orders: orders,
+    }),
+  });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Optimization failed: ${response.statusText} - ${errorText}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    logger.error('Route optimization error', error instanceof Error ? error : new Error(String(error)));
-    throw error;
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new Error(extractErrorMessage(data));
   }
-}
 
-/**
- * Generera mock-koordinater runt Stockholm för PoC
- * I framtiden: ersätt med riktig geocoding
- */
-export function generateMockCoordinates(index: number): { lat: number; lon: number } {
-  const baseLatStockholm = 59.3293;
-  const baseLonStockholm = 18.0686;
-
-  // Spread ut beställningar inom ~50km radie
-  // Använd index för att få konsistenta positioner
-  const angle = (index * 2.4) % (2 * Math.PI); // ~golden angle för bra distribution
-  const radius = 0.1 + (index % 5) * 0.1; // 0.1-0.5 grader (ca 10-50km)
-
-  return {
-    lat: baseLatStockholm + Math.cos(angle) * radius,
-    lon: baseLonStockholm + Math.sin(angle) * radius,
-  };
-}
-
-/**
- * Testa API-anslutning
- */
-export async function testApiConnection(): Promise<boolean> {
-  try {
-    const response = await fetch(`${MODAL_API_URL}/`, {
-      method: 'GET',
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      logger.info('Modal API health check', { data });
-      return true;
-    }
-
-    return false;
-  } catch (error) {
-    logger.error('API connection test failed', error instanceof Error ? error : new Error(String(error)));
-    return false;
-  }
+  return await response.json();
 }
