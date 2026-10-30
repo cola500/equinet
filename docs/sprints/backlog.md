@@ -3,7 +3,7 @@ title: "Produktbacklog"
 description: "Kanonisk backlog för Equinet. Alla kända stories, uppgifter och beslut. status.md pekar hit; roadmap.md är den strategiska vyn."
 category: sprint
 status: active
-last_updated: 2026-10-16
+last_updated: 2026-10-30
 tags: [backlog, roadmap, planning]
 sections:
   - Aktiva produktspår
@@ -118,6 +118,8 @@ Samlade produkt-/strategibeslut som väntar på Johan. Tills beslut: inget arbet
 | Story | Effort | Varför kritiskt |
 |-------|--------|----------------|
 | GDPR data retention policy + cron | 1 dag | Lagkrav. Radering av gammal data, definierade lagringsperioder. |
+| **Journal enligt Jordbruksverkets krav för godkända hovslagare** | Ej uppskattat (flera veckor). Slicea med Seven Dimensions före start. | Lagkrav för målgruppen. Godkända hovslagare måste föra journal: djurhållare, hästens identitet, datum/tid, anamnes, status, ev. diagnos och behandling, utförarens namn och titel, läkemedel (namn, styrka, dos, behandlingstid, karens). Spara minst 5 år från sista införandet. Rättelser ska lämna originaltexten läsbar och signeras + dateras. Digital journal OK om kraven uppfylls ([Hovslagareföreningen](https://hovslagareforeningen.se/en/godkand-hovslagare/journalforing/)). **Gap i dag:** `HorseNote`/`ProviderCustomerNote` är fritext utan dessa fält, `updatedAt` skriver över utan ändringshistorik, `onDelete: Cascade` från `Horse` raderar anteckningar, och `DataRetentionService` (2 år inaktivitet, flagga `data_retention` av) krockar med 5-årskravet. Viktigare när titeln skyddas 2030. Konkurrenten Equikura anger att de följer reglerna. Öppet: exakt föreskrift (SJVFS-nummer) och om kraven gäller icke-godkända hovslagare. Se affärsplanen (avsnitt 5–7). |
+| Justera startsidans "Hästjournal"-påstående | <0.5 dag | `src/app/page.tsx:36` lovar "Hästjournal — samlat på ett ställe". Kan läsas som att Equinet uppfyller journalkraven för godkända hovslagare, vilket det inte gör förrän raden ovan är klar. Byt till t.ex. "Hästens historik" tills vidare. |
 
 ---
 
