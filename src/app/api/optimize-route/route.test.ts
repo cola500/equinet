@@ -1,13 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { NextRequest } from "next/server"
 
-vi.mock("@/lib/auth-server", () => ({
-  auth: vi.fn(),
-}))
+vi.mock("@/lib/auth-dual", () => ({ getAuthUser: vi.fn() }))
 
 vi.mock("@/lib/rate-limit", () => ({
   rateLimiters: { api: vi.fn().mockResolvedValue(true) },
   getClientIP: vi.fn().mockReturnValue("127.0.0.1"),
+  RateLimitServiceError: class RateLimitServiceError extends Error {},
+}))
+
+vi.mock("@/lib/feature-flags", () => ({
+  isFeatureEnabled: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock("@/lib/logger", () => ({
@@ -15,11 +18,13 @@ vi.mock("@/lib/logger", () => ({
 }))
 
 import { POST } from "./route"
-import { auth } from "@/lib/auth-server"
-import { rateLimiters, getClientIP } from "@/lib/rate-limit"
+import { getAuthUser } from "@/lib/auth-dual"
+import { rateLimiters, RateLimitServiceError } from "@/lib/rate-limit"
+import { isFeatureEnabled } from "@/lib/feature-flags"
 
-const mockAuth = vi.mocked(auth)
+const mockGetAuthUser = vi.mocked(getAuthUser)
 const mockRateLimit = vi.mocked(rateLimiters.api)
+const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled)
 
 const BASE_URL = "http://localhost:3000/api/optimize-route"
 
@@ -31,53 +36,107 @@ function makeRequest(body: unknown): NextRequest {
   })
 }
 
-const validBody = {
-  stops: [
-    { lat: 59.33, lng: 18.07, id: "stop1" },
-    { lat: 59.34, lng: 18.08, id: "stop2" },
-  ],
+// Same shape as the real session from getAuthUser (userType, not role)
+const providerUser = {
+  id: "user-1", email: "maria@test.se", userType: "provider", isAdmin: false,
+  providerId: "provider-1", stableId: null, authMethod: "supabase" as const,
 }
 
-const providerSession = {
-  user: { id: "user1", role: "provider", providerId: "prov1" },
+const customerUser = {
+  ...providerUser, userType: "customer", providerId: null,
+}
+
+// Exactly what src/lib/route-optimizer.ts sends: coordinates only
+const validBody = {
+  start_location: { lat: 59.2753, lon: 15.2134 },
+  orders: [
+    { lat: 59.61, lon: 16.55 }, // Västerås
+    { lat: 59.08, lon: 15.11 }, // Kumla
+    { lat: 59.13, lon: 15.14 }, // Hallsberg
+  ],
 }
 
 describe("POST /api/optimize-route", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAuth.mockResolvedValue(providerSession as never)
+    mockGetAuthUser.mockResolvedValue(providerUser)
     mockRateLimit.mockResolvedValue(true)
-    // Mock global fetch for Modal API
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ optimizedRoute: [] }),
+    mockIsFeatureEnabled.mockResolvedValue(true)
+    global.fetch = vi.fn()
+  })
+
+  it("returns an optimized visiting order for a logged-in provider", async () => {
+    const res = await POST(makeRequest(validBody))
+
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect([...data.route].sort()).toEqual([0, 1, 2])
+    expect(data).toMatchObject({
+      num_stops: 3,
+      total_distance_km: expect.any(Number),
+      baseline_distance_km: expect.any(Number),
+      improvement_percent: expect.any(Number),
     })
+    expect(data.total_distance_km).toBeLessThanOrEqual(data.baseline_distance_km)
+  })
+
+  it("optimizes inside Equinet without calling external services", async () => {
+    await POST(makeRequest(validBody))
+
+    expect(global.fetch).not.toHaveBeenCalled()
+  })
+
+  it("rejects personal data fields so only coordinates are accepted", async () => {
+    const res = await POST(makeRequest({
+      ...validBody,
+      orders: validBody.orders.map((o) => ({ ...o, customer: "Anders Bergman", address: "Ekebyvägen 12" })),
+    }))
+
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toBe("Valideringsfel")
   })
 
   it("returns 401 when not authenticated", async () => {
-    mockAuth.mockResolvedValueOnce(null as never)
+    mockGetAuthUser.mockResolvedValue(null)
+
     const res = await POST(makeRequest(validBody))
+
     expect(res.status).toBe(401)
-    const data = await res.json()
-    expect(data.error).toBe("Ej inloggad")
+    expect((await res.json()).error).toBe("Ej inloggad")
   })
 
-  it("returns 403 when user is not a provider", async () => {
-    mockAuth.mockResolvedValueOnce({
-      user: { id: "user1", role: "customer" },
-    } as never)
+  it("returns 403 when the user is not a provider", async () => {
+    mockGetAuthUser.mockResolvedValue(customerUser)
+
     const res = await POST(makeRequest(validBody))
+
     expect(res.status).toBe(403)
-    const data = await res.json()
-    expect(data.error).toBe("Åtkomst nekad")
+    expect((await res.json()).error).toBe("Åtkomst nekad")
+  })
+
+  it("returns 404 when route planning is disabled", async () => {
+    mockIsFeatureEnabled.mockResolvedValue(false)
+
+    const res = await POST(makeRequest(validBody))
+
+    expect(res.status).toBe(404)
+    expect(mockIsFeatureEnabled).toHaveBeenCalledWith("route_planning")
   })
 
   it("returns 429 when rate limited", async () => {
-    mockRateLimit.mockResolvedValueOnce(false)
+    mockRateLimit.mockResolvedValue(false)
+
     const res = await POST(makeRequest(validBody))
+
     expect(res.status).toBe(429)
-    const data = await res.json()
-    expect(data.error).toBeDefined()
+  })
+
+  it("returns 503 when the rate limiter is unavailable (fail-closed)", async () => {
+    mockRateLimit.mockRejectedValue(new RateLimitServiceError("redis down"))
+
+    const res = await POST(makeRequest(validBody))
+
+    expect(res.status).toBe(503)
   })
 
   it("returns 400 for invalid JSON", async () => {
@@ -86,63 +145,46 @@ describe("POST /api/optimize-route", () => {
       headers: { "Content-Type": "application/json" },
       body: "not-json",
     })
+
     const res = await POST(req)
+
     expect(res.status).toBe(400)
-    const data = await res.json()
-    expect(data.error).toBe("Ogiltig JSON")
+    expect((await res.json()).error).toBe("Ogiltig JSON")
   })
 
-  it("returns 400 when stops is missing", async () => {
-    const res = await POST(makeRequest({}))
+  it("returns 400 when start_location is missing", async () => {
+    const res = await POST(makeRequest({ orders: validBody.orders }))
+
     expect(res.status).toBe(400)
-    const data = await res.json()
-    expect(data.error).toBe("Valideringsfel")
+    expect((await res.json()).error).toBe("Valideringsfel")
   })
 
-  it("returns 400 when stops has fewer than 2 items", async () => {
-    const res = await POST(makeRequest({ stops: [{ lat: 59.33, lng: 18.07, id: "s1" }] }))
+  it("returns 400 when fewer than 2 orders are sent", async () => {
+    const res = await POST(makeRequest({ ...validBody, orders: [validBody.orders[0]] }))
+
     expect(res.status).toBe(400)
-    const data = await res.json()
-    expect(data.error).toBe("Valideringsfel")
   })
 
-  it("returns 400 when stops has invalid coordinates", async () => {
+  it("returns 400 when too many orders are sent", async () => {
+    const orders = Array.from({ length: 101 }, () => ({ lat: 59, lon: 15 }))
+
+    const res = await POST(makeRequest({ ...validBody, orders }))
+
+    expect(res.status).toBe(400)
+  })
+
+  it("returns 400 for invalid coordinates", async () => {
     const res = await POST(makeRequest({
-      stops: [
-        { lat: 200, lng: 18.07, id: "s1" },
-        { lat: 59.34, lng: 18.08, id: "s2" },
-      ],
+      ...validBody,
+      orders: [{ lat: 200, lon: 15 }, validBody.orders[1]],
     }))
+
     expect(res.status).toBe(400)
   })
 
-  it("rejects unknown fields with .strict()", async () => {
+  it("rejects unknown fields at top level", async () => {
     const res = await POST(makeRequest({ ...validBody, hack: true }))
+
     expect(res.status).toBe(400)
-  })
-
-  it("returns 200 on happy path", async () => {
-    const res = await POST(makeRequest(validBody))
-    expect(res.status).toBe(200)
-    const data = await res.json()
-    expect(data.optimizedRoute).toBeDefined()
-  })
-
-  it("calls auth, getClientIP, and rateLimiters.api", async () => {
-    const req = makeRequest(validBody)
-    await POST(req)
-    expect(mockAuth).toHaveBeenCalled()
-    expect(getClientIP).toHaveBeenCalledWith(req)
-    expect(mockRateLimit).toHaveBeenCalledWith("127.0.0.1")
-  })
-
-  it("returns 500 when Modal API fails", async () => {
-    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      ok: false,
-      status: 502,
-      text: () => Promise.resolve("Bad Gateway"),
-    })
-    const res = await POST(makeRequest(validBody))
-    expect(res.status).toBe(502)
   })
 })

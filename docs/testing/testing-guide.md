@@ -3,7 +3,7 @@ title: "Manuell testningsguide"
 description: "Komplett checklista for manuell testning av Equinet -- alla floden, feature flags, mobil"
 category: testing
 status: active
-last_updated: 2026-10-24
+last_updated: 2026-10-30
 tags: [testing, manual, checklist, qa]
 sections:
   - Startsida och offentliga sidor
@@ -247,7 +247,10 @@ sections:
 - [ ] Menyval visas nar PA, doljs nar AV
 - [ ] Skapa rutt med datum och stopp
 - [ ] Kartvy med stopp
-- [ ] Optimera ordning och restidsberakning
+- [ ] Optimera ordning och restidsberakning: valj 2 eller fler bestallningar med adress och klicka Optimera. Toast visar hur mycket kortare rutten blev.
+- [ ] Valj 2 bestallningar dar en saknar position: tydligt felmeddelande om att adress med position kravs (inget API-anrop)
+- [ ] Optimeringen svarar direkt (ingen vantetid) och i DevTools > Network skickar anropet till /api/optimize-route bara koordinater, inga namn eller adresser
+- [ ] Hogst 100 bestallningar per optimering, fler ger ett tydligt felmeddelande
 
 ### Rutt-annonser (GA, ingen flagga)
 
