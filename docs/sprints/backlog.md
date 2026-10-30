@@ -24,6 +24,7 @@ sections:
   - Dagens rutt (uppföljning)
   - Features som kräver arbete innan lansering
   - Messaging-epic (post-launch)
+  - Besöksplats och restid-epic
   - Process & tech-debt (vid tillfälle)
   - Parking lot
   - Vid lansering
@@ -311,6 +312,18 @@ Ta bort workarounden när lägsta stödda iOS inte längre inkluderar den påver
 | Slice 3: medlemskap + inbjudningar med godkännande | Medel (bygga) | Medlems-entitet + ansök/godkänn-flöde saknas idag. |
 | Slice 4 (kärnvärde): gemensamt leverantörsbesök | Störst (bygga) | Stall-koppla `GroupBookingRequest`; flera hästar till ett besök. Det enda genuint nya. |
 | Slice 5: roller/multi-admin, synlighet, häst i flera stall | Medel (bygga) | Schemaändring: single owner → roller; single `stableId` → m2m. |
+
+## Besöksplats och restid-epic
+
+> Slicad 2026-10-30. Se [epic-besoksplats-restid.md](../ideas/epic-besoksplats-restid.md). **Beslut:** besöksplatsen är stallets adress. Står hästen i ett stall som inte finns i Equinet anges platsen på hästen. Bufferten blir ett standardvärde som leverantören kan ändra. **MVP inte bestämd**; Johan tittar på förslaget igen.
+
+| Slice | Effort | Beskrivning |
+|-------|--------|-------------|
+| Slice 1 (MVP-förslag): besöksplats | 2-3 dagar | Fältet "Hästen står på" på hästen. Gemensam regel stall → hästens plats → ägarens hemadress, använd i tidslistan, i bokningskontrollen och i Dagens rutt. Schemaändring på `Horse` (tech-architect). |
+| Slice 2: plats krävs vid bokning | 1-2 dagar | Kunden anger plats i bokningsflödet om hästen saknar plats. API:et avvisar annars. Reserven till hemadressen tas bort. |
+| Slice 3: buffert och samma plats | 1-2 dagar | Bufferten blir ett standardvärde som leverantören kan ändra (i dag hårdkodade 60 minuter). Samma plats ger ingen restid. Schemaändring på `Provider`. |
+| Slice 4: riktig körtid | 1-2 dagar | OSRM-vägsträcka i restidskontrollen i stället för fågelväg × 1,2. Beror på driften av OSRM. |
+| Slice 5: kontroll överallt | 1 dag | Restidskontroll även för manuella bokningar och ombokningar. |
 
 ## Process & tech-debt (vid tillfälle)
 
